@@ -1,6 +1,6 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8" />
@@ -35,14 +35,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
 
 
-    <link rel="stylesheet" type="text/css" href="../static/css/base.css" />
-    <link rel="icon" type="image/x-icon" href="../static/img/wwbmicon.ico">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}" />
+    <link rel="icon" type="image/x-icon" href="{% static 'img/wwbmicon.ico' %}">
 
-    <!-- {% if title %}
+    {% if title %}
     <title>{{ title }}</title>
     {% else %}
     <title>Who Wants to be a Millionaire?</title>
-    {% endif %} -->
+    {% endif %}
     <title>Who Wants to be a Millionaire?</title>
 </head>
 
@@ -50,8 +50,8 @@
     <header class="site-header">
         <nav class="navbar navbar-expand-md fixed-top blurr">
             <div class="container-fluid unblurr">
-                <img class="img-responsive brand" src="../static/img/wwbmicon.ico" />
-                <a class="navbar-brand mr-4 bg-steel" href="{% url 'homePage' %}"><b style="font-size: medium;">Who
+                <img class="img-responsive brand" src="{% static 'img/wwbmicon.ico' %}" />
+                <a class="navbar-brand mr-4 bg-steel" href="#"><b style="font-size: medium;">Who
                         Wants to be a Millionaire?</b></a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
                     aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,7 +103,7 @@
                 <div class="col-lg-4 col-md-6 logo-div unblurr"
                     style="padding-top: 65px; padding-bottom: 30px; padding-right: 100px; text-align: bottom;">
                     <span>
-                        <img class="img-responsive brand" src="../static/img/wwbmicon.ico" />
+                        <img class="img-responsive brand" src="{% static 'img/wwbmicon.ico' %}" />
                         <a class="navbar-brand mr-4 bg-steel" href="#"><b>Who Wants to be a Millionaire?</b></a>
                         <h5 class="h1 text-white"></h5>
                         <a class="footer-nav-link" href="#">blogsterr.com</a>
