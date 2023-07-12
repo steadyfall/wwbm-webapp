@@ -15,7 +15,7 @@
             var footerHeight = $('footer').height();
             var footerTop = $('footer').position().top + footerHeight;
             if (footerTop < docHeight) {
-                $('footer').css('margin-top', 10 + (docHeight - footerTop) + 'px');
+                $('footer').css('margin-top', (docHeight - footerTop) + 'px');
             }
         });
         $(window).bind('resize', resizeHandler);
@@ -33,6 +33,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope&display=swap" rel="stylesheet"> 
 
 
     <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}" />
@@ -43,7 +44,6 @@
     {% else %}
     <title>Who Wants to be a Millionaire?</title>
     {% endif %}
-    <title>Who Wants to be a Millionaire?</title>
 </head>
 
 <body>
@@ -51,7 +51,7 @@
         <nav class="navbar navbar-expand-md fixed-top blurr">
             <div class="container-fluid unblurr">
                 <img class="img-responsive brand" src="{% static 'img/wwbmicon.ico' %}" />
-                <a class="navbar-brand mr-4 bg-steel" href="#"><b style="font-size: medium;">Who
+                <a class="navbar-brand mr-4 bg-purple" href="#"><b style="font-size: medium;">Who
                         Wants to be a Millionaire?</b></a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
                     aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,6 +60,7 @@
                 <div class="collapse navbar-collapse" id="navbarToggle">
                     <div class="navbar-nav mr-auto">
                         <a class="nav-item nav-link" href="#">Home</a>
+                        <a class="nav-item nav-link" href="#">Leaderboard</a>
                         <a class="nav-item nav-link" href="#">Scores</a>
                         <a class="nav-item nav-link" href="#">About</a>
                     </div>
@@ -96,36 +97,8 @@
 
     </main>
 
-    <footer class="page-footer text-center text-lg-start blurr"
-        style="padding-left: 25px; padding-top: 25px; padding-right: -150px;">
-        <div class="unblurr">
-            <div class="row unblurr">
-                <div class="col-lg-4 col-md-6 logo-div unblurr"
-                    style="padding-top: 65px; padding-bottom: 30px; padding-right: 100px; text-align: bottom;">
-                    <span>
-                        <img class="img-responsive brand" src="{% static 'img/wwbmicon.ico' %}" />
-                        <a class="navbar-brand mr-4 bg-steel" href="#"><b>Who Wants to be a Millionaire?</b></a>
-                        <h5 class="h1 text-white"></h5>
-                        <a class="footer-nav-link" href="#">blogsterr.com</a>
-                    </span>
-                </div>
-                <div class="col-lg-2 col-md-6"></div>
-                <div class="col-lg-2 col-md-6 unblurr" style="padding-top: 30px;">
-                    <h5 class="text-white mb-3"><b>Quick Links</b></h5>
-                    <ul class="list-unstyled">
-                        <li><a class="footer-nav-link" href="#">Home</a></li>
-                        <li><a class="footer-nav-link" href="#">Scores</a></li>
-                        <li><a class="footer-nav-link" href="#">About</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-4 col-md-6 unblurr"
-                    style="padding-top: 65px; padding-right: 0px; padding-left: 230px; text-align: bottom; bottom: 0; overflow-x: hidden;">
-                    <h5 class="text-white mb-3"><strong>CONTACT US!</strong></h5>
-                    <a class="footer-nav-link" href="#">Click here to contact us!</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    {% block footer %}{% endblock %}
+    
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
