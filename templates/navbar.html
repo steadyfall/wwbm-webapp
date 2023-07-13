@@ -1,0 +1,31 @@
+<header class="site-header">
+    <nav class="navbar navbar-expand-md fixed-top blurr">
+        <div class="container-fluid unblurr">
+            <img class="img-responsive brand" src="{% static 'img/wwbmicon.ico' %}" />
+            <a class="navbar-brand mr-4 bg-purple" href="#"><b style="font-size: medium;">Who
+                    Wants to be a Millionaire?</b></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
+                aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarToggle">
+                <div class="navbar-nav mr-auto">
+                    <a class="nav-item nav-link" href="#">Home</a>
+                    <a class="nav-item nav-link" href="#">Leaderboard</a>
+                    <a class="nav-item nav-link" href="#">Scores</a>
+                    <a class="nav-item nav-link" href="#">About</a>
+                </div>
+                <!-- Navbar Right Side -->
+                <div class="navbar-nav ms-auto">
+                    <!-- {% if user.is_authenticated %} -->
+                    <a class="nav-item nav-link" href="#">Profile</a>
+                    <a class="nav-item nav-link" href="#">Logout</a>
+                    <!-- {% else %} -->
+                    <a class="nav-item nav-link" href="#">Login</a>
+                    <a class="nav-item nav-link" href="#">Register</a>
+                    <!-- {% endif %} -->
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
