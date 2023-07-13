@@ -1,5 +1,5 @@
 function setNewDate() {
-    newDate = new Date().getTime() + countDownmicsec;
+    newDate = new Date().getTime() + countDownSec * 1000;
     localStorage.setItem('newDate', newDate);
 };
 function setDifference() {
@@ -7,37 +7,73 @@ function setDifference() {
     localStorage.setItem('difference', difference);
 };
 
-var timeLeft = document.getElementById("time-left");
+let x;
+let newDate;
+let difference;
+let countDownSec;
+let paused;
+let timeLeft;
 
-var countDownSec = 20;
-var countDownmicsec = countDownSec * 1000;
+timeLeft = document.getElementById("time-left");
 
-var newDate = localStorage.getItem('newDate');
-if (!newDate) {setNewDate();}
-var difference = localStorage.getItem('difference')
-if (!difference) {setDifference();}
+countDownSec = 20;
+++countDownSec;
+paused = false;
 
-if (newDate - new Date().getTime() <= 0) {
+function pause() {
+    if (!paused) {
+        countDownSec = parseInt(difference / 1000);
+        ++countDownSec;
+    }
     localStorage.clear();
-    setNewDate();
-    setDifference();
     timeLeft.innerHTML = countDownSec;
-} else {
-    timeLeft.innerHTML = Math.floor((newDate - new Date().getTime()) / 1000);
+    paused = !paused;
+    // console.log(paused, 'lmao', countDownSec);
+    var startBack = paused ? clearInterval(x) : startTimer();
 }
 
-var x = setInterval(function () {
+document.getElementById('lifelineButton').addEventListener('click', pause);
+
+function timeUpdate() {
+    var newDate = localStorage.getItem('newDate');
+    if (!newDate) { setNewDate(); }
+    var difference = localStorage.getItem('difference')
+    if (!difference) { setDifference(); }
+
+    if (newDate - new Date().getTime() <= 0) {
+        localStorage.clear();
+        setNewDate();
+        setDifference();
+        timeLeft.innerHTML = countDownSec;
+    } else {
+        timeLeft.innerHTML = Math.floor((newDate - new Date().getTime()) / 1000);
+    }
+}
+
+function checker() {
     difference = newDate - new Date().getTime();
-    console.log(difference);
+    // console.log(difference);
     if (difference < 10) {
         window.location.href = 'https://www.encodedna.com/javascript/operators/default.htm';
         // document.getElementById("newform").submit()
     }
     var seconds = Math.floor(difference / 1000);
     // console.log(seconds);
-    timeLeft = document.getElementById("time-left");
     if (timeLeft.innerHTML <= 10) {
         timeLeft.style.color = 'red';
+    } else {
+        timeLeft.style.color = 'white';
     }
     timeLeft.innerHTML = seconds;
-    }, 1000);
+}
+
+function startTimer() {
+    // console.log(countDownSec);
+    timeUpdate();
+    x = setInterval(checker, 1000);
+}
+
+
+if (!paused) {
+    startTimer();
+}
