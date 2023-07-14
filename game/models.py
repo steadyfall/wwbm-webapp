@@ -34,8 +34,8 @@ class Level(models.Model):
     )
 
     class Meta:
-        verbose_name = "lifeline"
-        verbose_name_plural = "lifelines"
+        verbose_name = "level"
+        verbose_name_plural = "levels"
 
     @classmethod
     def get_default_pk(cls):

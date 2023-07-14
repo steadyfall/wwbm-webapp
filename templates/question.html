@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load utility %}
 {% block content %}
 <form method="post" id="newform">
     {% csrf_token %}
@@ -73,7 +74,7 @@
             <div class="question"
                 style="display: flex; padding-top: 35px; padding-bottom: 50px; justify-content: center;">
                 <div style="max-width: 900px; font-size: larger; word-wrap: break-word;">
-                    <b>What is the capital of Gujarat?</b>
+                    <b>{{ question }}</b>
                 </div>
             </div>
         </div>
@@ -84,7 +85,7 @@
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
                         <span style="color: aqua;">A. </span>
-                        <b>What is the capital of Gujarat?</b>
+                        <b>{{ options_part1|slicer:0 }}</b>
                     </div>
                 </div>
                 <div class="col-sm"></div>
@@ -92,7 +93,7 @@
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
                         <span style="color: aqua;">B. </span>
-                        <b>What is the capital of Gujarat? What is the capital of Gujarat?</b>
+                        <b>{{ options_part1|slicer:1 }}</b>
                     </div>
                 </div>
             </div>
@@ -102,7 +103,7 @@
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
                         <span style="color: aqua;">C. </span>
-                        <b>What is the capital of Gujarat?</b>
+                        <b>{{ options_part2|slicer:0 }}</b>
                     </div>
                 </div>
                 <div class="col-sm"></div>
@@ -110,7 +111,7 @@
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
                         <span style="color: aqua;">D. </span>
-                        <b>What is the capital of Gujarat? What is the capital of Gujarat?</b>
+                        <b>{{ options_part2|slicer:1 }}</b>
                     </div>
                 </div>
             </div>

@@ -4,7 +4,7 @@ from django.urls import path
 from . import views as game_views
 
 urlpatterns = [
-    path('', game_views.home, name="home"),
+    path('', game_views.mainPage, name="home"),
 ]
 
 if settings.DEBUG:
