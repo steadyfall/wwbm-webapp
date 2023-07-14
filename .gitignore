@@ -1,5 +1,6 @@
 .venv
 db.sqlite3
+sqlite3.exe
 __pycache__
 sv.ps1
 data

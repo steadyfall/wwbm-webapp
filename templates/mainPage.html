@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block header %}
+{% include 'navbar.html' %}
+{% endblock header %}
+{% block content %}
+<div class="content">
+    <div class="content blurr" id="wrapper">
+        <div class="elementToFadeInAndOut unblurr">
+            <span style="font-family: 'Open Sans', sans-serif; font-size: 40px;">
+                Want to PLAY <br> 
+                <b>Who Wants to become a Millionaire?</b>
+            </span>
+            <button class="button-64" role="button" style="margin-left: 36%;"><span class="text">PLAY</span></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block footer %}
+{% include 'footer.html' %}
+{% endblock footer %}
