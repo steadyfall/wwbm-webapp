@@ -40,7 +40,7 @@ class Level(models.Model):
     @classmethod
     def get_default_pk(cls):
         level, created = cls.objects.get_or_create(level_number=0)
-        return level.level_number
+        return level.pk
 
     def print_money(self):
         return f"{self.money}"
@@ -148,9 +148,9 @@ class Question(models.Model):
     def get_default_pk(cls):
         question, created = cls.objects.get_or_create(
             text="None",
-            correct_option=Option.get_default_pk(),
-            incorrect_options=[Option.get_default_pk()],
+            correct_option=Option.objects.get(pk=Option.get_default_pk()),
         )
+        question.incorrect_options.set([Option.get_default_pk()]),
         return question.pk
 
     class Meta:
@@ -167,7 +167,7 @@ class Session(models.Model):
     )
     date_created = models.DateTimeField(default=timezone.now)
     session_user = models.ForeignKey(
-        get_user_model(), on_delete=models.SET(get_sentinel_user), related_name="initiated_sessions"
+        get_user_model(), default=get_sentinel_user, on_delete=models.SET(get_sentinel_user), related_name="initiated_sessions"
     )
     current_level = models.ForeignKey(
         Level,
@@ -204,6 +204,14 @@ class Session(models.Model):
 
     """ def get_absolute_url(self):
         return reverse('session', kwargs={'session_id': self.session_id}) """
+
+    @classmethod
+    def get_unused_sessionId(cls):
+        used_sessionId = {ssn.session_id for ssn in cls.objects.all()}
+        newSessionId = get_random_string(8)
+        while newSessionId in used_sessionId:
+            newSessionId = get_random_string(8)
+        return newSessionId
 
     class Meta:
         verbose_name = "session"
