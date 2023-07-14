@@ -5,6 +5,8 @@ from time import strftime
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.crypto import get_random_string
 from django.urls import reverse
+from django.contrib.auth import get_user_model
+
 
 class Lifeline(models.Model):
     date_created = models.DateTimeField(default=timezone.now)
@@ -46,6 +48,7 @@ class Level(models.Model):
     def __str__(self):
         return f"Level {self.level_number}"
 
+
 class Category(models.Model):
     date_created = models.DateTimeField(default=timezone.now)
     name = models.CharField(max_length=81)
@@ -82,6 +85,7 @@ class Option(models.Model):
     def __str__(self):
         return self.text
 
+
 class ChosenOption(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     option = models.ForeignKey(Option, on_delete=models.CASCADE)
@@ -94,6 +98,10 @@ class ChosenOption(models.Model):
     def __str__(self):
         produce = f'{self.user.__str__()} chose {self.option.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen)} UTC'
         return produce
+
+
+def get_sentinel_user():
+    return get_user_model().objects.get_or_create(username="deleted")[0].pk
 
 
 class Question(models.Model):
@@ -115,6 +123,9 @@ class Question(models.Model):
         (TRUE_FALSE, "True or False"),
     ]
 
+    who_added = models.ForeignKey(
+        get_user_model(), default=get_sentinel_user, on_delete=models.SET_DEFAULT, related_name="created_questions", primary_key=False
+    )
     date_added = models.DateTimeField(default=timezone.now)
     falls_under = models.ManyToManyField(Category, related_name="all_questions")
     text = models.TextField(max_length=666, blank=False, null=False)
@@ -150,17 +161,13 @@ class Question(models.Model):
         return f"{self.get_difficulty_display()} question under {', '.join([i.__str__() for i in self.falls_under.all()])}"
 
 
-def get_sentinel_user():
-    return User.objects.get_or_create(username="deleted")[0]
-
-
 class Session(models.Model):
     session_id = models.CharField(
         primary_key=True, default=get_random_string(8), editable=False, max_length=8
     )
     date_created = models.DateTimeField(default=timezone.now)
     session_user = models.ForeignKey(
-        User, on_delete=models.SET(get_sentinel_user), related_name="initiated_sessions"
+        get_user_model(), on_delete=models.SET(get_sentinel_user), related_name="initiated_sessions"
     )
     current_level = models.ForeignKey(
         Level,
