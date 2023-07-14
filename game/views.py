@@ -6,7 +6,11 @@ import random
 def mainPage(request):
     return render(request, "mainPage.html")
 
-def home(request):
+def rules(request):
+    context = {"lifelines":Lifeline.objects.all()}
+    return render(request, "rules.html", context)
+
+def question(request):
     allOptions = [i.text for i in Question.objects.all()[345].incorrect_options.all()]
     allOptions.extend([Question.objects.all()[345].correct_option.text])
     random.shuffle(allOptions)
