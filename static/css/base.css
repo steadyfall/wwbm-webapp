@@ -94,8 +94,8 @@ ul {
 
 .elementToFadeInAndOut {
     background: transparent;
-    -webkit-animation: fadein 5s linear forwards;
-    animation: fadein 5s linear forwards;
+    -webkit-animation: fadein 3s linear forwards;
+    animation: fadein 3s linear forwards;
     opacity: 0;
 }
 
