@@ -16,7 +16,7 @@ let timeLeft;
 
 timeLeft = document.getElementById("time-left");
 
-countDownSec = 20;
+countDownSec = parseInt({{timer}});
 ++countDownSec;
 paused = false;
 
@@ -32,7 +32,14 @@ function pause() {
     var startBack = paused ? clearInterval(x) : startTimer();
 }
 
+function submitChecker() {
+    if (!paused) {
+        pause();
+    }
+}
+
 document.getElementById('lifelineButton').addEventListener('click', pause);
+document.getElementById('sendAnswer').addEventListener('click', submitChecker)
 
 function timeUpdate() {
     var newDate = localStorage.getItem('newDate');

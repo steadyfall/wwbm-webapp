@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load utility %}
+{% block header %}
+{% include 'navbar.html' %}
+{% endblock header %}
+{% block content %}
+<div class="content">
+    <div class="content blurr" id="wrapper">
+        <div class="unblurr">
+            <span class="text-center" style="font-family: 'Open Sans', sans-serif; font-size: 40px;">
+                Your score is currently <br>
+                ${{ score }}
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}

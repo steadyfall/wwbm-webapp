@@ -55,7 +55,7 @@
         <div class="row">
             <div class="col-md-12">
                 {% for message in messages %}
-                <div class="alert alert-success center" role="alert">
+                <div class="alert alert-{{ message.tags }} center" role="alert">
                     {{ message }}
                 </div>
                 {% endfor %}
@@ -63,7 +63,6 @@
         </div>
         {% endif%}
         {% block content %}{% endblock %}
-        </div>
         <br style="clear: both" />
 
     </main>

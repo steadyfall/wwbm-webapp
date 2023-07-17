@@ -38,14 +38,16 @@
                         Questions that are grouped into the same states will all be of similar difficulty.
                         <ul>
                             <li>The <span class="text-info">1st state (Questions 1 – 5)</span> will contain the easiest
-                                questions.</li>
+                                questions. [<span class="text-danger">20 sec</span> per question]
+                            </li>
                             <li>
                                 The <span class="text-info">2nd state (Questions 6 – 9)</span> will be slightly more
-                                difficult, followed by the <br>
-                                <span class="text-info">3rd state (Questions 10 – 12)</span>.
+                                difficult [<span class="text-danger">40 sec</span> per question], followed by the
+                                <span class="text-info">3rd state (Questions 10 – 12)</span>. [<span
+                                    class="text-danger">50 sec</span> per question]
                             </li>
                             <li>The <span class="text-info">4th state (Questions 13 – 15)</span> will pose the most
-                                difficult questions of the game.
+                                difficult questions of the game. [<span class="text-danger">60 sec</span> per question]
                             </li>
                         </ul>
                         <br><br><br>
@@ -57,7 +59,14 @@
                         <br>
                         <ol>
                             {% for lifeline in lifelines %}
-                            <li><span style="color: greenyellow;">{{ lifeline.name }}</span> –– {{ lifeline.description }}</li>
+                            <li>{% if lifeline.name == "Fifty-50" %}
+                                {% include "lifelineSVG/fifty50.html" %}
+                                {% elif lifeline.name == "Audience Poll" %}
+                                {% include "lifelineSVG/audiencePoll.html" %}
+                                {% elif lifeline.name == "Expert Answer" %}
+                                {% include "lifelineSVG/expertAnswer.html" %}
+                                {% endif %}
+                                | <span style="color: greenyellow;">{{ lifeline.name }}</span> –– {{ lifeline.description }}</li>
                             {% endfor %}
                         </ol>
                     </div>
@@ -73,8 +82,8 @@
                         value="no">No</button>
                 </div>
                 <div class="small-bttn align-items-center">
-                    <button type="submit" class="btn btn-success" title="Let's play Who Wants to Be a Millionaire?" name="agreed"
-                        value="yes">Yes</button>
+                    <button type="submit" class="btn btn-success" title="Let's play Who Wants to Be a Millionaire?"
+                        name="agreed" value="yes">Yes</button>
                 </div>
             </div>
         </div>
