@@ -6,6 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.crypto import get_random_string
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+import random
 
 
 class Lifeline(models.Model):
@@ -25,7 +26,7 @@ class Level(models.Model):
     level_number = models.IntegerField(
         verbose_name="Level",
         default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(16)],
+        validators=[MinValueValidator(-1), MaxValueValidator(16)],
     )
     money = models.IntegerField(
         verbose_name="Prize Money",
@@ -96,7 +97,7 @@ class ChosenOption(models.Model):
         verbose_name_plural = "chosen options"
 
     def __str__(self):
-        produce = f'{self.user.__str__()} chose {self.option.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen)} UTC'
+        produce = f'{self.user.__str__()} chose {self.option.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen.timetuple())} UTC'
         return produce
 
 
@@ -124,7 +125,11 @@ class Question(models.Model):
     ]
 
     who_added = models.ForeignKey(
-        get_user_model(), default=get_sentinel_user, on_delete=models.SET_DEFAULT, related_name="created_questions", primary_key=False
+        get_user_model(),
+        default=get_sentinel_user,
+        on_delete=models.SET_DEFAULT,
+        related_name="created_questions",
+        primary_key=False,
     )
     date_added = models.DateTimeField(default=timezone.now)
     falls_under = models.ManyToManyField(Category, related_name="all_questions")
@@ -162,12 +167,18 @@ class Question(models.Model):
 
 
 class Session(models.Model):
-    session_id = models.CharField(
-        primary_key=True, default=get_random_string(8), editable=False, max_length=8
-    )
+    session_id = models.CharField(primary_key=True, editable=False, max_length=8)
     date_created = models.DateTimeField(default=timezone.now)
     session_user = models.ForeignKey(
-        get_user_model(), default=get_sentinel_user, on_delete=models.SET(get_sentinel_user), related_name="initiated_sessions"
+        get_user_model(),
+        default=get_sentinel_user,
+        on_delete=models.SET(get_sentinel_user),
+        related_name="initiated_sessions",
+    )
+    prev_level = models.ForeignKey(
+        Level,
+        default=Level.get_default_pk,
+        on_delete=models.SET_DEFAULT,
     )
     current_level = models.ForeignKey(
         Level,
@@ -217,6 +228,32 @@ class Session(models.Model):
             newSessionId = get_random_string(8)
         return newSessionId
 
+    @classmethod
+    def get_next_question(cls, session_id):
+        sessionObj = cls.objects.get(session_id=session_id)
+        level_number = sessionObj.current_level.level_number
+        mode = "None"
+        if level_number >= 11:
+            mode = Question.HARD
+        elif level_number >= 6:
+            mode = Question.MEDIUM
+        else:
+            mode = Question.EASY
+        questionsAskedToUser = list(sessionObj.session_user.questions_asked.all())
+        mode_questions = list(Question.objects.filter(difficulty=mode))
+        desirable_questions = list(set(mode_questions) - set(questionsAskedToUser))
+        qn = random.choice(desirable_questions)
+        return qn
+
+    @classmethod
+    def set_question(cls, session_id):
+        sessionObj = cls.objects.get(session_id=session_id)
+        nextQuestion = cls.get_next_question(session_id)
+        sessionObj.current_question = nextQuestion
+        nextQuestion.asked_to.add(sessionObj.session_user)
+        sessionObj.save(update_fields=["current_question"])
+        sessionObj.questions_asked.add(nextQuestion)
+
     class Meta:
         verbose_name = "session"
         verbose_name_plural = "sessions"
@@ -235,5 +272,5 @@ class QuestionOrder(models.Model):
         verbose_name_plural = "ordering of questions in session"
 
     def __str__(self):
-        produce = f'{self.session.session_id} - {self.question.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen)} UTC'
+        produce = f'{self.session.session_id} - {self.question.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen.timetuple())} UTC'
         return produce
