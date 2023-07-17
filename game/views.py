@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views.generic import View
+from django.contrib import messages
 
 from game.models import *
 import random
@@ -7,12 +8,15 @@ import random
 
 # Testing pages
 
+
 def mainPage(request):
     return render(request, "mainPage.html")
 
+
 def rules(request):
-    context = {"lifelines":Lifeline.objects.all()}
+    context = {"lifelines": Lifeline.objects.all()}
     return render(request, "rules.html", context)
+
 
 def question(request):
     allOptions = [i.text for i in Question.objects.all()[345].incorrect_options.all()]
@@ -29,36 +33,163 @@ def question(request):
     return render(request, "question.html", context)
 
 
+def sample(request, session, level):
+    return render(
+        request, "gameover.html", {"score": Session.objects.get(session_id=session).score}
+    )
+
+
 # Development pages
+
 
 class MainPage(View):
     def get(self, request, *args, **kwargs):
         return render(request, "mainPage.html")
-    
+
     def post(self, request, *args, **kwargs):
-        if self.request.POST['startPlay'] == 'yes':
-            new_session = Session.objects.create(session_user=self.request.user)
-            return redirect("rules", session = new_session.session_id, permanent=True)
+        if self.request.POST["startPlay"] == "yes":
+            new_session = Session.objects.create(session_id=Session.get_unused_sessionId() ,session_user=self.request.user)
+            return redirect("rules", session=new_session.session_id, permanent=True)
         return render(request, "mainPage.html")
-    
+
 
 class Rules(View):
     def get_sessionId(self):
-        return self.kwargs['session']
+        return self.kwargs["session"]
 
     def get(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
-        if Session.objects.filter(session_id = sessionId).exists():
-            return render(request, "rules.html")
+        if Session.objects.filter(session_id=sessionId).exists():
+            context = {"lifelines": Lifeline.objects.all()}
+            return render(request, "rules.html", context)
         return redirect("mainpage", permanent=True)
-    
+
     def post(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
         sessionObj = Session.objects.get(session_id=sessionId)
-        if self.request.POST['agreed'] == 'yes':
+        if self.request.POST["agreed"] == "yes":
             sessionObj.agreedToRules = True
-            sessionObj.save(update_fields=["agreedToRules"])
-            print(sessionObj.agreedToRules)
-            return render(request, "mainPage.html")
+            sessionObj.prev_level = Level.objects.get(level_number=-1)
+            sessionObj.current_level = Level.objects.get(level_number=1)
+            sessionObj.save(
+                update_fields=["agreedToRules", "current_level", "prev_level"]
+            )
+            return redirect("question", session=sessionId, level=1, permanent=True)
         sessionObj.delete()
-        return redirect("mainpage", permanent=True) 
+        return redirect("mainpage", permanent=True)
+
+
+class QuestionInGame(View):
+    def get_url_kwargs(self):
+        return (self.kwargs["session"], self.kwargs["level"])
+
+    def context_creator(self):
+        def randomOptionsCreator(obj):
+            optionsAsIs = [o.text for o in qn.incorrect_options.all()]
+            optionsAsIs.extend([qn.correct_option.text])
+            random.shuffle(optionsAsIs)
+            orderAsIs = [0, 1, 2, 3]
+            random.shuffle(orderAsIs)
+            return optionsAsIs, orderAsIs
+
+        def timeDecider(level_number):
+            if level_number >= 13:
+                return 60
+            elif level_number >= 10:
+                return 50
+            elif level_number >= 6:
+                return 40
+            elif level_number >= 1:
+                return 20
+            else:
+                return 5
+
+        sessionId, level = self.get_url_kwargs()
+        sessionObj = Session.objects.get(session_id=sessionId)
+        total = sessionObj.score
+        forAmount = sessionObj.current_level.money
+        qn = sessionObj.current_question
+        options, order = randomOptionsCreator(qn)
+        context = dict(
+            question=qn,
+            total=total,
+            forAmount=forAmount,
+            timer=timeDecider(level),
+            option1=options[order[0]],
+            option2=options[order[1]],
+            option3=options[order[2]],
+            option4=options[order[3]],
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        sessionId, level = self.get_url_kwargs()
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if check:
+            sessionObj = Session.objects.get(session_id=sessionId)
+            if (
+                sessionObj.agreedToRules
+                and not sessionObj.gameOver
+                and (1 <= sessionObj.current_level.level_number <= 15)
+                and sessionObj.current_level.level_number == level
+            ):
+                level_diff = (
+                    sessionObj.current_level.level_number
+                    - sessionObj.prev_level.level_number
+                )
+                if level_diff >= 2 or sessionObj.current_question.text == "None":
+                    sessionObj.prev_level = Level.objects.get(
+                        level_number=1 + sessionObj.prev_level.level_number
+                    )
+                    sessionObj.save(update_fields=["prev_level"])
+                    Session.set_question(sessionId)
+                return render(request, "question.html", self.context_creator())
+        return redirect("mainpage", permanent=True)
+
+    def post(self, request, *args, **kwargs):
+        sessionId, level = self.get_url_kwargs()
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if not check:
+            return redirect("mainpage", permanent=True)
+        sessionObj = Session.objects.get(session_id=sessionId)
+
+        if (
+            not (sessionObj.agreedToRules)
+            or sessionObj.gameOver
+            or not (1 <= sessionObj.current_level.level_number <= 15)
+            or not (sessionObj.current_level.level_number == level)
+        ):
+            return redirect("mainpage", permanent=True)
+
+        if self.request.POST["submit"] == "exit":
+            sessionObj.gameOver = True
+            sessionObj.save(update_fields=["gameOver"])
+            return redirect("correct", session=sessionId, level=level, permanent=True)
+
+        if "submit" not in tuple(self.request.POST.keys()) or (
+            "userAnswer" not in tuple(self.request.POST.keys())
+        ):
+            messages.warning(request, "Choose an option!")
+            return redirect(self.request.get_full_path())
+        if self.request.POST["submit"] == "yes":
+            userAnswer = self.request.POST["userAnswer"]
+            optionText = sessionObj.current_question.correct_option.text
+            option = Option.objects.get(text=userAnswer)
+            option.hits.add(sessionObj.session_user)
+            if userAnswer == optionText:
+                messages.success(request, "YOU have answered correctly")
+                sessionObj.score += sessionObj.current_level.money
+                sessionObj.current_level = Level.objects.get(
+                    level_number=1 + sessionObj.current_level.level_number
+                )
+                sessionObj.save(update_fields=["current_level", "score"])
+                return redirect(
+                    "question", session=sessionId, level=sessionObj.current_level.level_number, permanent=True
+                )
+            else:
+                messages.warning(request, "YOU have answered INCORRECTLY")
+                sessionObj.gameOver = True
+                sessionObj.save(update_fields=["gameOver"])
+                return redirect(
+                    "correct", session=sessionId, level=level, permanent=True
+                )
