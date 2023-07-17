@@ -175,6 +175,10 @@ class Session(models.Model):
         on_delete=models.SET_DEFAULT,
         related_name="sessions_currently",
     )
+    agreedToRules = models.BooleanField(verbose_name="Agreed to T&C", default=False)
+    # Above will turn True if user agrees to terms and conditions given
+    gameOver = models.BooleanField(verbose_name="Game over?", default=False)
+    # Above will turn True if either user quits from the game or answers an question wrong
     score = models.IntegerField(
         verbose_name="Money Won",
         default=0,
