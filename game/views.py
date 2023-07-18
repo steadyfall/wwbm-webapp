@@ -33,14 +33,6 @@ def question(request):
     return render(request, "question.html", context)
 
 
-def sample(request, session, level):
-    return render(
-        request,
-        "gameover.html",
-        {"score": Session.objects.get(session_id=session).score},
-    )
-
-
 # Development pages
 
 
@@ -98,7 +90,7 @@ class Rules(View):
 class QuestionInGame(View):
     def get_url_kwargs(self):
         """Order: Session, Level"""
-        return (self.kwargs["session"], self.kwargs["level"])
+        return (self.kwargs["session"], int(self.kwargs["level"]))
 
     def context_creator(self):
         def randomOptionsCreator(obj):
@@ -178,16 +170,16 @@ class QuestionInGame(View):
         ):
             return redirect("mainpage", permanent=True)
 
-        if self.request.POST["submit"] == "exit":
-            sessionObj.gameOver = True
-            sessionObj.save(update_fields=["gameOver"])
-            return redirect("correct", session=sessionId, level=level, permanent=True)
-
         if "submit" not in tuple(self.request.POST.keys()) or (
             "userAnswer" not in tuple(self.request.POST.keys())
         ):
             messages.warning(request, "Choose an option!")
             return redirect(self.request.get_full_path())
+
+        if self.request.POST["submit"] == "exit":
+            sessionObj.gameOver = True
+            sessionObj.save(update_fields=["gameOver"])
+            return redirect("statusAfterQn", session=sessionId, level=level, status="quit", permanent=True)
 
         if self.request.POST["submit"] == "yes":
             userAnswer = self.request.POST["userAnswer"]
@@ -195,7 +187,6 @@ class QuestionInGame(View):
             option = Option.objects.get(text=userAnswer)
             option.hits.add(sessionObj.session_user)
             if userAnswer == optionText:
-                messages.success(request, "YOU have answered correctly")
                 sessionObj.score += sessionObj.current_level.money
                 sessionObj.current_level = Level.objects.get(
                     level_number=1 + sessionObj.current_level.level_number
@@ -203,16 +194,129 @@ class QuestionInGame(View):
                 sessionObj.save(update_fields=["current_level", "score"])
                 sessionObj.correct_qns.add(sessionObj.current_question)
                 return redirect(
-                    "question",
+                    "statusAfterQn",
                     session=sessionId,
-                    level=sessionObj.current_level.level_number,
+                    level=level,
+                    status="correct",
                     permanent=True,
                 )
             else:
-                messages.warning(request, "YOU have answered INCORRECTLY")
                 sessionObj.gameOver = True
                 sessionObj.wrong_qn = sessionObj.current_question
-                sessionObj.save(update_fields=["gameOver", "wrong_qn"])
+                sessionObj.score //= 100
+                sessionObj.save(update_fields=["gameOver", "wrong_qn", "score"])
                 return redirect(
-                    "correct", session=sessionId, level=level, permanent=True
+                    "statusAfterQn", session=sessionId, level=level, status="incorrect", permanent=True
                 )
+
+
+class BetweenQuestion(View):
+    def get_url_kwargs(self):
+        """Order: Session, Level"""
+        return (self.kwargs["session"], int(self.kwargs["level"]), self.kwargs["status"])
+
+    def context_creator(self, message, mode="wrong"):
+        sessionId, level, qStatus = self.get_url_kwargs()
+        sessionObj = Session.objects.get(session_id=sessionId)
+        total = sessionObj.score
+        header, formatted_message, nextQ = "", "", False
+        if mode == "correct":
+            header = "You answered it correctly!"
+            formatted_message = message.format(
+                f"{Level.objects.get(level_number=level).money:,}", f"{total:,}"
+            )
+            nextQ = True
+        elif mode == "over":
+            header = "You have quit successfully!"
+            formatted_message = message.format(
+                f"{total:,}"
+            )
+        elif mode == "wrong":
+            header = "You answered it wrong!"
+            formatted_message = message.format(
+                f"{total*99:,}", f"{total:,}"
+            )
+        context = dict(
+            message=formatted_message,
+            mainMessage=header,
+            nextQ=nextQ,
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        sessionId, level, qStatus = self.get_url_kwargs()
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if check:
+            sessionObj = Session.objects.get(session_id=sessionId)
+            if (
+                sessionObj.agreedToRules
+                and (1 <= sessionObj.current_level.level_number <= 16)
+                and (0 <= sessionObj.current_level.level_number - level <= 1)
+            ):
+                level_diff = (
+                    sessionObj.current_level.level_number
+                    - sessionObj.prev_level.level_number
+                )
+                if (
+                    qStatus.lower() == "quit"
+                    and sessionObj.gameOver
+                    and len(sessionObj.wrong_qn.text) == 4
+                    and level_diff in (1, 2)
+                ):
+                    msg = """You just QUIT the game successfully, making your total earnings $<u style="color: blueviolet;">{}</u>!"""
+                    return render(
+                        request, "correct.html", self.context_creator(msg, "over")
+                    )
+                elif qStatus.lower() == "correct" and level_diff >= 2 and len(sessionObj.wrong_qn.text) == 4:
+                    msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
+                    $<u style="color: blueviolet;">{}</u>!"""
+                    return render(
+                        request, "correct.html", self.context_creator(msg, "correct")
+                    )
+                elif qStatus.lower() == "incorrect" and sessionObj.gameOver and len(sessionObj.wrong_qn.text) > 4:
+                    msg = """You just lost $<u class="text-light">{}</u> to make your final earnings $<u class="text-light">{}</u>!"""
+                    return render(
+                        request, "gameover.html", self.context_creator(msg)
+                    )
+        return redirect("mainpage", permanent=True)
+
+    def post(self, request, *args, **kwargs):
+        sessionId, level, qStatus = self.get_url_kwargs()
+        check = Session.objects.filter(session_id=sessionId).exists()
+
+        if qStatus.lower() != "correct":
+            return redirect("mainpage", permanent=True)
+
+        if not check:
+            return redirect("mainpage", permanent=True)
+        sessionObj = Session.objects.get(session_id=sessionId)
+
+        if (
+            not sessionObj.agreedToRules
+            and not (1 <= sessionObj.current_level.level_number <= 16)
+            and not (0 <= sessionObj.current_level.level_number - level <= 1)
+        ):
+            return redirect("mainpage", permanent=True)
+
+        if "nextQ" not in tuple(self.request.POST.keys()):
+            messages.warning(request, "Choose an option!")
+            return redirect(self.request.get_full_path())
+        
+        if self.request.POST["nextQ"] == "no":
+            sessionObj.gameOver = True
+            sessionObj.save(update_fields=["gameOver"])
+            return redirect(
+                "statusAfterQn",
+                session=sessionId,
+                level=level,
+                status="quit",
+                permanent=True,
+            )
+
+        if self.request.POST["nextQ"] == "yes":
+            return redirect(
+                "question",
+                session=sessionId,
+                level=sessionObj.current_level.level_number,
+                permanent=True,
+            )

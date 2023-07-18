@@ -7,7 +7,7 @@ urlpatterns = [
     path('', game_views.MainPage.as_view(), name="mainpage"),
     path('game/<str:session>/rules/', game_views.Rules.as_view(), name="rules"),
     path('game/<str:session>/question/<int:level>/', game_views.QuestionInGame.as_view(), name="question"),
-    path('game/<str:session>/question/<int:level>/correct', game_views.sample, name="correct")
+    path('game/<str:session>/question/<int:level>/<str:status>/', game_views.BetweenQuestion.as_view(), name="statusAfterQn"),
 ]
 
 if settings.DEBUG:
