@@ -35,7 +35,9 @@ def question(request):
 
 def sample(request, session, level):
     return render(
-        request, "gameover.html", {"score": Session.objects.get(session_id=session).score}
+        request,
+        "gameover.html",
+        {"score": Session.objects.get(session_id=session).score},
     )
 
 
@@ -47,10 +49,15 @@ class MainPage(View):
         return render(request, "mainPage.html")
 
     def post(self, request, *args, **kwargs):
+        if "startPlay" not in tuple(self.request.POST.keys()):
+            return redirect(self.request.get_full_path())
         if self.request.POST["startPlay"] == "yes":
-            new_session = Session.objects.create(session_id=Session.get_unused_sessionId() ,session_user=self.request.user)
+            new_session = Session.objects.create(
+                session_id=Session.get_unused_sessionId(),
+                session_user=self.request.user,
+            )
             return redirect("rules", session=new_session.session_id, permanent=True)
-        return render(request, "mainPage.html")
+        return redirect(self.request.get_full_path())
 
 
 class Rules(View):
@@ -59,34 +66,44 @@ class Rules(View):
 
     def get(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
-        if Session.objects.filter(session_id=sessionId).exists():
-            context = {"lifelines": Lifeline.objects.all()}
-            return render(request, "rules.html", context)
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if check:
+            sessionObj = Session.objects.get(session_id=sessionId)
+            if not sessionObj.agreedToRules and not sessionObj.gameOver:
+                context = {"lifelines": Lifeline.objects.all()}
+                return render(request, "rules.html", context)
         return redirect("mainpage", permanent=True)
 
     def post(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
-        sessionObj = Session.objects.get(session_id=sessionId)
-        if self.request.POST["agreed"] == "yes":
-            sessionObj.agreedToRules = True
-            sessionObj.prev_level = Level.objects.get(level_number=-1)
-            sessionObj.current_level = Level.objects.get(level_number=1)
-            sessionObj.save(
-                update_fields=["agreedToRules", "current_level", "prev_level"]
-            )
-            return redirect("question", session=sessionId, level=1, permanent=True)
-        sessionObj.delete()
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if "agreed" not in tuple(self.request.POST.keys()):
+            sessionObj.delete()
+            return redirect("mainpage", permanent=True)
+        if check:
+            sessionObj = Session.objects.get(session_id=sessionId)
+            if self.request.POST["agreed"] == "yes":
+                sessionObj.agreedToRules = True
+                sessionObj.prev_level = Level.objects.get(level_number=-1)
+                sessionObj.current_level = Level.objects.get(level_number=1)
+                sessionObj.save(
+                    update_fields=["agreedToRules", "current_level", "prev_level"]
+                )
+                return redirect("question", session=sessionId, level=1, permanent=True)
+            else:
+                sessionObj.delete()
         return redirect("mainpage", permanent=True)
 
 
 class QuestionInGame(View):
     def get_url_kwargs(self):
+        """Order: Session, Level"""
         return (self.kwargs["session"], self.kwargs["level"])
 
     def context_creator(self):
         def randomOptionsCreator(obj):
-            optionsAsIs = [o.text for o in qn.incorrect_options.all()]
-            optionsAsIs.extend([qn.correct_option.text])
+            optionsAsIs = [o.text for o in obj.incorrect_options.all()]
+            optionsAsIs.extend([obj.correct_option.text])
             random.shuffle(optionsAsIs)
             orderAsIs = [0, 1, 2, 3]
             random.shuffle(orderAsIs)
@@ -171,6 +188,7 @@ class QuestionInGame(View):
         ):
             messages.warning(request, "Choose an option!")
             return redirect(self.request.get_full_path())
+
         if self.request.POST["submit"] == "yes":
             userAnswer = self.request.POST["userAnswer"]
             optionText = sessionObj.current_question.correct_option.text
@@ -183,13 +201,18 @@ class QuestionInGame(View):
                     level_number=1 + sessionObj.current_level.level_number
                 )
                 sessionObj.save(update_fields=["current_level", "score"])
+                sessionObj.correct_qns.add(sessionObj.current_question)
                 return redirect(
-                    "question", session=sessionId, level=sessionObj.current_level.level_number, permanent=True
+                    "question",
+                    session=sessionId,
+                    level=sessionObj.current_level.level_number,
+                    permanent=True,
                 )
             else:
                 messages.warning(request, "YOU have answered INCORRECTLY")
                 sessionObj.gameOver = True
-                sessionObj.save(update_fields=["gameOver"])
+                sessionObj.wrong_qn = sessionObj.current_question
+                sessionObj.save(update_fields=["gameOver", "wrong_qn"])
                 return redirect(
                     "correct", session=sessionId, level=level, permanent=True
                 )
