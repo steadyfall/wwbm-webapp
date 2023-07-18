@@ -28,9 +28,9 @@
                         (A,B,C,D). The contestant must answer 15 of these questions correctly,
                         one at a time, to win <span class="text-success">$1,000,000</span>. As soon as the contestant
                         answers a question <span class="text-danger">INCORRECTLY</span>, the
-                        game is <span class="text-danger">OVER</span>. Contestants also get three lifelines to assist
-                        them if they get stuck on a
-                        particular question. <br>
+                        game is <span class="text-danger">OVER</span> and they receive 1% of the collected prize money.
+                        Contestants also get three lifelines to assist them if they get stuck on a particular question.
+                        <br>
                         <br>
                         The <i>Who Wants to Be a Millionaire </i> questions are structured according to <span
                             class="text-primary">4 different states</span>
@@ -59,14 +59,18 @@
                         <br>
                         <ol>
                             {% for lifeline in lifelines %}
-                            <li>{% if lifeline.name == "Fifty-50" %}
+                            <li>
+                                {% if lifeline.name == "Fifty-50" %}
                                 {% include "lifelineSVG/fifty50.html" %}
                                 {% elif lifeline.name == "Audience Poll" %}
                                 {% include "lifelineSVG/audiencePoll.html" %}
                                 {% elif lifeline.name == "Expert Answer" %}
                                 {% include "lifelineSVG/expertAnswer.html" %}
                                 {% endif %}
-                                | <span style="color: greenyellow;">{{ lifeline.name }}</span> –– {{ lifeline.description }}</li>
+                                | <span style="color: greenyellow;">
+                                    {{ lifeline.name }}
+                                </span> –– {{ lifeline.description }}
+                            </li>
                             {% endfor %}
                         </ol>
                     </div>
