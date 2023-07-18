@@ -1,0 +1,110 @@
+/* Start Banner */
+
+@mixin hpd-basic {
+    max-width: 600px;
+    background-repeat: no-repeat;
+    background-position: right;
+
+}
+
+@mixin hpd-basic-big {
+    text-align: left;
+    padding-right: 150px;
+}
+
+/* Setup */
+/* body {
+  padding: 50px;
+  background: whitesmoke;
+} */
+
+.hpd {
+    margin: 0 auto 20px;
+}
+
+/*
+ * Common
+ */
+.hpd {
+    display: block;
+    padding: 14px;
+    box-sizing: border-box;
+    border-radius: 2px;
+    background: #05eb55;
+
+    font-family: 'Helvetica Neue', Helvetica, sans-serif;
+    font-size: 20px;
+    text-align: center;
+    text-decoration: none;
+    color: black;
+}
+
+.hpd .hpd-title {
+    margin: 0;
+    font-size: 27px;
+    font-style: italic;
+    text-transform: uppercase;
+    color: black;
+}
+
+.hpd .hpd-desc {
+    margin: 10px 0;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 2;
+}
+
+.hpd-btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 2px;
+    background: #255571;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: black;
+
+    transition: background .5s ease;
+
+    .hpd:hover & {
+        background: #2bde73; Kickstarter green
+    }
+}
+
+/*
+ * Wide Button
+ */
+.hpd-wide {
+    @include hpd-basic;
+    padding: 0;
+
+    .hpd-body {
+        padding: 14px;
+    }
+
+    .hpd-desc {
+        margin-bottom: 0;
+    }
+
+    .hpd-btn {
+        display: block;
+        padding: 20px 14px;
+    }
+}
+
+@media (min-width: 600px) {
+    .hpd-wide {
+        @include hpd-basic-big;
+        padding: 0;
+
+        .hpd-body {
+            padding: 14px 150px 14px 14px;
+        }
+
+        .hpd-btn {
+            padding: 10px 14px;
+        }
+    }
+}
+
+/* Banner */
