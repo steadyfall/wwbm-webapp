@@ -2,8 +2,7 @@
 {% load static %}
 {% load utility %}
 {% block header %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/bannerwrongQ.css' %}" />
-{% include 'navbar.html' %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/bannerCorrectQ.css' %}" />
 {% endblock header %}
 {% block content %}
 <div class="row gy-10">
@@ -36,8 +35,9 @@
         <a href="#" class="hpd hpd-wide">
             &nbsp;
             <div class="hpd-body">
-                <h3 class="hpd-title"><b>You answered it wrong!</b></h3>
-                <p class="hpd-desc">{{ message|safe }}</p>
+                <h3 class="hpd-title"><b>You answered it right!</b></h3>
+                <p class="hpd-desc">You just earned $<u style="color: blueviolet;">1,000</u> to make your total earnings
+                    $<u style="color: blueviolet;">{{score}}</u>!</p>
             </div>
             &nbsp;
         </a>
@@ -54,12 +54,20 @@
 </div>
 <div class="row gy-10">
     <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4 d-flex align-items-center" style="background-color:rgb(40, 106, 231); text-align: center;">
-        <span style="color: black">Go back to: </span>
-        <a href="" class="col text-sm" style="text-decoration: none; color: whitesmoke;">Leaderboard</a>
-        |
-        <a href="" class="col text-sm" style="text-decoration: none; color:whitesmoke;">Main Page</a>
+    <div class="col-md-1 offset-2"></div>
+    <div class="col-md-3">
+        <div class="col text-sm">Do you want to <span style="color: #00ff0d;">proceed</span>
+            to the next question?</div>
+    </div>
+    <div class="col-md-2">
+        <div class="small-bttn align-items-end">
+            <button type="submit" class="btn btn-danger" title="Exit with collected money" name="nextQ"
+                value="no">Exit</button>
+        </div>
+        <div class="small-bttn align-items-end">
+            <button type="submit" class="btn btn-success" title="Move on to the next question!"
+                name="nextQ" value="yes">Proceed</button>
+        </div>
     </div>
 </div>
 <div class="row gy-10">
