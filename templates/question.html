@@ -2,6 +2,45 @@
 {% load static %}
 {% load utility %}
 {% block content %}
+<div class="modal fade" id="staticBackdropLifeline" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLifelineLabel" aria-hidden="true">
+    <div class="modal-dialog rounded">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLifelineLabel">Assistance</h1>
+            </div>
+            <div class="modal-body">
+                Lifelines that you have left include: &nbsp; &nbsp;
+                {% include "lifelineSVG/fifty50.html" %}
+                {% include "lifelineSVG/audiencePoll.html" %}
+                {% include "lifelineSVG/expertAnswer.html" %}
+                <br>
+                <label for="lifeline">Which lifeline would you like to use? </label>
+                <form method="post" id="lifeline" style="margin-left: 25%;">
+                    {% csrf_token %}
+                    <div class="input-group mt-1">
+                        <select class="form-select-sm" name="lifeline" id="options">
+                            <option value="fifty">Fifty-50</option>
+                            <option value="audience">Audience Poll</option>
+                            <option value="expert">Expert Answer</option>
+                        </select>
+                        &nbsp;&nbsp;
+                        <div class="input-group-addon">
+                            <button type="submit" class="btn btn-primary btn-sm" id="confirmLifeline" name="lifeline"
+                                value="yes">
+                                Choose
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    id="closeLifeline">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <form method="post" id="newform">
     {% csrf_token %}
     <div class="content">
@@ -21,7 +60,8 @@
                     {% include "lifelineSVG/audiencePoll.html" %}
                     {% include "lifelineSVG/expertAnswer.html" %}
                     &nbsp; &nbsp; &nbsp;
-                    <a href="#" id="lifelineButton"><span class="badge bg-success p-2 bg-opacity-50">USE A LIFELINE</span></a>
+                    <button type="button" id="lifelineButton" class="btn btn-success" data-bs-toggle="modal"
+                        data-bs-target="#staticBackdropLifeline">USE A LIFELINE</button>
                 </div>
             </div>
             <div class="col-sm"></div>
@@ -33,12 +73,12 @@
             <div class="col-sm"></div>
             <div class="bttn blurr" style="align-self: flex-end;">
                 <div class="unblurr" style="padding-top: 12px; text-align: end;">
-                    Time left: <span id="time-left"></span> s
+                    Time left: <span id="time-left">20</span> s
                 </div>
             </div>
         </div>
         <br style="clear: both" />
-        
+
         <br style="clear: both" />
         <br style="clear: both" />
         <div class="row d-flex" style="justify-content: center;">
@@ -95,25 +135,29 @@
                 <div class="unblurr" style="padding-top: 12px; text-align: center;">
                     Your option is <b>:</b> &nbsp; &nbsp;
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_a" value="{{ option1 }}">
+                        <input class="form-check-input" type="radio" name="userAnswer" id="option_a"
+                            value="{{ option1 }}">
                         <label class="form-check-label" for="option_a">
                             {% include "optionSVG/optionA.html" %}
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_b" value="{{ option2 }}">
+                        <input class="form-check-input" type="radio" name="userAnswer" id="option_b"
+                            value="{{ option2 }}">
                         <label class="form-check-label" for="option_b">
                             {% include "optionSVG/optionB.html" %}
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_c" value="{{ option3 }}">
+                        <input class="form-check-input" type="radio" name="userAnswer" id="option_c"
+                            value="{{ option3 }}">
                         <label class="form-check-label" for="option_c">
                             {% include "optionSVG/optionC.html" %}
                         </label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_d" value="{{ option4 }}">
+                        <input class="form-check-input" type="radio" name="userAnswer" id="option_d"
+                            value="{{ option4 }}">
                         <label class="form-check-label" for="option_d">
                             {% include "optionSVG/optionD.html" %}
                         </label>
@@ -122,13 +166,15 @@
             </div>
             <div class="col-md-6"></div>
             <div class="small-bttn">
-                <button type="submit" title="Exit with collected money" class="btn btn-danger" name="submit" value="exit">Exit</button>
+                <button type="submit" title="Exit with collected money" class="btn btn-danger" name="submit"
+                    value="exit">Exit</button>
             </div>
             <div class="small-bttn">
-                <button type="submit" class="btn btn-success" title="Submit your answer" name="submit" id="sendAnswer" value="yes">Submit</button>
+                <button type="submit" class="btn btn-success" title="Submit your answer" name="submit" id="sendAnswer"
+                    value="yes">Submit</button>
             </div>
         </div>
     </div>
 </form>
-<script src="{% static 'js/timer.js' %}"></script>
+<script defer src="{% static 'js/timer.js' %}"></script>
 {% endblock %}

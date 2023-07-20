@@ -16,7 +16,7 @@ let timeLeft;
 
 timeLeft = document.getElementById("time-left");
 
-countDownSec = parseInt({{timer}});
+countDownSec = parseInt(timeLeft.textContent);
 ++countDownSec;
 paused = false;
 
@@ -84,3 +84,13 @@ function startTimer() {
 if (!paused) {
     startTimer();
 }
+
+
+$('#confirmLifeline').on("click", function (e) {
+    e.prop('disabled', true);
+});
+
+$('#closeLifeline').on("click", function () {
+    $('#lifelineButton').prop('disabled', true);
+    pause();
+});
