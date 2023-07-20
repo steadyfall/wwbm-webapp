@@ -55,7 +55,9 @@
         <div class="row">
             <div class="col-md-12">
                 {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} center" role="alert">
+                <div {% if message.tags %} {% if message.tags == 'error' %} class="alert alert-danger center"
+                {% else %} class="alert alert-{{ message.tags }} center" {% endif %} 
+                {% endif %} role="alert">
                     {{ message }}
                 </div>
                 {% endfor %}
