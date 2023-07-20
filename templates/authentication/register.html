@@ -42,19 +42,12 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/auth.css' %}" />
     <script defer type="text/javascript" src="{% static 'js/validator.js' %}"></script>
 
-    <title>Login</title>
+    <title>Register</title>
 </head>
 
 <body class="d-flex flex-column">
     <div class="vertical-center">
         <div class="container-xl py-4" style="width:37%; height: 50%;">
-            {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                <li{% if message.tags %} class="alert alert-{{ message.tags }}" {% endif %}>{{ message }}</li>
-                    {% endfor %}
-            </ul>
-            {% endif %}
             <div class="text-center mb-4">
                 <a href="#" class="navbar-brand navbar-brand-autodark"><img src="{% static 'img/wwbmicon.ico' %}"
                         height="50" alt="Who Wants To Be A Millionaire?" /></a>
@@ -62,6 +55,11 @@
             <div class="card card-md grey-bg">
                 <div class="card-body m-2">
                     <h2 class="h2 text-center mb-4 whitesmoke">Create a new account</h2>
+                    <ul class="messages text-center" style="list-style-type: none; padding: 0;" id="allAlerts">
+                        {% for message in messages %}
+                        <li{% if message.tags %} class="alert alert-{{ message.tags }}" {% endif %}>{{ message }}</li>
+                        {% endfor %}
+                    </ul>       
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
@@ -138,8 +136,8 @@
                                     Enter the same password as before, for verification.
                                 </small></i>
                         </div>
-                        <div class="form-footer m-1">
-                            <button class="signinButton ml-25percent w-50" type="submit">Register</button><br>
+                        <div class="form-footer">
+                            <button class="registerButton ml-25percent w-50" type="submit" id="submitButton">Register</button><br>
                         </div>
                     </form>
                 </div>
