@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block header %}
+{% include 'navbar.html' %}
+{% endblock header %}
+{% block content %}
+<div class="content blurr">
+    <div class="content unblurr">
+        <div class="row d-flex" style="font-family: 'Open Sans', sans-serif; font-size: 35px;">
+            <b>
+                <h1>RULES</h1>
+            </b>
+        </div>
+        <br style="clear: both" />
+        <br style="clear: both" />
+        {% include 'gamerules.html' %}
+    </div>
+</div>
+{% endblock content %}
+{% block footer %}
+{% include 'footer.html' %}
+{% endblock footer %}

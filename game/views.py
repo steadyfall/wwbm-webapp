@@ -13,7 +13,7 @@ def pageChecker(request):
     if request.method == 'POST':
         messages.success(request, "Account created!")
         print(request.POST)
-    return render(request, "authentication/signin.html")
+    return render(request, "about.html", {"lifelines": Lifeline.objects.all()})
 
 
 def rules(request):
@@ -54,6 +54,12 @@ class MainPage(View):
             return redirect("rules", session=new_session.session_id, permanent=True)
         return redirect(self.request.get_full_path())
 
+
+class About(View):
+    def get(self, request, *args, **kwargs):
+        context = {"lifelines": Lifeline.objects.all()}
+        return render(request, "about.html", context)
+    
 
 class Rules(View):
     def get_sessionId(self):
