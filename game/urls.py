@@ -4,6 +4,7 @@ from django.urls import path
 from . import views as game_views
 
 urlpatterns = [
+    path('tester/', game_views.pageChecker, name="tester"),
     path('', game_views.MainPage.as_view(), name="mainpage"),
     path('game/<str:session>/rules/', game_views.Rules.as_view(), name="rules"),
     path('game/<str:session>/question/<int:level>/', game_views.QuestionInGame.as_view(), name="question"),

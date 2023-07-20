@@ -9,8 +9,11 @@ import random
 # Testing pages
 
 
-def mainPage(request):
-    return render(request, "mainPage.html")
+def pageChecker(request):
+    if request.method == 'POST':
+        messages.success(request, "Account created!")
+        print(request.POST)
+    return render(request, "authentication/signin.html")
 
 
 def rules(request):
