@@ -25,6 +25,27 @@ function emailRegex(email) {
     return isValid;
 }
 
+function passwordRegex(pwd) {
+    const notNumericPasswordRegex = /^.*\D.*$/;
+    var username = document.getElementById('usernameInput').value.toLowerCase();
+    // console.log(username);
+    var isValid = (pwd.length >= 8) && (notNumericPasswordRegex.test(pwd)) && (username && (pwd.indexOf(username) === -1));
+    /* console.log("pwd: ", pwd, "| >= 8:", (pwd.length >= 8), 
+                "| all not numbers:", (~notNumericPasswordRegex.test(pwd)), 
+                "| username:", username, 
+                "| username not in password:", (pwd.indexOf(username) === -1), 
+                "| result:",isValid); */
+    return isValid;
+}
+
+function password2Regex(pwd) {
+    var password = document.getElementById('passwordInput').value;
+    // console.log(username);
+    var isValid = (password && (pwd === password) && passwordRegex(pwd));
+    // console.log(password, pwd, (pwd === password));
+    return isValid;
+}
+
 function validOrInvalidPic(isValid, parent) {
     var status = '';
     var children = [].slice.call(parent.getElementsByTagName('*'), 0);
@@ -46,85 +67,57 @@ function validOrInvalidPic(isValid, parent) {
     }
 }
 
-$('#usernameInput').on("input focus keyup", function () {
+function inputValid(e, isValid) {
+    validOrInvalidPic(isValid, e.parentNode.parentNode.parentNode);
+    if (e.value.length === 0) {
+        nothingWritten(e);
+        return 1;
+    }
+    if (isValid) {
+        validWritten(e);
+    } else {
+        invalidWritten(e);
+    }
+    return isValid;
+}
+
+$('#usernameInput').on("input focus keyup click change", function () {
     var isValid = usernameRegex(this.value);
     // console.log(isValid);
-
-    validOrInvalidPic(isValid, this.parentNode.parentNode.parentNode);
-    if (this.value.length === 0) {
-        nothingWritten(this);
-        return 1;
-    }
-    if (isValid) {
-        validWritten(this);
-    } else {
-        invalidWritten(this);
-    }
-    return isValid;
+    return inputValid(this, isValid);
 });
 
 
-$('#emailInput').on("input focus keyup", function () {
+$('#emailInput').on("input focus keyup click change", function () {
     var isValid = emailRegex(this.value);
     // console.log(isValid);
-
-    validOrInvalidPic(isValid, this.parentNode.parentNode.parentNode);
-    if (this.value.length === 0) {
-        nothingWritten(this);
-        return 1;
-    }
-    if (isValid) {
-        validWritten(this);
-    } else {
-        invalidWritten(this);
-    }
-    return isValid;
+    return inputValid(this, isValid);
 });
 
-
-$('#passwordInput').on("input focus keyup", function () {
-    const numericPasswordRegex = /^(\d+)$/;
-    var username = document.getElementById('usernameInput').value;
-    // console.log(username);
-    var isValid = (this.value.length >= 8) && (~numericPasswordRegex.test(this.value)) && (username && (this.value.indexOf(username) === -1));
-    /* console.log("pwd: ", this.value, "| >= 8:", (this.value.length >= 8), 
-                "| all not numbers:", (~numericPasswordRegex.test(this.value)), 
-                "| username:", username, 
-                "| username not in password:", (this.value.indexOf(username) === -1), 
-                "| result:",isValid); */
-
-    validOrInvalidPic(isValid, this.parentNode.parentNode.parentNode);
-    if (this.value.length === 0) {
-        nothingWritten(this);
-        return 1;
-    }
-    if (isValid) {
-        validWritten(this);
-    } else {
-        invalidWritten(this);
-    }
-    return isValid;
+$('#usernameInput, #passwordInput, #password2Input').on("input click change focus keyup", function () {
+    var pwd = document.getElementById('passwordInput');
+    var pwd2 = document.getElementById('password2Input');
+    var passwordIsValid = passwordRegex(pwd.value);
+    var password2IsValid = password2Regex(pwd2.value);
+    // console.log(passwordIsValid, password2IsValid)
+    inputValid(pwd, passwordIsValid);
+    inputValid(pwd2, password2IsValid);
+    return 1;
 });
 
-$('#password2Input').on("input focus keyup", function () {
-    var password = document.getElementById('passwordInput').value;
-    // console.log(username);
-    var isValid = (password && (this.value === password));
-    /* console.log("pwd: ", this.value, "| >= 8:", (this.value.length >= 8), 
-                "| all not numbers:", (~numericPasswordRegex.test(this.value)), 
-                "| username:", username, 
-                "| username not in password:", (this.value.indexOf(username) === -1), 
-                "| result:",isValid); */
-
-    validOrInvalidPic(isValid, this.parentNode.parentNode.parentNode);
-    if (this.value.length === 0) {
-        nothingWritten(this);
-        return 1;
+$('#submitButton').on('click', function (e) {
+    var ul = document.getElementById("allAlerts");
+    var uname = document.getElementById('usernameInput');
+    var email = document.getElementById('emailInput');
+    var pwd = document.getElementById('passwordInput');
+    var pwd2 = document.getElementById('password2Input');
+    var isValid = inputValid(uname, usernameRegex(uname.value)) && inputValid(email, emailRegex(email.value)) &&
+        inputValid(pwd, passwordRegex(pwd.value)) && inputValid(pwd2, password2Regex(pwd2.value));
+    if (!isValid) {
+        e.preventDefault(); //prevent the default action
+        var warning = '<li class="alert alert-danger">Modify before submitting.</li>';
+        if (ul.innerHTML.indexOf(warning) === -1) {
+            ul.innerHTML += warning;
+        }
     }
-    if (isValid) {
-        validWritten(this);
-    } else {
-        invalidWritten(this);
-    }
-    return isValid;
 });
