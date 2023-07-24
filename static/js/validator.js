@@ -28,8 +28,9 @@ function emailRegex(email) {
 function passwordRegex(pwd) {
     const notNumericPasswordRegex = /^.*\D.*$/;
     var username = document.getElementById('usernameInput').value.toLowerCase();
+    var lowerCasePwd = pwd.toLowerCase();
     // console.log(username);
-    var isValid = (pwd.length >= 8) && (notNumericPasswordRegex.test(pwd)) && (username && (pwd.indexOf(username) === -1));
+    var isValid = (pwd.length >= 8) && (notNumericPasswordRegex.test(pwd)) && (username && (lowerCasePwd.indexOf(username) === -1));
     /* console.log("pwd: ", pwd, "| >= 8:", (pwd.length >= 8), 
                 "| all not numbers:", (~notNumericPasswordRegex.test(pwd)), 
                 "| username:", username, 
@@ -41,7 +42,7 @@ function passwordRegex(pwd) {
 function password2Regex(pwd) {
     var password = document.getElementById('passwordInput').value;
     // console.log(username);
-    var isValid = (password && (pwd === password) && passwordRegex(pwd));
+    var isValid = (password && (pwd === password) && passwordRegex(pwd.toLowerCase()));
     // console.log(password, pwd, (pwd === password));
     return isValid;
 }
@@ -97,7 +98,7 @@ $('#emailInput').on("input focus keyup click change", function () {
 $('#usernameInput, #passwordInput, #password2Input').on("input click change focus keyup", function () {
     var pwd = document.getElementById('passwordInput');
     var pwd2 = document.getElementById('password2Input');
-    var passwordIsValid = passwordRegex(pwd.value);
+    var passwordIsValid = passwordRegex(pwd.value.toLowerCase());
     var password2IsValid = password2Regex(pwd2.value);
     // console.log(passwordIsValid, password2IsValid)
     inputValid(pwd, passwordIsValid);
@@ -112,7 +113,7 @@ $('#submitButton').on('click', function (e) {
     var pwd = document.getElementById('passwordInput');
     var pwd2 = document.getElementById('password2Input');
     var isValid = inputValid(uname, usernameRegex(uname.value)) && inputValid(email, emailRegex(email.value)) &&
-        inputValid(pwd, passwordRegex(pwd.value)) && inputValid(pwd2, password2Regex(pwd2.value));
+        inputValid(pwd, passwordRegex(pwd.value.toLowerCase())) && inputValid(pwd2, password2Regex(pwd2.value));
     if (!isValid) {
         e.preventDefault(); //prevent the default action
         var warning = '<li class="alert alert-danger">Modify before submitting.</li>';
