@@ -20,7 +20,7 @@ def passwordValidator(username: str, password: str):
     if (
         len(password) >= 8
         and (re.fullmatch(notNumericRegex, password) is not None)
-        and (username and (password.find(username) == -1))
+        and (username and (password.lower().find(username) == -1))
     ):
         return True
     return False
