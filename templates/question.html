@@ -10,24 +10,32 @@
                 <h1 class="modal-title fs-5" id="staticBackdropLifelineLabel">Assistance</h1>
             </div>
             <div class="modal-body">
-                Lifelines that you have left include: &nbsp; &nbsp;
-                {% include "lifelineSVG/fifty50.html" %}
-                {% include "lifelineSVG/audiencePoll.html" %}
-                {% include "lifelineSVG/expertAnswer.html" %}
+                Lifelines that you have left are: &nbsp; &nbsp;
+                {% for life in session.left_lifelines.all %}
+                {% if life.name == 'Fifty-50' %}
+                <span title="{{ life.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
+                {% elif life.name == 'Audience Poll' %}
+                <span title="{{ life.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
+                {% elif life.name == 'Expert Answer' %}
+                <span title="{{ life.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
+                {% endif %}
+                {% empty %}
+                {% endfor %}
                 <br>
                 <label for="lifeline">Which lifeline would you like to use? </label>
                 <form method="post" id="lifeline" style="margin-left: 25%;">
                     {% csrf_token %}
                     <div class="input-group mt-1">
                         <select class="form-select-sm" name="lifeline" id="options">
-                            <option value="fifty">Fifty-50</option>
-                            <option value="audience">Audience Poll</option>
-                            <option value="expert">Expert Answer</option>
+                            {% for life in session.left_lifelines.all %}
+                            <option value="{{ life.name }}">{{ life.name }}</option>
+                            {% endfor %}
                         </select>
+                        <input type="hidden" id="timeLeftAfterLifeline" name="timeLeftAfterLifeline" value="">
                         &nbsp;&nbsp;
                         <div class="input-group-addon">
-                            <button type="submit" class="btn btn-primary btn-sm" id="confirmLifeline" name="lifeline"
-                                value="yes">
+                            <button type="submit" class="btn btn-primary btn-sm" id="confirmLifeline"
+                                name="lifelineSubmit" value="yes">
                                 Choose
                             </button>
                         </div>
@@ -44,7 +52,23 @@
 <form method="post" id="newform">
     {% csrf_token %}
     <div class="content">
-        <br style="clear: both" />
+        {% if expertAnswerText %}
+        <div class="alert alert-success">
+            {{ expertAnswerText|safe }}
+        </div>
+        {% elif audiencePollText %}
+        <div class="alert alert-success">
+            Audience Poll tells us the following:
+            <ul class="text-center" style="padding: 0; list-style-type: none;">
+                {{ audiencePollText|safe }}
+            </ul>
+        </div>
+        {% elif fifty50Text %}
+        <div class="alert alert-success">
+            <span class="text-danger">{{ fifty50Text|safe }}</span>
+        </div>
+        {% endif %}
+        </div>
         <br style="clear: both" />
         <div class="row d-flex">
             <div class="bttn blurr" style="align-self: flex-start;">
@@ -56,12 +80,24 @@
             <div class="big-bttn blurr" style="align-self: center;">
                 <div class="unblurr" style="padding-top: 12px; text-align: center;">
                     Lifelines Left <b>:</b> &nbsp; &nbsp;
-                    {% include "lifelineSVG/fifty50.html" %}
-                    {% include "lifelineSVG/audiencePoll.html" %}
-                    {% include "lifelineSVG/expertAnswer.html" %}
-                    &nbsp; &nbsp; &nbsp;
+                    {% for life in session.left_lifelines.all %}
+                    {% if life.name == 'Fifty-50' %}
+                    <span title="{{ life.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
+                    {% elif life.name == 'Audience Poll' %}
+                    <span title="{{ life.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
+                    {% elif life.name == 'Expert Answer' %}
+                    <span title="{{ life.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
+                    {% endif %}
+                    {% empty %}
                     <button type="button" id="lifelineButton" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#staticBackdropLifeline">USE A LIFELINE</button>
+                        data-bs-target="#staticBackdropLifeline" disabled>USE A LIFELINE</button>
+                    {% endfor %}
+                    &nbsp; &nbsp; &nbsp;
+                    {% if session.left_lifelines.all %}
+                    <button type="button" id="lifelineButton" class="btn btn-success" data-bs-toggle="modal"
+                        data-bs-target="#staticBackdropLifeline" {% if usedLifelineRecently %}disabled{% endif %}>USE A
+                        LIFELINE</button>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-sm"></div>
@@ -73,7 +109,7 @@
             <div class="col-sm"></div>
             <div class="bttn blurr" style="align-self: flex-end;">
                 <div class="unblurr" style="padding-top: 12px; text-align: end;">
-                    Time left: <span id="time-left">20</span> s
+                    Time left: <span id="time-left">{{ timer }}</span> s
                 </div>
             </div>
         </div>
@@ -95,16 +131,20 @@
                 <div class="options"
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
+                        {% if option1 %}
                         <span style="color: aqua;">A. </span>
                         <b>{{ option1 }}</b>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-sm"></div>
                 <div class="options"
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
+                        {% if option2 %}
                         <span style="color: aqua;">B. </span>
                         <b>{{ option2 }}</b>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -113,16 +153,20 @@
                 <div class="options"
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
+                        {% if option3 %}
                         <span style="color: aqua;">C. </span>
                         <b>{{ option3 }}</b>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-sm"></div>
                 <div class="options"
                     style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
                     <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
+                        {% if option4 %}
                         <span style="color: aqua;">D. </span>
                         <b>{{ option4 }}</b>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -133,7 +177,8 @@
         <div class="row d-flex">
             <div class="big-bttn blurr" style="align-self: center;">
                 <div class="unblurr" style="padding-top: 12px; text-align: center;">
-                    Your option is <b>:</b> &nbsp; &nbsp;
+                    Your option is <b>:</b> &nbsp;
+                    {% if option1 %}
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="userAnswer" id="option_a"
                             value="{{ option1 }}">
@@ -141,6 +186,8 @@
                             {% include "optionSVG/optionA.html" %}
                         </label>
                     </div>
+                    {% endif %}
+                    {% if option2 %}
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="userAnswer" id="option_b"
                             value="{{ option2 }}">
@@ -148,6 +195,8 @@
                             {% include "optionSVG/optionB.html" %}
                         </label>
                     </div>
+                    {% endif %}
+                    {% if option3 %}
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="userAnswer" id="option_c"
                             value="{{ option3 }}">
@@ -155,6 +204,8 @@
                             {% include "optionSVG/optionC.html" %}
                         </label>
                     </div>
+                    {% endif %}
+                    {% if option4 %}
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="userAnswer" id="option_d"
                             value="{{ option4 }}">
@@ -162,15 +213,16 @@
                             {% include "optionSVG/optionD.html" %}
                         </label>
                     </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-md-6"></div>
             <div class="small-bttn">
-                <button type="submit" title="Exit with collected money" class="btn btn-danger" name="submit"
+                <button type="submit" title="Exit with collected money" class="btn btn-danger" name="submitBtn"
                     value="exit">Exit</button>
             </div>
             <div class="small-bttn">
-                <button type="submit" class="btn btn-success" title="Submit your answer" name="submit" id="sendAnswer"
+                <button type="submit" class="btn btn-success" title="Submit your answer" name="submitBtn" id="sendAnswer"
                     value="yes">Submit</button>
             </div>
         </div>
