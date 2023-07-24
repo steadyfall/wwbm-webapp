@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views.generic import View
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 
 from game.models import *
@@ -48,12 +49,15 @@ class MainPage(View):
         if "startPlay" not in tuple(self.request.POST.keys()):
             return redirect(self.request.get_full_path())
         if self.request.POST["startPlay"] == "yes":
-            new_session = Session.objects.create(
-                session_id=Session.get_unused_sessionId(),
-                session_user=self.request.user,
-            )
-            new_session.left_lifelines.set([2, 3, 4])
-            return redirect("rules", session=new_session.session_id, permanent=True)
+            if self.request.user.is_authenticated:
+                new_session = Session.objects.create(
+                    session_id=Session.get_unused_sessionId(),
+                    session_user=self.request.user,
+                )
+                new_session.left_lifelines.set([2, 3, 4])
+                return redirect("rules", session=new_session.session_id, permanent=True)
+            else:
+                return redirect('login')
         return redirect(self.request.get_full_path())
 
 
@@ -63,9 +67,18 @@ class About(View):
         return render(request, "about.html", context)
 
 
-class Rules(View):
+class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
     def get_sessionId(self):
         return self.kwargs["session"]
+    
+    def test_func(self):
+        sessionId = self.get_sessionId()
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if check:
+            sessionObj = Session.objects.get(session_id=sessionId)
+            if self.request.user == sessionObj.session_user:
+                return True
+        return False
 
     def get(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
@@ -98,10 +111,19 @@ class Rules(View):
         return redirect("mainpage", permanent=True)
 
 
-class QuestionInGame(View):
+class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
     def get_url_kwargs(self):
         """Order: Session, Level"""
         return (self.kwargs["session"], int(self.kwargs["level"]))
+    
+    def test_func(self):
+        sessionId, level = self.get_url_kwargs()
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if check:
+            sessionObj = Session.objects.get(session_id=sessionId)
+            if self.request.user == sessionObj.session_user:
+                return True
+        return False
 
     def context_creator(self, lifeline=None, timeLeft=None):
         def randomOptionsCreator(obj, selected=None):
@@ -291,7 +313,7 @@ class QuestionInGame(View):
                 )
 
 
-class BetweenQuestion(View):
+class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
     def get_url_kwargs(self):
         """Order: Session, Level"""
         return (
@@ -299,6 +321,15 @@ class BetweenQuestion(View):
             int(self.kwargs["level"]),
             self.kwargs["status"],
         )
+
+    def test_func(self):
+        sessionId, level, qStatus = self.get_url_kwargs()
+        check = Session.objects.filter(session_id=sessionId).exists()
+        if check:
+            sessionObj = Session.objects.get(session_id=sessionId)
+            if self.request.user == sessionObj.session_user:
+                return True
+        return False
 
     def context_creator(self, message, mode="wrong"):
         sessionId, level, qStatus = self.get_url_kwargs()
