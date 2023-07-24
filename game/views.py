@@ -384,6 +384,12 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                     and level_diff >= 2
                     and len(sessionObj.wrong_qn.text) == 4
                 ):
+                    if level == 15 and sessionObj.current_level.level_number == 16:
+                        msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
+                        $<u style="color: blueviolet;">{}</u>!"""
+                        return render(
+                            request, "finished.html", self.context_creator(msg, "correct")
+                        )
                     msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
                     $<u style="color: blueviolet;">{}</u>!"""
                     return render(
