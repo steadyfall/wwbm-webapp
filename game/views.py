@@ -3,6 +3,7 @@ from django.views.generic import View
 from django.contrib import messages
 
 from game.models import *
+from .lifelines import *
 import random
 
 
@@ -10,7 +11,7 @@ import random
 
 
 def pageChecker(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         messages.success(request, "Account created!")
         print(request.POST)
     return render(request, "about.html", {"lifelines": Lifeline.objects.all()})
@@ -51,6 +52,7 @@ class MainPage(View):
                 session_id=Session.get_unused_sessionId(),
                 session_user=self.request.user,
             )
+            new_session.left_lifelines.set([2, 3, 4])
             return redirect("rules", session=new_session.session_id, permanent=True)
         return redirect(self.request.get_full_path())
 
@@ -59,7 +61,7 @@ class About(View):
     def get(self, request, *args, **kwargs):
         context = {"lifelines": Lifeline.objects.all()}
         return render(request, "about.html", context)
-    
+
 
 class Rules(View):
     def get_sessionId(self):
@@ -101,12 +103,17 @@ class QuestionInGame(View):
         """Order: Session, Level"""
         return (self.kwargs["session"], int(self.kwargs["level"]))
 
-    def context_creator(self):
-        def randomOptionsCreator(obj):
-            optionsAsIs = [o.text for o in obj.incorrect_options.all()]
-            optionsAsIs.extend([obj.correct_option.text])
-            random.shuffle(optionsAsIs)
-            orderAsIs = [0, 1, 2, 3]
+    def context_creator(self, lifeline=None, timeLeft=None):
+        def randomOptionsCreator(obj, selected=None):
+            if selected is None:
+                optionsAsIs = [o.text for o in obj.incorrect_options.all()]
+                optionsAsIs.extend([obj.correct_option.text])
+                random.shuffle(optionsAsIs)
+            else:
+                optionsAsIs = list(selected)
+                random.shuffle(optionsAsIs)
+                optionsAsIs.extend([None, None])
+            orderAsIs = list(range(4))
             random.shuffle(orderAsIs)
             return optionsAsIs, orderAsIs
 
@@ -127,16 +134,56 @@ class QuestionInGame(View):
         total = sessionObj.score
         forAmount = sessionObj.current_level.money
         qn = sessionObj.current_question
-        options, order = randomOptionsCreator(qn)
+        options, order = (
+            randomOptionsCreator(qn, fifty50(qn.pk, sessionId))
+            if (lifeline is not None and lifeline == FIFTY50)
+            else randomOptionsCreator(qn)
+        )
+        timer = (
+            int(timeLeft)
+            if (
+                lifeline is not None
+                and lifeline in (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER)
+            )
+            else timeDecider(level)
+        )
+        fifty50Text = (
+            "Kindly check your updated options."
+            if (lifeline is not None and lifeline == FIFTY50)
+            else None
+        )
+        expertAnswerText = (
+            expertAnswer(qn.pk, sessionId)
+            if (lifeline is not None and lifeline == EXPERT_ANSWER)
+            else None
+        )
+        audiencePollText = (
+            audiencePoll(qn.pk, sessionId)
+            if (lifeline is not None and lifeline == AUDIENCE_POLL)
+            else None
+        )
+        usedLifelineRecently = (
+            True
+            if (
+                lifeline is not None
+                and lifeline in (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER)
+            )
+            else None
+        )
         context = dict(
+            session=sessionObj,
             question=qn,
             total=total,
             forAmount=forAmount,
-            timer=timeDecider(level),
+            timer=timer,
             option1=options[order[0]],
             option2=options[order[1]],
             option3=options[order[2]],
             option4=options[order[3]],
+            expertAnswerText=expertAnswerText,
+            audiencePollText=audiencePollText,
+            fifty50Text=fifty50Text,
+            usedLifelineRecently=usedLifelineRecently,
         )
         return context
 
@@ -179,18 +226,39 @@ class QuestionInGame(View):
         ):
             return redirect("mainpage", permanent=True)
 
-        if "submit" not in tuple(self.request.POST.keys()) or (
+        if "lifelineSubmit" in set(self.request.POST.keys()):
+            if self.request.POST["lifelineSubmit"] == "yes" and self.request.POST[
+                "lifeline"
+            ] in set(mappedLifelines.keys()):
+                return render(
+                    self.request,
+                    "question.html",
+                    self.context_creator(
+                        lifeline=self.request.POST["lifeline"],
+                        timeLeft=self.request.POST["timeLeftAfterLifeline"],
+                    ),
+                )
+            else:
+                return render(self.request, "question.html", self.context_creator())
+
+        if "submitBtn" not in tuple(self.request.POST.keys()) or (
             "userAnswer" not in tuple(self.request.POST.keys())
         ):
             messages.warning(request, "Choose an option!")
             return redirect(self.request.get_full_path())
 
-        if self.request.POST["submit"] == "exit":
+        if self.request.POST["submitBtn"] == "exit":
             sessionObj.gameOver = True
             sessionObj.save(update_fields=["gameOver"])
-            return redirect("statusAfterQn", session=sessionId, level=level, status="quit", permanent=True)
+            return redirect(
+                "statusAfterQn",
+                session=sessionId,
+                level=level,
+                status="quit",
+                permanent=True,
+            )
 
-        if self.request.POST["submit"] == "yes":
+        if self.request.POST["submitBtn"] == "yes":
             userAnswer = self.request.POST["userAnswer"]
             optionText = sessionObj.current_question.correct_option.text
             option = Option.objects.get(text=userAnswer)
@@ -215,14 +283,22 @@ class QuestionInGame(View):
                 sessionObj.score //= 100
                 sessionObj.save(update_fields=["gameOver", "wrong_qn", "score"])
                 return redirect(
-                    "statusAfterQn", session=sessionId, level=level, status="incorrect", permanent=True
+                    "statusAfterQn",
+                    session=sessionId,
+                    level=level,
+                    status="incorrect",
+                    permanent=True,
                 )
 
 
 class BetweenQuestion(View):
     def get_url_kwargs(self):
         """Order: Session, Level"""
-        return (self.kwargs["session"], int(self.kwargs["level"]), self.kwargs["status"])
+        return (
+            self.kwargs["session"],
+            int(self.kwargs["level"]),
+            self.kwargs["status"],
+        )
 
     def context_creator(self, message, mode="wrong"):
         sessionId, level, qStatus = self.get_url_kwargs()
@@ -237,14 +313,10 @@ class BetweenQuestion(View):
             nextQ = True
         elif mode == "over":
             header = "You have quit successfully!"
-            formatted_message = message.format(
-                f"{total:,}"
-            )
+            formatted_message = message.format(f"{total:,}")
         elif mode == "wrong":
             header = "You answered it wrong!"
-            formatted_message = message.format(
-                f"{total*99:,}", f"{total:,}"
-            )
+            formatted_message = message.format(f"{total*99:,}", f"{total:,}")
         context = dict(
             message=formatted_message,
             mainMessage=header,
@@ -276,17 +348,23 @@ class BetweenQuestion(View):
                     return render(
                         request, "correct.html", self.context_creator(msg, "over")
                     )
-                elif qStatus.lower() == "correct" and level_diff >= 2 and len(sessionObj.wrong_qn.text) == 4:
+                elif (
+                    qStatus.lower() == "correct"
+                    and level_diff >= 2
+                    and len(sessionObj.wrong_qn.text) == 4
+                ):
                     msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
                     $<u style="color: blueviolet;">{}</u>!"""
                     return render(
                         request, "correct.html", self.context_creator(msg, "correct")
                     )
-                elif qStatus.lower() == "incorrect" and sessionObj.gameOver and len(sessionObj.wrong_qn.text) > 4:
+                elif (
+                    qStatus.lower() == "incorrect"
+                    and sessionObj.gameOver
+                    and len(sessionObj.wrong_qn.text) > 4
+                ):
                     msg = """You just lost $<u class="text-light">{}</u> to make your final earnings $<u class="text-light">{}</u>!"""
-                    return render(
-                        request, "gameover.html", self.context_creator(msg)
-                    )
+                    return render(request, "gameover.html", self.context_creator(msg))
         return redirect("mainpage", permanent=True)
 
     def post(self, request, *args, **kwargs):
@@ -310,7 +388,7 @@ class BetweenQuestion(View):
         if "nextQ" not in tuple(self.request.POST.keys()):
             messages.warning(request, "Choose an option!")
             return redirect(self.request.get_full_path())
-        
+
         if self.request.POST["nextQ"] == "no":
             sessionObj.gameOver = True
             sessionObj.save(update_fields=["gameOver"])

@@ -32,15 +32,6 @@ function pause() {
     var startBack = paused ? clearInterval(x) : startTimer();
 }
 
-function submitChecker() {
-    if (!paused) {
-        pause();
-    }
-}
-
-document.getElementById('lifelineButton').addEventListener('click', pause);
-document.getElementById('sendAnswer').addEventListener('click', submitChecker)
-
 function timeUpdate() {
     var newDate = localStorage.getItem('newDate');
     if (!newDate) { setNewDate(); }
@@ -61,7 +52,7 @@ function checker() {
     difference = newDate - new Date().getTime();
     // console.log(difference);
     if (difference < 10) {
-        window.location.href = 'https://www.encodedna.com/javascript/operators/default.htm';
+        $('#sendAnswer').click();
         // document.getElementById("newform").submit()
     }
     var seconds = Math.floor(difference / 1000);
@@ -85,12 +76,36 @@ if (!paused) {
     startTimer();
 }
 
+$('#lifelineButton').on('click', pause);
+$('#sendAnswer').on("click submit", function submitChecker(e) {
+    if (!paused) {
+        pause();
+    }
+    var arr = [];
+    var common = "#option_";
+    for (i = 0; i <= 3; i++) {
+        var newcommon = (' ' + common).slice(1) + String.fromCharCode(97+i); 
+        arr[i] = newcommon;
+    }
+    var option = arr.some(o => $(o).is(":checked"));
+    if (!option) {
+        for (i = 0; i <= arr.length - 1; i++) {
+            if (~($(arr[i]).is(":checked"))) {
+                $(arr[i]).attr('checked', true);
+                break;
+            }
+        }
+        // console.log(arr);
+        // e.preventDefault();
+    }
+});
 
 $('#confirmLifeline').on("click", function (e) {
-    e.prop('disabled', true);
+    $('#timeLeftAfterLifeline').val(parseInt(timeLeft.textContent));
+    e.attr('disabled', true);
 });
 
 $('#closeLifeline').on("click", function () {
-    $('#lifelineButton').prop('disabled', true);
+    $('#lifelineButton').attr('disabled', true);
     pause();
 });

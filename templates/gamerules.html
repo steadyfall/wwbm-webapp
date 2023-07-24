@@ -47,11 +47,11 @@
                 {% for lifeline in lifelines %}
                 <li>
                     {% if lifeline.name == "Fifty-50" %}
-                    {% include "lifelineSVG/fifty50.html" %}
+                    <span title="{{ lifeline.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
                     {% elif lifeline.name == "Audience Poll" %}
-                    {% include "lifelineSVG/audiencePoll.html" %}
+                    <span title="{{ lifeline.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
                     {% elif lifeline.name == "Expert Answer" %}
-                    {% include "lifelineSVG/expertAnswer.html" %}
+                    <span title="{{ lifeline.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
                     {% endif %}
                     | <span style="color: greenyellow;">
                         {{ lifeline.name }}
