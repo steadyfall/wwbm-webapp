@@ -2,6 +2,7 @@
 {% load static %}
 {% load utility %}
 {% block content %}
+<iframe src="{% static 'audio/introduction.mp3' %}" allow="autoplay" id="audio" style="display:none"></iframe>
 <form method="post" id="newform">
     {% csrf_token %}
     <div class="content blurr">
