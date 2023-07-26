@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load utility %}
+{% block header %}
+{% include 'navbar.html' %}
+{% endblock header %}
+{% block content %}
+<div class="content blurr">
+    <div class="content unblurr">
+        <div class="row d-flex" style="font-family: 'Open Sans', sans-serif; font-size: 35px;">
+            <b>
+                <h1>Leaderboard</h1>
+            </b>
+        </div>
+        <br style="clear: both" />
+        <div class="row row-deck row-cards">
+            <div class="table-responsive">
+                <table class="table table-vcenter table-striped table-dark">
+                    <thead>
+                        <tr>
+                            <th class="w-1"></th>
+                            <th class="text-center">Score</th>
+                            <th class="text-center">Level reached</th>
+                            <th class="text-center">User</th>
+                            <th class="text-center">Date played</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in allSessions %}
+                        <tr>
+                            <td class="w-1"></td>
+                            <td class="text-center">{{ session|slicer:0 }}</td>
+                            <td class="text-center">{{ session|slicer:1 }}</td>
+                            <td class="text-center">{{ session|slicer:2 }}</td>
+                            <td class="text-center">{{ session|slicer:3|date:"j F Y, g:i A e" }}</td>
+                            <td class="w-1"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex align-items-center">
+                <p class="m-0">
+                    Showing 
+                    <span>
+                        {{ allSessions.start_index }}
+                    </span> to 
+                    <span>
+                        {{ allSessions.end_index}}
+                    </span> of 
+                    <span>
+                        {{ allSessions.paginator.count }}
+                    </span> entries
+                </p>
+                {% if allSessions.has_other_pages %}
+                <ul class="pagination ms-auto justify-content-end">
+                    <li class="page-item {% if allSessions.has_previous %}{% else %}disabled{% endif %}">
+                        <a class="page-link" href="{% if allSessions.has_previous %}?page={{ allSessions.previous_page_number }}{% else %}#{% endif %}" tabindex="-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M15 6l-6 6l6 6" />
+                            </svg>
+                        </a>
+                    </li>
+                    {% for num in allSessions.paginator.page_range %}
+                        {% if allSessions.number == num %}
+                            <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% elif num > allSessions.number|add:'-2' and num < allSessions.number|add:'2' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if allSessions.has_next %}{% else %}disabled{% endif %}">
+                        <a class="page-link" href="{% if allSessions.has_next %}?page={{ allSessions.next_page_number }}{% else %}#{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M9 6l6 6l-6 6" />
+                            </svg>
+                        </a>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block footer %}
+{% include 'footer.html' %}
+{% endblock footer %}
