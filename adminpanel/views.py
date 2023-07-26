@@ -1,3 +1,4 @@
 from django.shortcuts import render
 
-# Create your views here.
+def testSite(request):
+    return render(request, 'adminpanel/base.html')
