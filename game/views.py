@@ -68,10 +68,7 @@ class MainPage(View):
 
 class About(View):
     def get(self, request, *args, **kwargs):
-        context = {
-            "title": "About The Game",
-            "lifelines": Lifeline.objects.all()
-        }
+        context = {"title": "About The Game", "lifelines": Lifeline.objects.all()}
         return render(request, "about.html", context)
 
 
@@ -96,7 +93,7 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
             if not sessionObj.agreedToRules and not sessionObj.gameOver:
                 context = {
                     "title": "Rules (game about to begin)",
-                    "lifelines": Lifeline.objects.all()
+                    "lifelines": Lifeline.objects.all(),
                 }
                 return render(request, "rules.html", context)
         return redirect("mainpage", permanent=True)
@@ -204,11 +201,11 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             else None
         )
         context = dict(
-            title=f"WWBM - Question for {forAmount:,}",
+            title=f"WWBM - Question for $ {forAmount:,}",
             session=sessionObj,
             question=qn,
-            total=total,
-            forAmount=forAmount,
+            total=f"{total:,}",
+            forAmount=f"{forAmount:,}",
             timer=timer,
             option1=options[order[0]],
             option2=options[order[1]],
@@ -275,10 +272,8 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             else:
                 return render(self.request, "question.html", self.context_creator())
 
-        if "submitBtn" not in tuple(self.request.POST.keys()) or (
-            "userAnswer" not in tuple(self.request.POST.keys())
-        ):
-            messages.warning(request, "Choose an option!")
+        if "submitBtn" not in tuple(self.request.POST.keys()):
+            messages.warning(request, "Invalid data!")
             return redirect(self.request.get_full_path())
 
         if self.request.POST["submitBtn"] == "exit":
@@ -292,6 +287,10 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                 permanent=True,
             )
 
+        if "userAnswer" not in tuple(self.request.POST.keys()):
+            messages.warning(request, "Choose an option!")
+            return redirect(self.request.get_full_path())
+
         if self.request.POST["submitBtn"] == "yes":
             userAnswer = self.request.POST["userAnswer"]
             optionText = sessionObj.current_question.correct_option.text
@@ -304,13 +303,44 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                 )
                 sessionObj.save(update_fields=["current_level", "score"])
                 sessionObj.correct_qns.add(sessionObj.current_question)
+
+                # Message to user after they have answered correctly and being redirected to next question
+                if level == 15 and sessionObj.current_level.level_number == 16:
+                    sessionObj.gameOver = True
+                    sessionObj.save(update_fields=["gameOver"])
+                    return redirect(
+                        "statusAfterQn",
+                        session=sessionId,
+                        level=level,
+                        status="correct",
+                        permanent=True,
+                    )
+                msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
+                $<u style="color: blueviolet;">{}</u>!"""
+                messages.success(
+                    request,
+                    msg.format(
+                        f"{Level.objects.get(level_number=level).money:,}",
+                        f"{sessionObj.score:,}",
+                    ),
+                )
+
+                # Redirecting to next question
                 return redirect(
+                    "question",
+                    session=sessionId,
+                    level=sessionObj.current_level.level_number,
+                    permanent=True,
+                )
+            
+                # Previous method of going to intermediary page and giving option to user to quit
+                """ return redirect(
                     "statusAfterQn",
                     session=sessionId,
                     level=level,
                     status="correct",
                     permanent=True,
-                )
+                ) """
             else:
                 sessionObj.gameOver = True
                 sessionObj.wrong_qn = sessionObj.current_question
