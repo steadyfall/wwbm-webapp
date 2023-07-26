@@ -68,7 +68,10 @@ class MainPage(View):
 
 class About(View):
     def get(self, request, *args, **kwargs):
-        context = {"lifelines": Lifeline.objects.all()}
+        context = {
+            "title": "About The Game",
+            "lifelines": Lifeline.objects.all()
+        }
         return render(request, "about.html", context)
 
 
@@ -91,7 +94,10 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
         if check:
             sessionObj = Session.objects.get(session_id=sessionId)
             if not sessionObj.agreedToRules and not sessionObj.gameOver:
-                context = {"lifelines": Lifeline.objects.all()}
+                context = {
+                    "title": "Rules (game about to begin)",
+                    "lifelines": Lifeline.objects.all()
+                }
                 return render(request, "rules.html", context)
         return redirect("mainpage", permanent=True)
 
@@ -198,6 +204,7 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             else None
         )
         context = dict(
+            title=f"WWBM - Question for {forAmount:,}",
             session=sessionObj,
             question=qn,
             total=total,
@@ -341,19 +348,24 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
         sessionObj = Session.objects.get(session_id=sessionId)
         total = sessionObj.score
         header, formatted_message, nextQ = "", "", False
+        title = ""
         if mode == "correct":
+            title = "Correct answer!"
             header = "You answered it correctly!"
             formatted_message = message.format(
                 f"{Level.objects.get(level_number=level).money:,}", f"{total:,}"
             )
             nextQ = True
         elif mode == "over":
+            title = "Game has been quit!"
             header = "You have quit successfully!"
             formatted_message = message.format(f"{total:,}")
         elif mode == "wrong":
+            title = "Wrong answer!"
             header = "You answered it wrong!"
             formatted_message = message.format(f"{total*99:,}", f"{total:,}")
         context = dict(
+            title=title,
             message=formatted_message,
             mainMessage=header,
             nextQ=nextQ,
@@ -478,6 +490,7 @@ class Leaderboard(View):
         except EmptyPage:
             objects_list = paginator.page(paginator.num_pages)
         context = dict(
+            title="WWBM Leaderboard",
             heading="Leaderboard",
             allSessions=objects_list,
         )
@@ -512,6 +525,7 @@ class ScoreBoard(LoginRequiredMixin, View):
         except EmptyPage:
             objects_list = paginator.page(paginator.num_pages)
         context = dict(
+            title="Scoreboard",
             heading=f'Scoreboard for <u><span class="text-info"><i>{self.request.user.username}</i></span></u>',
             allSessions=objects_list,
         )
