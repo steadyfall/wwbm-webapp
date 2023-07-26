@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -40,6 +42,8 @@ def question(request):
 
 # Development pages
 
+PAGINATE_NO = 12
+
 
 class MainPage(View):
     def get(self, request, *args, **kwargs):
@@ -57,7 +61,7 @@ class MainPage(View):
                 new_session.left_lifelines.set([2, 3, 4])
                 return redirect("rules", session=new_session.session_id, permanent=True)
             else:
-                return redirect('login')
+                return redirect("login")
         return redirect(self.request.get_full_path())
 
 
@@ -70,7 +74,7 @@ class About(View):
 class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
     def get_sessionId(self):
         return self.kwargs["session"]
-    
+
     def test_func(self):
         sessionId = self.get_sessionId()
         check = Session.objects.filter(session_id=sessionId).exists()
@@ -115,7 +119,7 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
     def get_url_kwargs(self):
         """Order: Session, Level"""
         return (self.kwargs["session"], int(self.kwargs["level"]))
-    
+
     def test_func(self):
         sessionId, level = self.get_url_kwargs()
         check = Session.objects.filter(session_id=sessionId).exists()
@@ -388,7 +392,9 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                         msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
                         $<u style="color: blueviolet;">{}</u>!"""
                         return render(
-                            request, "finished.html", self.context_creator(msg, "correct")
+                            request,
+                            "finished.html",
+                            self.context_creator(msg, "correct"),
                         )
                     msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
                     $<u style="color: blueviolet;">{}</u>!"""
@@ -444,3 +450,36 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                 level=sessionObj.current_level.level_number,
                 permanent=True,
             )
+
+
+class Leaderboard(View):
+    def context_creator(self):
+        allSessions = [
+            (
+                f"$ {ses['score']:,}",
+                ses["current_level__level_number"],
+                ses["session_user__username"],
+                ses["date_created"],
+            )
+            for ses in Session.objects.order_by("-score", "-date_created").values(
+                "score",
+                "current_level__level_number",
+                "session_user__username",
+                "date_created",
+            )
+        ]
+        paginator = Paginator(allSessions, PAGINATE_NO)
+        page = self.request.GET.get("page", 1)
+        try:
+            objects_list = paginator.page(page)
+        except PageNotAnInteger:
+            objects_list = paginator.page(1)
+        except EmptyPage:
+            objects_list = paginator.page(paginator.num_pages)
+        context = dict(
+            allSessions=objects_list,
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return render(request, "leaderboard.html", self.context_creator())
