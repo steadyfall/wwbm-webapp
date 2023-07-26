@@ -4,6 +4,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
+from django.db.models import Count
 
 from game.models import *
 from .lifelines import *
@@ -477,9 +478,44 @@ class Leaderboard(View):
         except EmptyPage:
             objects_list = paginator.page(paginator.num_pages)
         context = dict(
+            heading="Leaderboard",
             allSessions=objects_list,
         )
         return context
 
     def get(self, request, *args, **kwargs):
         return render(request, "leaderboard.html", self.context_creator())
+
+
+class ScoreBoard(LoginRequiredMixin, View):
+    def context_creator(self):
+        allSessions = [
+            (
+                f"$ {ses.score:,}",
+                ses.current_level.level_number,
+                ses.date_created,
+                ses.correct_qns.all().count(),
+                (True if ses.wrong_qn.pk == Question.get_default_pk() else False),
+                ses.used_lifelines.all().count(),
+                ses.left_lifelines.all().count(),
+            )
+            for ses in Session.objects.filter(session_user=self.request.user).order_by(
+                "-score", "-date_created"
+            )
+        ]
+        paginator = Paginator(allSessions, PAGINATE_NO)
+        page = self.request.GET.get("page", 1)
+        try:
+            objects_list = paginator.page(page)
+        except PageNotAnInteger:
+            objects_list = paginator.page(1)
+        except EmptyPage:
+            objects_list = paginator.page(paginator.num_pages)
+        context = dict(
+            heading=f'Scoreboard for <u><span class="text-info"><i>{self.request.user.username}</i></span></u>',
+            allSessions=objects_list,
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return render(request, "scoreboard.html", self.context_creator())

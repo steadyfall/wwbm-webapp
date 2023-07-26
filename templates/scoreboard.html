@@ -9,7 +9,7 @@
     <div class="content unblurr">
         <div class="row d-flex" style="font-family: 'Open Sans', sans-serif; font-size: 35px;">
             <b>
-                <h1>{{ heading }}</h1>
+                <h1>{{ heading|safe }}</h1>
             </b>
         </div>
         <br style="clear: both" />
@@ -20,9 +20,12 @@
                         <tr>
                             <th class="w-1"></th>
                             <th class="text-center">Score</th>
-                            <th class="text-center">Level reached</th>
-                            <th class="text-center">User</th>
-                            <th class="text-center">Date played</th>
+                            <th class="text-center">Level Reached</th>
+                            <th class="text-center">Date Played</th>
+                            <th class="text-center">Correct Questions</th>
+                            <th class="text-center">User Quit?</th>
+                            <th class="text-center"><b>Used</b> Lifelines</th>
+                            <th class="text-center"><b>Unused</b> Lifelines</th>
                             <th class="w-1"></th>
                         </tr>
                     </thead>
@@ -32,8 +35,17 @@
                             <td class="w-1"></td>
                             <td class="text-center">{{ session|slicer:0 }}</td>
                             <td class="text-center">{{ session|slicer:1 }}</td>
-                            <td class="text-center">{{ session|slicer:2 }}</td>
-                            <td class="text-center">{{ session|slicer:3|date:"j F Y, g:i A e" }}</td>
+                            <td class="text-center">{{ session|slicer:2|date:"j F Y, g:i A e" }}</td>
+                            <td class="text-center">{{ session|slicer:3 }}</td>
+                            <td class="text-center">
+                                {% if session|slicer:4 %}
+                                <span title="Yes">{% include 'icons/check.html' %}</span>
+                                {% else %}
+                                <span title="No">{% include 'icons/cross.html' %}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ session|slicer:5 }}</td>
+                            <td class="text-center">{{ session|slicer:6 }}</td>
                             <td class="w-1"></td>
                         </tr>
                         {% endfor %}
