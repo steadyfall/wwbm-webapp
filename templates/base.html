@@ -58,7 +58,7 @@
                 <div {% if message.tags %} {% if message.tags == 'error' %} class="alert alert-danger center"
                 {% else %} class="alert alert-{{ message.tags }} center" {% endif %} 
                 {% endif %} role="alert">
-                    {{ message }}
+                    {{ message|safe }}
                 </div>
                 {% endfor %}
             </div>
