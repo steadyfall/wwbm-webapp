@@ -161,9 +161,11 @@ class Question(models.Model):
     class Meta:
         verbose_name = "question"
         verbose_name_plural = "questions"
+        ordering = ["-date_added"]
 
     def __str__(self):
-        return f"{self.get_difficulty_display()} question under {', '.join([i.__str__() for i in self.falls_under.all()])}"
+        # return f"{self.get_difficulty_display()} question under {', '.join([i.__str__() for i in self.falls_under.all()])}"
+        return f"{self.text} ({self.difficulty})"
 
 
 class Session(models.Model):
@@ -257,6 +259,7 @@ class Session(models.Model):
     class Meta:
         verbose_name = "session"
         verbose_name_plural = "sessions"
+        ordering = ["-date_created"]
 
     def __str__(self):
         return f"{self.session_id}"
