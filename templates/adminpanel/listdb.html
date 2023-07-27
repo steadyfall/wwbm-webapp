@@ -14,7 +14,7 @@
                         </ol>
                     </nav>
                     <div class="col-1 mt-3 px-3">
-                        <a href="{% url 'adminDBObjectCreate' lowerdb %}" class="btn btn-indigo">Create</a>
+                        <a href="{% url 'adminDBObjectCreate' db %}" class="btn btn-indigo">Create</a>
                     </div>
                     <div class="col-1 mt-3 py-2 text-end">
                         <div class="form-label">Actions:</div>
@@ -24,7 +24,7 @@
                             <option value="-">---</option>
                             <option value="Delete selected">Delete selected {{ recordVerboseNamePlural }}</option>
                             <option value="Delete all in view">Delete all {{ recordVerboseNamePlural }} on page</option>
-                            <option value="Delete everything">Delete EVERY {{ recordVerboseNamePlural }}</option>
+                            <option value="Delete everything">Delete EVERY {{ recordVerboseName }}</option>
                         </select>
                     </div>
                     <div class="col-1 mt-3">
@@ -73,10 +73,10 @@
                                     </td>
                                     <td>{{ record }}</td>
                                     <td><span class="badge bg-blue"><a style="text-decoration: none; color: #fff;"
-                                                href="{% url 'adminDBObject' lowerdb record.key_primary %}">Edit</a></span>
+                                                href="{% url 'adminDBObject' db record.key_primary %}">Edit</a></span>
                                     </td>
                                     <td><span class="badge bg-red"><a style="text-decoration: none; color: #fff;"
-                                                href="{% url 'adminDBObjectDelete' lowerdb record.key_primary %}">Delete</a></span>
+                                                href="{% url 'adminDBObjectDelete' db record.key_primary %}">Delete</a></span>
                                     </td>
                                 </tr>
                                 {% endfor %}
