@@ -1,4 +1,5 @@
 {% extends "adminpanel/base.html" %}
+{% load utility %}
 {% block content %}
 <form method="post">
     {% csrf_token %}
@@ -9,8 +10,13 @@
                 <div class="row">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="#">Admin</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Sessions</li>
+                            {% for numbering, obj in breadcrumbs %}
+                            {% if numbering == breadcrumbs|length %}
+                            <li class="breadcrumb-item active" aria-current="page">{{ obj|slicer:0 }}</li>
+                            {% else %}
+                            <li class="breadcrumb-item"><a href="{{ obj|slicer:1 }}">{{ obj|slicer:0 }}</a></li>
+                            {% endif %}
+                            {% endfor %}
                         </ol>
                     </nav>
                     <div class="col-1 mt-3 px-3">
