@@ -13,6 +13,9 @@
     <!-- CSS files -->
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 
     <style>
         @import url("https://rsms.me/inter/inter.css");
@@ -37,9 +40,11 @@
                     aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3" style="pointer-events: none;">
+                <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3"
+                    style="pointer-events: none;">
                     <a href=".">
-                        <img src="{% static 'img/wwbmicon.ico' %}" width="110" height="32" class="navbar-brand-image" alt="Who Wants To Be A Millionaire?">
+                        <img src="{% static 'img/wwbmicon.ico' %}" width="110" height="32" class="navbar-brand-image"
+                            alt="Who Wants To Be A Millionaire?">
                     </a>
                     &nbsp;&nbsp; Admin Panel
                 </h1>
@@ -179,8 +184,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="#">
-                                    <span
-                                        class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                             class="icon icon-tabler icon-tabler-user" width="24" height="24"
                                             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -209,8 +213,8 @@
                                             <path d="M21 21l-6 -6" />
                                         </svg>
                                     </span>
-                                    <input type="text" name="search" class="form-control" placeholder="Search everything."
-                                        aria-label="Search in website">
+                                    <input type="text" name="search" class="form-control"
+                                        placeholder="Search everything." aria-label="Search in website">
                                 </div>
                             </form>
                         </div>
@@ -256,4 +260,5 @@
             </div>
         </footer>
 </body>
+
 </html>
