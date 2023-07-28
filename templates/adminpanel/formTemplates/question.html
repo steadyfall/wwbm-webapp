@@ -1,0 +1,85 @@
+{% load static %}
+<div class="mb-3 d-flex">
+    <div class="form-label mt-2" id="{{ form.who_added.id_for_label }}">
+        By whom was this question added?
+    </div>
+    <select name="{{ form.who_added.html_name }}" id="{{ form.who_added.html_name }}" class="w-25 ms-3">
+        {% for val, name in form.who_added.field.choices %}
+        <option value="{{ val }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label mt-2" id="{{ form.falls_under.id_for_label }}">
+        Which category does this question fall under?
+    </div>
+    <select name="{{ form.falls_under.html_name }}" id="{{ form.falls_under.html_name }}" class="w-50 ms-3">
+        {% for val, name in form.falls_under.field.choices %}
+        <option value="{{ val }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label mt-1" id="{{ form.question_type.id_for_label }}">
+        What type of question is this?
+    </div>
+    <div class="form-selectgroup ms-3">
+        {% for val, name in form.question_type.field.choices %}
+        <label class="form-selectgroup-item">
+            <input type="radio" name="{{ form.question_type.html_name }}" value="{{ val }}"
+                class="form-selectgroup-input">
+            <span class="form-selectgroup-label">{{ name }}</span>
+        </label>
+        {% endfor %}
+    </div>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label mt-2" id="{{ form.difficulty.id_for_label }}">
+        What is the difficulty of the question?
+    </div>
+    <div class="form-selectgroup ms-3">
+        {% for val, name in form.difficulty.field.choices %}
+        <label class="form-selectgroup-item">
+            <input type="radio" name="{{ form.difficulty.html_name }}" value="{{ val }}" class="form-selectgroup-input">
+            <span class="form-selectgroup-label">{{ name }}</span>
+        </label>
+        {% endfor %}
+    </div>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label mt-2" id="{{ form.text.id_for_label }}">
+        Question Text:
+    </div>
+    <textarea class="form-control w-75 ms-3" name="{{ form.text.html_name }}" id="{{ form.text.html_name }}" rows="9"
+        cols="10" placeholder="Write the question here!">{{ form.text.value|default_if_none:"" }}</textarea>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label mt-2" id="{{ form.correct_option.id_for_label }}">
+        What is the correct option?
+    </div>
+    <select class="w-25 ms-3" name="{{ form.correct_option.html_name }}" id="{{ form.correct_option.html_name }}">
+        {% for val, name in form.correct_option.field.choices %}
+        <option value="{{ val }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label mt-2" id="{{ form.incorrect_options.id_for_label }}">
+        What are the incorrect options?
+    </div>
+    <select class="w-50 ms-3" name="{{ form.incorrect_options.html_name }}" id="{{ form.incorrect_options.html_name }}"
+        multiple>
+        {% for val, name in form.incorrect_options.field.choices %}
+        <option value="{{ val }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label mt-2" id="{{ form.date_added.id_for_label }}">
+        When was this question added? (in UTC)
+    </div>
+    <input class="form-control form-control-flush w-25 ms-3" type="text" name="{{ form.date_added.html_name }}"
+        id="{{ form.date_added.html_name }}" value="{{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}"
+        placeholder="Select a date...">
+</div>
+<script src="{% static 'js/adminpanelForms/questionform.js' %}"></script>
