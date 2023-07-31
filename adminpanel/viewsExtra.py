@@ -14,18 +14,30 @@ def safe_object_delete(model, pk: str | int) -> None:
     return model.objects.get(pk=pk).delete()
 
 
+def pk_checker(pk: int | str, model: models.Model) -> bool:
+    """
+    Checks if the given primary key qualifies as a primary key.
+    """
+    if isinstance(model._meta.pk, BigAutoField):
+        return pk.isdigit()
+    elif isinstance(model._meta.pk, CharField):
+        RANDOM_STRING_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        pattern = "[{}]".format(RANDOM_STRING_CHARS) + "{8}"
+        return re.fullmatch(pattern, pk) is not None
+    else:
+        return pk.isdigit()
+    
+
 def safe_pk_list_converter(pk_list: list, model: models.Model) -> list:
     """
     Safely converts a string to number and 0 if not in digits to return a list of numbers.
     """
     if isinstance(model._meta.pk, BigAutoField):
-        return list(map(lambda x: int(x) if x.isdigit() else 0, pk_list))
+        return list(map(lambda x: int(x) if pk_checker(x, model) else 0, pk_list))
     elif isinstance(model._meta.pk, CharField):
-        RANDOM_STRING_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        pattern = "[{}]".format(RANDOM_STRING_CHARS) + "{8}"
-        return list(map(lambda x: x if re.fullmatch(pattern, x) is not None else 0, pk_list))
+        return list(map(lambda x: x if pk_checker(x, model) else 0, pk_list))
     else:
-        return list(map(lambda x: int(x) if x.isdigit() else 0, pk_list))
+        return list(map(lambda x: int(x) if pk_checker(x, model) else 0, pk_list))
 
 
 
