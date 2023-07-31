@@ -111,13 +111,7 @@
     </div>
     <input class="form-control form-control-flush w-25 ms-3" type="text"
         name="{{ form.date_added.html_name }}" id="{{ form.date_added.html_name }}"
-        value=" {% if form.instance.date_added %}
-                    {{ form.instance.date_added|date:'Y-n-j H:i' }}
-                {% elif form.data.date_added %}
-                    {{ form.data.date_added|date:'Y-n-j H:i' }}
-                {% else %}
-                    {{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}
-                {% endif %}"
+        value="{% if form.instance.date_added %}{{ form.instance.date_added|date:'Y-n-j H:i' }}{% elif form.data.date_added %}{{ form.data.date_added|date:'Y-n-j H:i' }}{% else %}{{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}{% endif %}"
         placeholder="Select a date...">
 </div>
 <script type="module">
