@@ -116,12 +116,12 @@
 </div>
 <script type="module">
     import { whoAddedConfig, fallsUnderConfig, correctOptionConfig, incorrectOptionConfig, questionTypeConfig, difficultyConfig, dateAddedConfig } from "{% static 'js/adminpanelForms/questionform.js' %}";
-    var who_addedD = {% if form.instance.pk is not None %}{% if form.instance.who_added %}{{ form.instance.who_added|safe }}{% endif %}{% elif form.data.who_added %}{{ form.data.who_added|safe }}{% else %}[]{% endif %};
-    var falls_underD = {% if form.instance.pk is not None %}{% if form.instance|getListFromQueryDict:'falls_under'|safe %}{{ form.instance|getListFromQueryDict:'falls_under'|safe }}{% endif %}{% elif form.data|getListFromQueryDict:'falls_under' %}{{ form.data|getListFromQueryDict:'falls_under'|safe}}{% else %}[]{% endif %};
+    var who_addedD = {% if form.instance.pk is not None %}{% if form.instance.who_added %}{{ form.instance.who_added.pk|safe }}{% endif %}{% elif form.data.who_added %}{{ form.data.who_added|safe }}{% else %}[]{% endif %};
+    var falls_underD = {% if form.instance.pk is not None %}{% if form.instance.falls_under.all %}{{ form.instance.falls_under.all|querysetToPrimaryKey|safe }}{% endif %}{% elif form.data|getListFromQueryDict:'falls_under'|safe %}{{ form.data|getListFromQueryDict:'falls_under'|safe}}{% else %}[]{% endif %};
     var question_typeD = {% if form.instance.pk is not None %}{% if form.instance.question_type %}['{{ form.instance.question_type|safe }}']{% endif %}{% elif form.data.question_type %}['{{ form.data.question_type|safe }}']{% else %}[]{% endif %};
     var difficultyD = {% if form.instance.pk is not None %}{% if form.instance.difficulty %}['{{ form.instance.difficulty|safe }}']{% endif %}{% elif form.data.difficulty %}['{{ form.data.difficulty|safe }}']{% else %}[]{% endif %};
-    var correct_optionD = {% if form.instance.pk is not None %}{% if form.instance.correct_option%}['{{ form.instance.correct_option|safe }}']{% endif %}{% elif form.data.correct_option %}['{{ form.data.correct_option|safe }}']{% else %}[]{% endif %};
-    var incorrect_optionsD = {% if form.instance.pk is not None %}{% if form.instance|getListFromQueryDict:'incorrect_options' %}{{ form.instance|getListFromQueryDict:'incorrect_options'|safe }}{% endif %}{% elif form.data|getListFromQueryDict:'incorrect_options' %}{{ form.data|getListFromQueryDict:'incorrect_options'|safe }}{% else %}[]{% endif %};
+    var correct_optionD = {% if form.instance.pk is not None %}{% if form.instance.correct_option%}['{{ form.instance.correct_option.pk|safe }}']{% endif %}{% elif form.data.correct_option %}['{{ form.data.correct_option|safe }}']{% else %}[]{% endif %};
+    var incorrect_optionsD = {% if form.instance.pk is not None %}{% if form.instance.incorrect_options.all %}{{ form.instance.incorrect_options.all|querysetToPrimaryKey|safe }}{% endif %}{% elif form.data|getListFromQueryDict:'incorrect_options'|safe %}{{ form.data|getListFromQueryDict:'incorrect_options'|safe }}{% else %}[]{% endif %};
     new TomSelect('#who_added', whoAddedConfig(who_addedD));
     new TomSelect('#falls_under', fallsUnderConfig(falls_underD));
     new TomSelect('#question_type', questionTypeConfig(question_typeD));
