@@ -1,60 +1,91 @@
 {% load static %}
+{% load utility %}
+{% if form.errors %}
+{{ form.non_field_errors }}
+<div class="alert alert-danger">
+    {% for field in form %}
+        {% for error in field.errors %}
+            <strong>
+                {% if field.name == 'who_added' %}
+                By whom was this question added?
+                {% elif field.name == 'date_added' %}
+                When was this question added? (in UTC)
+                {% elif field.name == 'falls_under' %}
+                Which category does this question fall under?
+                {% elif field.name == 'text' %}
+                Question Text
+                {% elif field.name == 'correct_option' %}
+                What is the correct option?
+                {% elif field.name == 'incorrect_options' %}
+                What are the incorrect options?
+                {% elif field.name == 'question_type' %}
+                What type of question is this?
+                {% elif field.name == 'difficulty' %}
+                What is the difficulty of the question?
+                {% else %}
+                {% endif %}
+            </strong>: {{ error|escape }}<br>
+        {% endfor %}
+    {% endfor %}
+</div>
+{% for error in form.non_field_errors %}
+<div class="alert alert-danger">
+    <strong>{{ error|escape }}</strong>
+</div>
+{% endfor %}
+{% endif %}
 <div class="mb-3 d-flex">
-    <div class="form-label mt-2" id="{{ form.who_added.id_for_label }}">
+    <div class="form-label required mt-2" id="{{ form.who_added.id_for_label }}">
         By whom was this question added?
     </div>
-    <select name="{{ form.who_added.html_name }}" id="{{ form.who_added.html_name }}" class="w-25 ms-3">
+    <select class="ms-3 w-25" name="{{ form.who_added.html_name }}" id="{{ form.who_added.html_name }}"
+        class="w-25 ms-3">
         {% for val, name in form.who_added.field.choices %}
         <option value="{{ val }}">{{ name }}</option>
         {% endfor %}
     </select>
 </div>
 <div class="mb-3 d-flex">
-    <div class="form-label mt-2" id="{{ form.falls_under.id_for_label }}">
+    <div class="form-label required mt-2" id="{{ form.falls_under.id_for_label }}">
         Which category does this question fall under?
     </div>
-    <select name="{{ form.falls_under.html_name }}" id="{{ form.falls_under.html_name }}" class="w-50 ms-3">
+    <select class="ms-3 w-50" name="{{ form.falls_under.html_name }}" id="{{ form.falls_under.html_name }}"
+        class="w-50 ms-3">
         {% for val, name in form.falls_under.field.choices %}
         <option value="{{ val }}">{{ name }}</option>
         {% endfor %}
     </select>
 </div>
 <div class="mb-3 d-flex">
-    <div class="form-label mt-1" id="{{ form.question_type.id_for_label }}">
+    <div class="form-label required mt-1" id="{{ form.question_type.id_for_label }}">
         What type of question is this?
     </div>
-    <div class="form-selectgroup ms-3">
+    <select class="w-25 ms-3" name="{{ form.question_type.html_name }}" id="{{ form.question_type.html_name }}">
         {% for val, name in form.question_type.field.choices %}
-        <label class="form-selectgroup-item">
-            <input type="radio" name="{{ form.question_type.html_name }}" value="{{ val }}"
-                class="form-selectgroup-input">
-            <span class="form-selectgroup-label">{{ name }}</span>
-        </label>
+        <option value="{{ val }}">{{ name }}</option>
         {% endfor %}
-    </div>
+    </select>
 </div>
 <div class="mb-3 d-flex">
-    <div class="form-label mt-2" id="{{ form.difficulty.id_for_label }}">
+    <div class="form-label required mt-2" id="{{ form.difficulty.id_for_label }}">
         What is the difficulty of the question?
     </div>
-    <div class="form-selectgroup ms-3">
+    <select class="w-25 ms-3" name="{{ form.difficulty.html_name }}" id="{{ form.difficulty.html_name }}">
         {% for val, name in form.difficulty.field.choices %}
-        <label class="form-selectgroup-item">
-            <input type="radio" name="{{ form.difficulty.html_name }}" value="{{ val }}" class="form-selectgroup-input">
-            <span class="form-selectgroup-label">{{ name }}</span>
-        </label>
+        <option value="{{ val }}">{{ name }}</option>
         {% endfor %}
-    </div>
+    </select>
 </div>
 <div class="mb-3 d-flex">
-    <div class="form-label mt-2" id="{{ form.text.id_for_label }}">
+    <div class="form-label required mt-2" id="{{ form.text.id_for_label }}">
         Question Text:
     </div>
     <textarea class="form-control w-75 ms-3" name="{{ form.text.html_name }}" id="{{ form.text.html_name }}" rows="9"
-        cols="10" placeholder="Write the question here!">{{ form.text.value|default_if_none:"" }}</textarea>
+        cols="10"
+        placeholder="Write the question here!">{% if form.instance.text %}{{ form.instance.text }}{% elif form.data.text %}{{ form.data.text }}{% else %}{{ form.text.value|default_if_none:"" }}{% endif %}</textarea>
 </div>
 <div class="mb-3 d-flex">
-    <div class="form-label mt-2" id="{{ form.correct_option.id_for_label }}">
+    <div class="form-label required mt-2" id="{{ form.correct_option.id_for_label }}">
         What is the correct option?
     </div>
     <select class="w-25 ms-3" name="{{ form.correct_option.html_name }}" id="{{ form.correct_option.html_name }}">
@@ -64,7 +95,7 @@
     </select>
 </div>
 <div class="mb-3 d-flex">
-    <div class="form-label mt-2" id="{{ form.incorrect_options.id_for_label }}">
+    <div class="form-label required mt-2" id="{{ form.incorrect_options.id_for_label }}">
         What are the incorrect options?
     </div>
     <select class="w-50 ms-3" name="{{ form.incorrect_options.html_name }}" id="{{ form.incorrect_options.html_name }}"
@@ -75,11 +106,41 @@
     </select>
 </div>
 <div class="mb-3 d-flex">
-    <div class="form-label mt-2" id="{{ form.date_added.id_for_label }}">
+    <div class="form-label required mt-2" id="{{ form.date_added.id_for_label }}">
         When was this question added? (in UTC)
     </div>
-    <input class="form-control form-control-flush w-25 ms-3" type="text" name="{{ form.date_added.html_name }}"
-        id="{{ form.date_added.html_name }}" value="{{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}"
+    <input class="form-control form-control-flush w-25 ms-3" type="text"
+        name="{{ form.date_added.html_name }}" id="{{ form.date_added.html_name }}"
+        value=" {% if form.instance.date_added %}
+                    {{ form.instance.date_added|date:'Y-n-j H:i' }}
+                {% elif form.data.date_added %}
+                    {{ form.data.date_added|date:'Y-n-j H:i' }}
+                {% else %}
+                    {{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}
+                {% endif %}"
         placeholder="Select a date...">
 </div>
-<script src="{% static 'js/adminpanelForms/questionform.js' %}"></script>
+<script type="module">
+    import { whoAddedConfig, fallsUnderConfig, correctOptionConfig, incorrectOptionConfig, questionTypeConfig, difficultyConfig, dateAddedConfig } from "{% static 'js/adminpanelForms/questionform.js' %}";
+    var who_addedD = {% if form.instance.pk is not None %}{% if form.instance.who_added %}{{ form.instance.who_added|safe }}{% endif %}{% elif form.data.who_added %}{{ form.data.who_added|safe }}{% else %}[]{% endif %};
+    var falls_underD = {% if form.instance.pk is not None %}{% if form.instance|getListFromQueryDict:'falls_under'|safe %}{{ form.instance|getListFromQueryDict:'falls_under'|safe }}{% endif %}{% elif form.data|getListFromQueryDict:'falls_under' %}{{ form.data|getListFromQueryDict:'falls_under'|safe}}{% else %}[]{% endif %};
+    var question_typeD = {% if form.instance.pk is not None %}{% if form.instance.question_type %}['{{ form.instance.question_type|safe }}']{% endif %}{% elif form.data.question_type %}['{{ form.data.question_type|safe }}']{% else %}[]{% endif %};
+    var difficultyD = {% if form.instance.pk is not None %}{% if form.instance.difficulty %}['{{ form.instance.difficulty|safe }}']{% endif %}{% elif form.data.difficulty %}['{{ form.data.difficulty|safe }}']{% else %}[]{% endif %};
+    var correct_optionD = {% if form.instance.pk is not None %}{% if form.instance.correct_option%}['{{ form.instance.correct_option|safe }}']{% endif %}{% elif form.data.correct_option %}['{{ form.data.correct_option|safe }}']{% else %}[]{% endif %};
+    var incorrect_optionsD = {% if form.instance.pk is not None %}{% if form.instance|getListFromQueryDict:'incorrect_options' %}{{ form.instance|getListFromQueryDict:'incorrect_options'|safe }}{% endif %}{% elif form.data|getListFromQueryDict:'incorrect_options' %}{{ form.data|getListFromQueryDict:'incorrect_options'|safe }}{% else %}[]{% endif %};
+    new TomSelect('#who_added', whoAddedConfig(who_addedD));
+    new TomSelect('#falls_under', fallsUnderConfig(falls_underD));
+    new TomSelect('#question_type', questionTypeConfig(question_typeD));
+    new TomSelect('#difficulty', difficultyConfig(difficultyD));
+    new TomSelect('#correct_option', correctOptionConfig(correct_optionD));
+    new TomSelect('#incorrect_options', incorrectOptionConfig(incorrect_optionsD));
+    new flatpickr("#date_added", dateAddedConfig);
+    $(document).ready(function () {
+        $(window).keydown(function (event) {
+            if (event.keyCode == 13) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    });
+</script>
