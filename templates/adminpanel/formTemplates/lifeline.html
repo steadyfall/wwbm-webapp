@@ -29,13 +29,7 @@
         Lifeline name:
     </div>
     <input class="form-control w-75 ms-3" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" placeholder="Write the lifeline name here!" 
-    value="{% if form.instance.name %}
-           {{ form.instance.name }}
-           {% elif form.data.name %}
-           {{ form.data.name }}
-           {% elif form.name.value %}
-           {{ form.name.value }}
-           {% endif %}">
+    value="{% if form.instance.name %}{{ form.instance.name }}{% elif form.data.name %}{{ form.data.name }}{% elif form.name.value %}{{ form.name.value }}{% endif %}">
 </div>
 <div class="mb-3 d-flex">
     <div class="form-label required mt-2" id="{{ form.description.id_for_label }}">
@@ -51,13 +45,7 @@
     </div>
     <input class="form-control form-control-flush w-25 ms-3" type="text"
         name="{{ form.date_created.html_name }}" id="{{ form.date_created.html_name }}"
-        value=" {% if form.instance.date_created %}
-                    {{ form.instance.date_created|date:'Y-n-j H:i' }}
-                {% elif form.data.date_created %}
-                    {{ form.data.date_created|date:'Y-n-j H:i' }}
-                {% else %}
-                    {{ form.date_created.value|default_if_none:''|date:'Y-n-j H:i' }}
-                {% endif %}"
+        value="{% if form.instance.date_created %}{{ form.instance.date_created|date:'Y-n-j H:i' }}{% elif form.data.date_created %}{{ form.data.date_created|date:'Y-n-j H:i' }}{% else %}{{ form.date_created.value|default_if_none:''|date:'Y-n-j H:i' }}{% endif %}"
         placeholder="Select a date...">
 </div>
 <script type="module">

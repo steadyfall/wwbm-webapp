@@ -27,13 +27,7 @@
         Option Text:
     </div>
     <input class="form-control w-75 ms-3" name="{{ form.text.html_name }}" id="{{ form.text.html_name }}" placeholder="Write the option here!" 
-    value="{% if form.instance.text %}
-           {{ form.instance.text }}
-           {% elif form.data.text %}
-           {{ form.data.text }}
-           {% elif form.text.value %}
-           {{ form.text.value }}
-           {% endif %}">
+    value="{% if form.instance.text %}{{ form.instance.text }}{% elif form.data.text %}{{ form.data.text }}{% elif form.text.value %}{{ form.text.value }}{% endif %}">
 </div>
 <div class="mb-3 d-flex">
     <div class="form-label required mt-2" id="{{ form.date_added.id_for_label }}">
@@ -41,13 +35,7 @@
     </div>
     <input class="form-control form-control-flush w-25 ms-3" type="text"
         name="{{ form.date_added.html_name }}" id="{{ form.date_added.html_name }}"
-        value=" {% if form.instance.date_added %}
-                    {{ form.instance.date_added|date:'Y-n-j H:i' }}
-                {% elif form.data.date_added %}
-                    {{ form.data.date_added|date:'Y-n-j H:i' }}
-                {% else %}
-                    {{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}
-                {% endif %}"
+        value="{% if form.instance.date_added %}{{ form.instance.date_added|date:'Y-n-j H:i' }}{% elif form.data.date_added %}{{ form.data.date_added|date:'Y-n-j H:i' }}{% else %}{{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}{% endif %}"
         placeholder="Select a date...">
 </div>
 <script type="module">
