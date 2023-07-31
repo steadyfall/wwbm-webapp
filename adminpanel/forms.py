@@ -1,5 +1,5 @@
 from django.forms import ModelForm, Form
-from game.models import Question, Session
+from game.models import Question, Option, Lifeline, Category
 
 
 class QuestionForm(ModelForm):
@@ -18,3 +18,35 @@ class QuestionForm(ModelForm):
             "date_added",
         ]
         exclude = ["asked_to"]
+
+class OptionForm(ModelForm):
+    template_name = "adminpanel/formTemplates/option.html"
+
+    class Meta:
+        model = Option
+        fields = [
+            "text",
+            "date_added",
+        ]
+        exclude = ["hits"]
+
+class LifelineForm(ModelForm):
+    template_name = "adminpanel/formTemplates/lifeline.html"
+
+    class Meta:
+        model = Lifeline
+        fields = [
+            "name",
+            "date_created",
+            "description",
+        ]
+
+class CategoryForm(ModelForm):
+    template_name = "adminpanel/formTemplates/category.html"
+
+    class Meta:
+        model = Category
+        fields = [
+            "date_created",
+            "name",
+        ]

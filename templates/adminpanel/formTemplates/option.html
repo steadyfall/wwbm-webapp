@@ -1,0 +1,68 @@
+{% load static %}
+{% load utility %}
+{% if form.errors %}
+{{ form.non_field_errors }}
+<div class="alert alert-danger">
+    {% for field in form %}
+        {% for error in field.errors %}
+            <strong>
+                {% if field.name == 'date_added' %}
+                When was this option added? (in UTC)
+                {% elif field.name == 'text' %}
+                Option Text
+                {% else %}
+                {% endif %}
+            </strong>: {{ error|escape }}<br>
+        {% endfor %}
+    {% endfor %}
+</div>
+{% for error in form.non_field_errors %}
+<div class="alert alert-danger">
+    <strong>{{ error|escape }}</strong>
+</div>
+{% endfor %}
+{% endif %}
+<div class="mb-3 d-flex">
+    <div class="form-label required mt-2" id="{{ form.text.id_for_label }}">
+        Option Text:
+    </div>
+    <input class="form-control w-75 ms-3" name="{{ form.text.html_name }}" id="{{ form.text.html_name }}" placeholder="Write the option here!" 
+    value="{% if form.instance.text %}
+           {{ form.instance.text }}
+           {% elif form.data.text %}
+           {{ form.data.text }}
+           {% elif form.text.value %}
+           {{ form.text.value }}
+           {% endif %}">
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label required mt-2" id="{{ form.date_added.id_for_label }}">
+        When was this option added? (in UTC)
+    </div>
+    <input class="form-control form-control-flush w-25 ms-3" type="text"
+        name="{{ form.date_added.html_name }}" id="{{ form.date_added.html_name }}"
+        value=" {% if form.instance.date_added %}
+                    {{ form.instance.date_added|date:'Y-n-j H:i' }}
+                {% elif form.data.date_added %}
+                    {{ form.data.date_added|date:'Y-n-j H:i' }}
+                {% else %}
+                    {{ form.date_added.value|default_if_none:''|date:'Y-n-j H:i' }}
+                {% endif %}"
+        placeholder="Select a date...">
+</div>
+<script type="module">
+    const dateAddedConfig = {
+        enableTime: true,
+        dateFormat: "Y-m-dTH:i",
+        time_24hr: true,
+    };
+    new flatpickr("#date_added", dateAddedConfig);
+    $(document).ready(function () {
+        $(window).keydown(function (event) {
+            if (event.keyCode == 13) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    });
+</script>
