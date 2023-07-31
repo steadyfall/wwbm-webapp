@@ -9,3 +9,7 @@ def slicer(value, arg):
 @register.filter()
 def titLe(value):
     return value.title()
+
+@register.filter()
+def getListFromQueryDict(querydict, itemToGet):
+    return querydict.getlist(itemToGet)
