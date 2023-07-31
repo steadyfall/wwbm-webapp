@@ -1,0 +1,78 @@
+{% load static %}
+{% load utility %}
+{% if form.errors %}
+{{ form.non_field_errors }}
+<div class="alert alert-danger">
+    {% for field in form %}
+        {% for error in field.errors %}
+            <strong>
+                {% if field.name == 'date_created' %}
+                When was this lifeline added? (in UTC)
+                {% elif field.name == 'name' %}
+                Lifeline Name
+                {% elif field.name == 'description' %}
+                Lifeline Description
+                {% else %}
+                {% endif %}
+            </strong>: {{ error|escape }}<br>
+        {% endfor %}
+    {% endfor %}
+</div>
+{% for error in form.non_field_errors %}
+<div class="alert alert-danger">
+    <strong>{{ error|escape }}</strong>
+</div>
+{% endfor %}
+{% endif %}
+<div class="mb-3 d-flex">
+    <div class="form-label required mt-2" id="{{ form.name.id_for_label }}">
+        Lifeline name:
+    </div>
+    <input class="form-control w-75 ms-3" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" placeholder="Write the lifeline name here!" 
+    value="{% if form.instance.name %}
+           {{ form.instance.name }}
+           {% elif form.data.name %}
+           {{ form.data.name }}
+           {% elif form.name.value %}
+           {{ form.name.value }}
+           {% endif %}">
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label required mt-2" id="{{ form.description.id_for_label }}">
+        Lifeline Description:
+    </div>
+    <textarea class="form-control w-75 ms-3" name="{{ form.description.html_name }}" id="{{ form.description.html_name }}" rows="9"
+        cols="10"
+        placeholder="Write the lifeline description here!">{% if form.instance.description %}{{ form.instance.description }}{% elif form.data.description %}{{ form.data.description }}{% else %}{{ form.description.value|default_if_none:"" }}{% endif %}</textarea>
+</div>
+<div class="mb-3 d-flex">
+    <div class="form-label required mt-2" id="{{ form.date_created.id_for_label }}">
+        When was this lifeline created? (in UTC)
+    </div>
+    <input class="form-control form-control-flush w-25 ms-3" type="text"
+        name="{{ form.date_created.html_name }}" id="{{ form.date_created.html_name }}"
+        value=" {% if form.instance.date_created %}
+                    {{ form.instance.date_created|date:'Y-n-j H:i' }}
+                {% elif form.data.date_created %}
+                    {{ form.data.date_created|date:'Y-n-j H:i' }}
+                {% else %}
+                    {{ form.date_created.value|default_if_none:''|date:'Y-n-j H:i' }}
+                {% endif %}"
+        placeholder="Select a date...">
+</div>
+<script type="module">
+    const dateAddedConfig = {
+        enableTime: true,
+        dateFormat: "Y-m-dTH:i",
+        time_24hr: true,
+    };
+    new flatpickr("#date_created", dateAddedConfig);
+    $(document).ready(function () {
+        $(window).keydown(function (event) {
+            if (event.keyCode == 13) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    });
+</script>
