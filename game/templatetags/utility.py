@@ -13,3 +13,7 @@ def titLe(value):
 @register.filter()
 def getListFromQueryDict(querydict, itemToGet):
     return querydict.getlist(itemToGet)
+
+@register.filter()
+def querysetToPrimaryKey(queryset):
+    return list(map(lambda x: x.pk, queryset))
