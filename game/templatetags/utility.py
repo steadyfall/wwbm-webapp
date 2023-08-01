@@ -30,3 +30,7 @@ def obj_exists(value):
 @register.filter
 def model_name(value):
     return value.name.title()
+
+@register.filter
+def multiply(value, arg):
+    return value * arg
