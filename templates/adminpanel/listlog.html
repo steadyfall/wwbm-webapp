@@ -1,0 +1,169 @@
+{% extends "adminpanel/base.html" %}
+{% load utility %}
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <!-- Page pre-title -->
+                        <div class="page-pretitle" style="font-size: larger;">
+                            Logs
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="row row-deck row-cards">
+                    <div class="table-responsive">
+                        <table class="table table-vcenter">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Object</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in allRecords %}
+                                <tr>
+                                    <td></td>
+                                    <td class="text-truncate">
+                                        {{ log.object_repr }}
+                                    </td>
+                                    <td>
+                                        {{ log.content_type|model_name }}
+                                    </td>
+                                    <td>
+                                        {{ log.action_time|date:"d M Y H:i:s" }}
+                                    </td>
+                                    <td>
+                                        {% if log.is_addition %}
+                                        <span class="badge bg-green me-1"></span> Added
+                                        {% elif log.is_change %}
+                                        <span class="badge bg-orange me-1"></span> Changed
+                                        {% elif log.is_deletion %}
+                                        <span class="badge bg-red me-1"></span> Deleted
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="dropdown">
+                                            {% if not log|user_check %}
+                                            <button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown"
+                                                data-boundary="window">Actions</button>
+                                            <div class="dropdown-menu dropdown-menu-end">
+                                                <a class="dropdown-item" href="#">History</a>
+                                                {% if log|obj_exists %}
+                                                <a class="dropdown-item" href="#">Change</a>
+                                                <a class="dropdown-item" href="#">Delete</a>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <p class="m-0 text-muted">
+                            Showing
+                            <span>
+                                {{ allRecords.start_index }}
+                            </span> to
+                            <span>
+                                {{ allRecords.end_index}}
+                            </span> of
+                            <span>
+                                {{ allRecords.paginator.count }}
+                            </span> entries
+                        </p>
+                        {% if allRecords.has_other_pages %}
+                        <ul class="pagination m-0 ms-auto">
+                            {% if allRecords.has_previous %}
+                            <li class="page-item {% if allRecords.has_previous %}{% else %}disabled{% endif %}">
+                                <a class="page-link" href="?page={{ allRecords.previous_page_number }}" tabindex="-1"
+                                    aria-disabled="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M15 6l-6 6l6 6" />
+                                    </svg>
+                                    prev
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M15 6l-6 6l6 6" />
+                                    </svg>
+                                    prev
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% for num in allRecords.paginator.page_range %}
+                            {% if allRecords.number == num %}
+                            <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                            {% elif num > allRecords.number|add:'-2' and num < allRecords.number|add:'2' %} <li class="page-item"><a
+                                    class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                {% endif %}
+                                {% endfor %}
+                                {% if allRecords.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ allRecords.next_page_number }}">
+                                        next
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path d="M9 6l6 6l-6 6" />
+                                        </svg>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">
+                                        next
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path d="M9 6l6 6l-6 6" />
+                                        </svg>
+                                    </a>
+                                </li>
+                                {% endif %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script>
+    $('.table-responsive').on('show.bs.dropdown', function () {
+        $('.table-responsive').css("overflow", "inherit");
+    });
+
+    $('.table-responsive').on('hide.bs.dropdown', function () {
+        $('.table-responsive').css("overflow", "auto");
+    })
+</script>
+{% endblock %}
