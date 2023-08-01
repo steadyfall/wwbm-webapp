@@ -9,6 +9,7 @@ from django.views.generic import View
 from django.contrib.admin.options import construct_change_message
 from django.forms import ModelForm
 from django.forms import modelform_factory
+from django.contrib.admin.models import LogEntry
 
 
 from .mixins import SuperuserRequiredMixin
@@ -436,3 +437,27 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
                 + f"""\nSuccessfully deleted 1 {object_name} and {deleted} objects related to it!""",
             )
         return redirect("adminListDB", db=smallcaseDB)
+
+
+class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    login_url = "adminLogin"
+    raise_exception = True
+
+    def context_creator(self):
+        paginator = Paginator(LogEntry.objects.order_by("-action_time"), PAGINATE_NO)
+        page = self.request.GET.get("page", 1)
+        try:
+            objects_list = paginator.page(page)
+        except PageNotAnInteger:
+            objects_list = paginator.page(1)
+        except EmptyPage:
+            objects_list = paginator.page(paginator.num_pages)
+        context = dict(
+            allRecords=objects_list,
+        )
+        context["title"] = SITE_NAME + " - " + "Changelog"
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.context_creator()
+        return render(request, "adminpanel/listlog.html", context)

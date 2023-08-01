@@ -1,4 +1,5 @@
 from django import template
+from django.contrib.auth.models import User
 
 register = template.Library()
 
@@ -17,3 +18,15 @@ def getListFromQueryDict(querydict, itemToGet):
 @register.filter()
 def querysetToPrimaryKey(queryset):
     return list(map(lambda x: x.pk, queryset))
+
+@register.filter
+def user_check(value):
+    return value.content_type.model_class() is User
+
+@register.filter
+def obj_exists(value):
+    return value.content_type.model_class().objects.filter(pk=value.object_id).exists()
+
+@register.filter
+def model_name(value):
+    return value.name.title()
