@@ -13,13 +13,15 @@ from django.forms import modelform_factory
 
 from .mixins import SuperuserRequiredMixin
 from .forms import QuestionForm, OptionForm, LifelineForm, CategoryForm
-from .viewsExtra import (pk_checker,
-                         safe_pk_list_converter,
-                         safe_object_delete_log,
-                         pretty_change_message,
-                         log_addition,
-                         log_change,
-                         log_deletion,)
+from .viewsExtra import (
+    pk_checker,
+    safe_pk_list_converter,
+    safe_object_delete_log,
+    pretty_change_message,
+    log_addition,
+    log_change,
+    log_deletion,
+)
 from game.models import Session, Lifeline, Category, Question, Option
 
 import operator
@@ -56,6 +58,7 @@ SITE_NAME = "AdminPanel"
 
 # Test site
 
+
 def testSite(request):
     return render(
         request,
@@ -70,7 +73,9 @@ def testSite(request):
         },
     )
 
+
 # Production sites
+
 
 class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
@@ -99,8 +104,13 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
         }
         context.update(self.kwargs)
         context["title"] = SITE_NAME + " - " + context["recordVerboseName"]
-        breadcrumbs = [["Admin", addressOfPages["adminMainPage"]], [smallcaseDB.title()]]
-        context["breadcrumbs"] = list(map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1))))
+        breadcrumbs = [
+            ["Admin", addressOfPages["adminMainPage"]],
+            [smallcaseDB.title()],
+        ]
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
         return context
 
     def get(self, request, *args, **kwargs):
@@ -125,18 +135,12 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
         if (
             request.POST.get("admin-action") == "Delete selected"
             and given_pk
-            and (
-                set(safe_given_pk) - set(map(lambda y: y.key_primary, query))
-                == set()
-            )
+            and (set(safe_given_pk) - set(map(lambda y: y.key_primary, query)) == set())
         ) or (
             request.POST.get("admin-action") == "Delete all in view"
             and request.POST.get("allcheck")
             and given_pk
-            and (
-                set(safe_given_pk) - set(map(lambda y: y.key_primary, query))
-                == set()
-            )
+            and (set(safe_given_pk) - set(map(lambda y: y.key_primary, query)) == set())
             and len(set(safe_given_pk)) == PAGINATE_NO
         ):
             object_name = (
@@ -144,7 +148,9 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
                 if len(given_pk) == 1
                 else model._meta.verbose_name_plural
             )
-            action = list(map(lambda x: safe_object_delete_log(request, model, x), safe_given_pk))
+            action = list(
+                map(lambda x: safe_object_delete_log(request, model, x), safe_given_pk)
+            )
             deleted = sum(list(map(lambda x: x[0], action)))
             messages.success(
                 request,
@@ -203,13 +209,20 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
             "recordVerboseNamePlural": model._meta.verbose_name_plural,
         }
         context.update(self.kwargs)
-        context["title"] = SITE_NAME + " - Create " + context["recordVerboseName"].title()
+        context["title"] = (
+            SITE_NAME + " - Create " + context["recordVerboseName"].title()
+        )
         breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]], 
-            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db":smallcaseDB})], 
-            [f"Create {smallcaseDB.title()}", addressOfPages["adminDBObjectCreate"]({"db":smallcaseDB})]
+            ["Admin", addressOfPages["adminMainPage"]],
+            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
+            [
+                f"Create {smallcaseDB.title()}",
+                addressOfPages["adminDBObjectCreate"]({"db": smallcaseDB}),
+            ],
         ]
-        context["breadcrumbs"] = list(map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1))))
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
         return context
 
     def get(self, request, *args, **kwargs):
@@ -217,11 +230,7 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
         if smallcaseDB not in allowedModelNames:
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         model = modelDict[smallcaseDB]
-        setattr(
-            AdminDBObjectCreate,
-            "form_class",
-            modelFormDict[smallcaseDB]
-        )
+        setattr(AdminDBObjectCreate, "form_class", modelFormDict[smallcaseDB])
         context = self.context_creator()
         return render(request, "adminpanel/objectCreate.html", context)
 
@@ -294,13 +303,18 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         context.update(self.kwargs)
         context["title"] = SITE_NAME + " - View " + context["recordVerboseName"].title()
         breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]], 
-            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db":smallcaseDB})], 
-            [f"View {smallcaseDB.title()}", addressOfPages["adminDBObjectCreate"]({"db":smallcaseDB})]
+            ["Admin", addressOfPages["adminMainPage"]],
+            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
+            [
+                f"View {smallcaseDB.title()}",
+                addressOfPages["adminDBObjectCreate"]({"db": smallcaseDB}),
+            ],
         ]
-        context["breadcrumbs"] = list(map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1))))
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
         return context
-    
+
     def get(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
         if smallcaseDB not in allowedModelNames:
@@ -308,12 +322,12 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
+        setattr(AdminDBObjectCreate, "form_class", modelFormDict[smallcaseDB])
         setattr(
-            AdminDBObjectCreate,
-            "form_class",
-            modelFormDict[smallcaseDB]
+            AdminDBObjectChange,
+            "instance",
+            model.objects.get(pk=int(pk) if pk.isnumeric() else pk),
         )
-        setattr(AdminDBObjectChange, "instance", model.objects.get(pk=int(pk) if pk.isnumeric() else pk))
         context = self.context_creator()
         return render(request, "adminpanel/objectView.html", context)
 
@@ -324,16 +338,16 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
-        
+
         if request.POST.get("cancel"):
             return redirect("adminListDB", db=smallcaseDB)
-        
+
         form = self.get_form()
         if not form.is_valid():
             messages.warning(request, "Kindly check your input before submitting.")
             context = self.context_creator()
             return render(request, "adminpanel/objectView.html", context)
-        
+
         if (request.POST.get("save") or request.POST.get("save_continue")) and (
             len(form.changed_data) != 0
         ):
@@ -355,7 +369,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
             ) """
 
         return redirect("adminDBList", db=smallcaseDB)
-    
+
 
 class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
     pass

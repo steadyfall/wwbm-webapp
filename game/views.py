@@ -332,7 +332,7 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                     level=sessionObj.current_level.level_number,
                     permanent=True,
                 )
-            
+
                 # Previous method of going to intermediary page and giving option to user to quit
                 """ return redirect(
                     "statusAfterQn",

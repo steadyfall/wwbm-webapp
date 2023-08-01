@@ -37,6 +37,7 @@ def fifty50(question_id, session_id):
     random.shuffle(newOptions)
     return newOptions
 
+
 def audiencePoll(question_id, session_id):
     general_procedure(mappedLifelines[AUDIENCE_POLL], question_id, session_id)
     question = Question.objects.get(pk=question_id)
