@@ -2,7 +2,7 @@ from django.urls import path
 from . import views as adminV
 
 urlpatterns = [
-    path("", adminV.testSite, name="adminMainPage"),
+    path("", adminV.AdminMainPage.as_view(), name="adminMainPage"),
     path("test/", adminV.testSite, name="test"),
     path("apps/<str:db>/", adminV.AdminListDB.as_view(), name="adminListDB"),
     path("logs/", adminV.ShowLogDB.as_view(), name="adminListLogs"),

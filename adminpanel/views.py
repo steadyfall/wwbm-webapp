@@ -7,6 +7,7 @@ from django.db.models import F
 from django.db import models
 from django.views.generic import View
 from django.contrib.admin.options import construct_change_message
+from django.contrib.auth.models import User
 from django.forms import ModelForm
 from django.forms import modelform_factory
 from django.contrib.admin.models import LogEntry
@@ -22,8 +23,10 @@ from .viewsExtra import (
     log_addition,
     log_change,
     log_deletion,
+    daterange,
 )
-from game.models import Session, Lifeline, Category, Question, Option
+from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
+import datetime
 
 import operator
 
@@ -64,19 +67,131 @@ SITE_NAME = "AdminPanel"
 def testSite(request):
     return render(
         request,
-        "adminpanel/listdb.html",
-        {
-            "allRecords": Session.objects.all().annotate(
-                key_primary=F(Session._meta.pk.name)
-            ),
-            "recordVerboseName": Session._meta.verbose_name,
-            "recordVerboseNamePlural": Session._meta.verbose_name_plural,
-            "lowerdb": "session",
-        },
+        "adminpanel/index.html",
+        {},
     )
 
 
 # Production sites
+
+
+class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    login_url = "admin_signin"
+    raise_exception = True
+
+    def context_creater(self):
+        recent_log = list(LogEntry.objects.order_by("-action_time")[:12])
+        total_question_count = Question.objects.all().count()
+        daily_question_count = Question.objects.filter(
+            date_added__gte=datetime.date.today()
+        ).count()
+        total_session_count = Session.objects.all().count()
+        daily_session_count = Session.objects.filter(
+            date_created__gte=datetime.date.today()
+        ).count()
+        top_30_highest_scores = list(
+            map(
+                lambda x: x.score,
+                Session.objects.order_by("-score", "-date_created")[:30],
+            )
+        )
+        highest_score = f"{top_30_highest_scores[0]:,}"
+        total_user_count = User.objects.all().count()
+        daily_user_count = User.objects.filter(
+            date_joined__gte=datetime.date.today()
+        ).count()
+        total_category = Category.objects.all()
+        active_users_count = User.objects.filter(is_active=True).count()
+
+        percent_of_daily_threshold = round(((daily_question_count) / 10) * 100)
+        more_than_ten_sessions = daily_session_count / 10
+        category_with_most_qs = sorted(
+            list(map(lambda x: (x, x.all_questions.all().count()), total_category)),
+            reverse=True,
+            key=lambda y: y[1],
+        )[0][0]
+
+        # Chart data
+        date_list = []
+        session_list = []
+        session_user_list = []
+        session_easy_list = []
+        session_medium_list = []
+        session_hard_list = []
+        score_list = []
+        start_date = datetime.date.today() - datetime.timedelta(15)
+        end_date = datetime.date.today() + datetime.timedelta(1)
+        for date in daterange(start_date, end_date):
+            session_query = Session.objects.filter(date_created__gte=date).filter(
+                date_created__lte=date + datetime.timedelta(1)
+            )
+            session_user_query = session_query.values("session_user").distinct()
+            questionorder_dateQuery = QuestionOrder.objects.filter(
+                date_chosen__gte=date
+            ).filter(date_chosen__lte=date + datetime.timedelta(1))
+            session_easy_query = questionorder_dateQuery.filter(
+                question__difficulty=Question.EASY
+            )
+            session_medium_query = questionorder_dateQuery.filter(
+                question__difficulty=Question.EASY
+            )
+            session_hard_query = questionorder_dateQuery.filter(
+                question__difficulty=Question.EASY
+            )
+            score_query = (
+                Session.objects.filter(date_created__gte=date)
+                .filter(date_created__lte=date + datetime.timedelta(1))
+                .order_by("-score")
+            )
+            date_list.append(date.strftime("%d-%m"))
+            session_list.append(session_query.count())
+            session_user_list.append(session_user_query.count())
+            session_easy_list.append(session_easy_query.count())
+            session_medium_list.append(session_medium_query.count())
+            session_hard_list.append(session_hard_query.count())
+            score_list.append(score_query[0].score if score_query.exists() else 0)
+        active_users_labels = [i.username for i in User.objects.all()]
+        active_users_activity = [
+            i.initiated_sessions.all().count() for i in User.objects.all()
+        ]
+
+        context = dict(
+            recent_log=recent_log,
+            total_question_count=total_question_count,
+            daily_question_count=daily_question_count,
+            total_session_count=total_session_count,
+            daily_session_count=daily_session_count,
+            top_30_highest_scores=top_30_highest_scores,
+            highest_score=highest_score,
+            total_user_count=total_user_count,
+            daily_user_count=daily_user_count,
+            total_category_count=f"{total_category.count():,}",
+            active_users_count=active_users_count,
+            percent_of_daily_threshold=percent_of_daily_threshold,
+            more_than_ten_sessions=more_than_ten_sessions,
+            category_with_most_qs=f"""<a style="text-decoration: none;" href="/admin/apps/category/object/{category_with_most_qs.pk}/" title="{category_with_most_qs.name}">This cat.</a>""",
+            date_list=date_list,
+            session_list=session_list,
+            session_user_list=session_user_list,
+            session_easy_list=session_easy_list,
+            session_medium_list=session_medium_list,
+            session_hard_list=session_hard_list,
+            score_list=score_list,
+            active_users_labels=active_users_labels,
+            active_users_activity=active_users_activity,
+        )
+        breadcrumbs = [
+            ["Admin", addressOfPages["adminMainPage"]],
+            [[], []],
+        ]
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.context_creater()
+        return render(request, "adminpanel/index.html", context)
 
 
 class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
