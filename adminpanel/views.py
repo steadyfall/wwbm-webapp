@@ -307,7 +307,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
             [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
             [
                 f"View {smallcaseDB.title()}",
-                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk":pk}),
+                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
             ],
         ]
         context["breadcrumbs"] = list(
@@ -362,9 +362,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
             return redirect("adminDBObject", db=smallcaseDB, pk=pk)
 
         if request.POST.get("delete"):
-            return redirect(
-                "adminDBObjectDelete", db=smallcaseDB, pk=pk
-            )
+            return redirect("adminDBObjectDelete", db=smallcaseDB, pk=pk)
 
         return redirect("adminListDB", db=smallcaseDB)
 
@@ -378,28 +376,30 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
     def get_url_kwargs(self):
         db, pk = str(self.kwargs["db"]), str(self.kwargs["pk"])
         return (db, pk)
-    
+
     def context_creator(self):
         smallcaseDB, pk = self.get_url_kwargs()
         model = modelDict[smallcaseDB]
         obj = model.objects.get(pk=pk)
         context = {
-            "record":obj,
+            "record": obj,
             "recordVerboseName": model._meta.verbose_name,
             "recordVerboseNamePlural": model._meta.verbose_name_plural,
         }
         context.update(self.kwargs)
-        context["title"] = SITE_NAME + " - Confirm deleting " + context["recordVerboseName"] + "?"
+        context["title"] = (
+            SITE_NAME + " - Confirm deleting " + context["recordVerboseName"] + "?"
+        )
         breadcrumbs = [
             ["Admin", addressOfPages["adminMainPage"]],
             [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
             [
                 f"View {smallcaseDB.title()}",
-                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk":pk}),
+                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
             ],
             [
                 f"Delete '{obj}'",
-                addressOfPages["adminDBObjectDelete"]({"db": smallcaseDB, "pk":pk}),
+                addressOfPages["adminDBObjectDelete"]({"db": smallcaseDB, "pk": pk}),
             ],
         ]
         context["breadcrumbs"] = list(
@@ -416,7 +416,7 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
             return redirect("adminListDB", db=smallcaseDB)
         context = self.context_creator()
         return render(request, "adminpanel/objectDelete.html", context)
-    
+
     def post(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
         if smallcaseDB not in allowedModelNames:
