@@ -8,7 +8,7 @@
     {% if title %}
     <title>{{ title }}</title>
     {% else %}
-    <title>Admin Panel</title>
+    <title>AdminPanel</title>
     {% endif %}
     <!-- Tabler -->
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
@@ -124,7 +124,7 @@
                                 </a>
                                 <div class="dropdown-menu">
                                     <div class="dropend">
-                                        <a class="dropdown-item" href="#" role="button">
+                                        <a class="dropdown-item" href="{% url 'adminListDB' 'lifeline'%}" role="button">
                                             Lifelines
                                         </a>
                                         <!-- <div class="dropdown-menu">
@@ -143,31 +143,31 @@
                                         </div> -->
                                     </div>
                                     <div class="dropend">
-                                        <a class="dropdown-item" href="#" role="button">
+                                        <a class="dropdown-item" href="{% url 'adminListDB' 'category'%}" role="button">
                                             Categories
                                         </a>
                                     </div>
                                     <div class="dropend">
-                                        <a class="dropdown-item" href="#" role="button">
+                                        <a class="dropdown-item" href="{% url 'adminListDB' 'option'%}" role="button">
                                             Options
                                         </a>
                                     </div>
                                     <div class="dropend">
-                                        <a class="dropdown-item" href="#" role="button">
+                                        <a class="dropdown-item" href="{% url 'adminListDB' 'question'%}" role="button">
                                             Questions
                                         </a>
                                     </div>
-                                    <div class="dropend">
+                                    <!-- <div class="dropend">
                                         <a class="dropdown-item" href="#" role="button">
                                             Sessions (read-only)
                                         </a>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </li>
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a class="nav-link" href="#">
                                     <span
-                                        class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/checkbox -->
+                                        class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                             class="icon icon-tabler icon-tabler-building-community" width="24"
                                             height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
@@ -186,9 +186,9 @@
                                         About
                                     </span>
                                 </a>
-                            </li>
+                            </li> -->
                             <li class="nav-item">
-                                <a class="nav-link" href="#">
+                                <a class="nav-link" href="{% url 'adminListLogs' %}">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                             class="icon icon-tabler icon-tabler-user" width="24" height="24"
@@ -244,7 +244,8 @@
                 <div class="row text-center align-items-center flex-row-reverse">
                     <div class="col-lg-auto ms-lg-auto">
                         <ul class="list-inline list-inline-dots mb-0">
-                            <li class="list-inline-item"></li>
+                            <li class="list-inline-item"><a href="{% url 'adminMainPage' %}" target="_blank"
+                                    class="link-secondary" rel="noopener"></a>Home</li>
                             <li class="list-inline-item"><a href="{% url 'adminLogout' %}" target="_blank"
                                     class="link-secondary" rel="noopener">Logout</a></li>
                         </ul>

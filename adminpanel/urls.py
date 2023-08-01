@@ -5,6 +5,7 @@ urlpatterns = [
     path("", adminV.testSite, name="adminMainPage"),
     path("test/", adminV.testSite, name="test"),
     path("apps/<str:db>/", adminV.AdminListDB.as_view(), name="adminListDB"),
+    path("logs/", adminV.testSite, name="adminListLogs"),
     path(
         "apps/<str:db>/object/<pk>/",
         adminV.AdminDBObjectChange.as_view(),
