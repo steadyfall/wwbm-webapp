@@ -21,12 +21,14 @@ def pk_checker(pk: int | str, model: models.Model) -> bool:
     if isinstance(model._meta.pk, BigAutoField):
         return pk.isdigit()
     elif isinstance(model._meta.pk, CharField):
-        RANDOM_STRING_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        RANDOM_STRING_CHARS = (
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        )
         pattern = "[{}]".format(RANDOM_STRING_CHARS) + "{8}"
         return re.fullmatch(pattern, pk) is not None
     else:
         return pk.isdigit()
-    
+
 
 def safe_pk_list_converter(pk_list: list, model: models.Model) -> list:
     """
@@ -38,7 +40,6 @@ def safe_pk_list_converter(pk_list: list, model: models.Model) -> list:
         return list(map(lambda x: x if pk_checker(x, model) else 0, pk_list))
     else:
         return list(map(lambda x: int(x) if pk_checker(x, model) else 0, pk_list))
-
 
 
 def widget_list_generator(model):

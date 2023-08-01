@@ -18,8 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('djadmin/', admin.site.urls),
-    path('admin/', include('adminpanel.urls')),
-    path('', include('game.urls')),
-    path('auth/', include('auth.urls'))
+    path("djadmin/", admin.site.urls),
+    path("admin/", include("adminpanel.urls")),
+    path("", include("game.urls")),
+    path("auth/", include("auth.urls")),
 ]
