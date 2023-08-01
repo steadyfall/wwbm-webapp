@@ -7,13 +7,35 @@
         <!-- Page header -->
         <div class="page-header d-print-none">
             <div class="container-xl">
-                <div class="row g-2 align-items-center">
-                    <div class="col">
-                        <!-- Page pre-title -->
-                        <div class="page-pretitle" style="font-size: larger;">
-                            Logs
-                        </div>
-                    </div>
+                <div class="row">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            {% for numbering, obj in breadcrumbs %}
+                            {% if numbering == breadcrumbs|length %}
+                            <li class="breadcrumb-item active" aria-current="page">{{ obj|slicer:0 }}</li>
+                            {% else %}
+                            <li class="breadcrumb-item"><a href="{{ obj|slicer:1 }}">{{ obj|slicer:0 }}</a></li>
+                            {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </nav>
+                    <!-- <div class="col-3 mt-3 ms-auto">
+                        <form method="GET" action="#" autocomplete="off" novalidate>
+                            <div class="input-icon ms-5 d-inline-block">
+                                <span class="input-icon-addon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                                        <path d="M21 21l-6 -6" />
+                                    </svg>
+                                </span>
+                                <input type="text" name="search" class="form-control" placeholder="Search record here."
+                                    aria-label="Search in website">
+                            </div>
+                        </form>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -119,8 +141,8 @@
                             {% for num in allRecords.paginator.page_range %}
                             {% if allRecords.number == num %}
                             <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                            {% elif num > allRecords.number|add:'-2' and num < allRecords.number|add:'2' %} <li class="page-item"><a
-                                    class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                            {% elif num > allRecords.number|add:'-2' and num < allRecords.number|add:'2' %} <li
+                                class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
                                 {% endif %}
                                 {% endfor %}
                                 {% if allRecords.has_next %}

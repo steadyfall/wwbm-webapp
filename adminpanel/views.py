@@ -47,6 +47,7 @@ addressOfPages = dict(
     adminMainPage=reverse_lazy("adminMainPage"),
     test=reverse_lazy("test"),
     adminListDB=lambda x: reverse_lazy("adminListDB", kwargs=x),
+    adminListLogs=reverse_lazy("adminListLogs"),
     adminDBObject=lambda x: reverse_lazy("adminDBObject", kwargs=x),
     adminDBObjectCreate=lambda x: reverse_lazy("adminDBObjectCreate", kwargs=x),
     adminDBObjectDelete=lambda x: reverse_lazy("adminDBObjectDelete", kwargs=x),
@@ -456,6 +457,13 @@ class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
             allRecords=objects_list,
         )
         context["title"] = SITE_NAME + " - " + "Changelog"
+        breadcrumbs = [
+            ["Admin", addressOfPages["adminMainPage"]],
+            ["Logs", addressOfPages["adminListLogs"]],
+        ]
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
         return context
 
     def get(self, request, *args, **kwargs):
