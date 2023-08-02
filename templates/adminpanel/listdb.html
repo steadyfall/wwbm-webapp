@@ -69,6 +69,7 @@
                                     <th>{{ recordVerboseName }}</th>
                                     <th class="w-1"></th>
                                     <th class="w-1"></th>
+                                    <th class="w-1"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -83,6 +84,9 @@
                                     </td>
                                     <td><span class="badge bg-red"><a style="text-decoration: none; color: #fff;"
                                                 href="{% url 'adminDBObjectDelete' db record.key_primary %}">Delete</a></span>
+                                    </td>
+                                    <td><span class="badge bg-purple"><a style="text-decoration: none; color: #fff;"
+                                                href="{% url 'adminDBObjectHistory' db record.key_primary %}">History</a></span>
                                     </td>
                                 </tr>
                                 {% endfor %}
