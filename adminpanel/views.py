@@ -355,7 +355,10 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         smallcaseDB = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames:
+        if smallcaseDB not in allowedModelNames or smallcaseDB in (
+            "session",
+            "lifeline",
+        ):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         model = modelDict[smallcaseDB]
         setattr(AdminDBObjectCreate, "form_class", modelFormDict[smallcaseDB])
@@ -364,7 +367,10 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         smallcaseDB = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames:
+        if smallcaseDB not in allowedModelNames or smallcaseDB in (
+            "session",
+            "lifeline",
+        ):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         if request.POST.get("cancel"):
             return redirect("adminListDB", db=smallcaseDB)
@@ -445,7 +451,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames:
+        if smallcaseDB not in allowedModelNames or smallcaseDB in ("session"):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
@@ -461,7 +467,10 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames:
+        if smallcaseDB not in allowedModelNames or smallcaseDB in (
+            "session",
+            "lifeline",
+        ):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
@@ -537,7 +546,10 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames:
+        if smallcaseDB not in allowedModelNames or smallcaseDB in (
+            "session",
+            "lifeline",
+        ):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
@@ -547,7 +559,10 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames:
+        if smallcaseDB not in allowedModelNames or smallcaseDB in (
+            "session",
+            "lifeline",
+        ):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
