@@ -1,20 +1,24 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, HttpResponseRedirect, redirect
 from django.contrib import messages
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse, reverse_lazy
-from django.db.models import F
-from django.db import models
+
 from django.views.generic import View
-from django.contrib.admin.options import construct_change_message
-from django.contrib.auth.models import User
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+from .forms import QuestionForm, OptionForm, LifelineForm, CategoryForm
 from django.forms import ModelForm
 from django.forms import modelform_factory
-from django.contrib.admin.models import LogEntry
 
+from django.db import models
+from django.db.models import F
+from django.contrib.auth.models import User
+from django.contrib.admin.models import LogEntry
+from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
 
 from .mixins import SuperuserRequiredMixin
-from .forms import QuestionForm, OptionForm, LifelineForm, CategoryForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from django.contrib.admin.options import construct_change_message
 from .viewsExtra import (
     pk_checker,
     safe_pk_list_converter,
@@ -26,10 +30,8 @@ from .viewsExtra import (
     daterange,
     get_content_type_for_model,
 )
-from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
 import datetime
-
-import operator
+from operator import itemgetter
 
 
 modelDict: dict[str, models.Model] = {
@@ -57,7 +59,7 @@ addressOfPages = dict(
     adminDBObjectDelete=lambda x: reverse_lazy("adminDBObjectDelete", kwargs=x),
     adminDBObjectHistory=lambda x: reverse_lazy("adminDBObjectHistory", kwargs=x),
 )
-after1stElement = operator.itemgetter(slice(1, None))
+after1stElement = itemgetter(slice(1, None))
 
 PAGINATE_NO = 12
 SITE_NAME = "AdminPanel"
