@@ -21,4 +21,9 @@ urlpatterns = [
         adminV.AdminDBObjectDelete.as_view(),
         name="adminDBObjectDelete",
     ),
+    path(
+        "apps/<str:db>/object/<pk>/history/",
+        adminV.AdminDBObjectHistory.as_view(),
+        name="adminDBObjectHistory",
+    ),
 ]

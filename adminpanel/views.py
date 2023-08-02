@@ -24,6 +24,7 @@ from .viewsExtra import (
     log_change,
     log_deletion,
     daterange,
+    get_content_type_for_model,
 )
 from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
 import datetime
@@ -54,6 +55,7 @@ addressOfPages = dict(
     adminDBObject=lambda x: reverse_lazy("adminDBObject", kwargs=x),
     adminDBObjectCreate=lambda x: reverse_lazy("adminDBObjectCreate", kwargs=x),
     adminDBObjectDelete=lambda x: reverse_lazy("adminDBObjectDelete", kwargs=x),
+    adminDBObjectHistory=lambda x: reverse_lazy("adminDBObjectHistory", kwargs=x),
 )
 after1stElement = operator.itemgetter(slice(1, None))
 
@@ -195,6 +197,7 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
         context["breadcrumbs"] = list(
             map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
         )
+        context.update(self.kwargs)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -563,6 +566,77 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return redirect("adminListDB", db=smallcaseDB)
 
 
+class AdminDBObjectHistory(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    login_url = "adminLogin"
+    raise_exception = False
+
+    def get_url_kwargs(self):
+        db, pk = str(self.kwargs["db"]), str(self.kwargs["pk"])
+        return (db, pk)
+
+    def context_creator(self):
+        smallcaseDB, pk = self.get_url_kwargs()
+        model = modelDict[smallcaseDB]
+
+        obj = model.objects.all()[0]
+        if model.objects.filter(pk=pk).exists():
+            obj = model.objects.get(pk=pk)
+
+        query = LogEntry.objects.filter(
+            content_type_id=get_content_type_for_model(obj).pk, object_id=pk
+        ).order_by("-action_time")
+
+        if query.exists():
+            paginator = Paginator(query, PAGINATE_NO)
+            page = self.request.GET.get("page", 1)
+            try:
+                objects_list = paginator.page(page)
+            except PageNotAnInteger:
+                objects_list = paginator.page(1)
+            except EmptyPage:
+                objects_list = paginator.page(paginator.num_pages)
+        else:
+            objects_list = None
+
+        context = dict(
+            record=obj,
+            recordVerboseName=model._meta.verbose_name,
+            recordVerboseNamePlural=model._meta.verbose_name_plural,
+            query=objects_list,
+            object_name=query[0].object_repr if query.exists() else str(obj),
+        )
+        context.update(self.kwargs)
+        context["title"] = (
+            SITE_NAME + " - " + "History of " + f'"{context["object_name"]}"'
+        )
+        breadcrumbs = [
+            ["Admin", addressOfPages["adminMainPage"]],
+            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
+            [
+                f"View {smallcaseDB.title()}",
+                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
+            ],
+            [
+                f"History of '{obj}'",
+                addressOfPages["adminDBObjectHistory"]({"db": smallcaseDB, "pk": pk}),
+            ],
+        ]
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        smallcaseDB, pk = self.get_url_kwargs()
+        if smallcaseDB not in allowedModelNames:
+            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+        model = modelDict[smallcaseDB]
+        if not pk_checker(pk, model):
+            return redirect("adminListDB", db=smallcaseDB)
+        context = self.context_creator()
+        return render(request, "adminpanel/objectHistory.html", context)
+
+
 class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
     raise_exception = True
@@ -579,6 +653,7 @@ class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
         context = dict(
             allRecords=objects_list,
         )
+        context.update(self.kwargs)
         context["title"] = SITE_NAME + " - " + "Changelog"
         breadcrumbs = [
             ["Admin", addressOfPages["adminMainPage"]],
