@@ -26,19 +26,24 @@
             {% csrf_token %}
             <div class="container-xl">
                 <div class="card">
+                    <div class="card-header">
+                        <h1 class="card-title">View {{ recordVerboseName|titLe }}</h1>
+                        <a class="ms-auto" href="{% url 'adminDBObjectHistory' db pk %}">
+                            <button type="button" class="btn btn-orange ms-auto">Check History</button>
+                        </a>
+                    </div>
                     <div class="card-body">
-                        <h2 class="card-title">View {{ recordVerboseName|titLe }}</h2>
                         {{ form }}
                     </div>
                     <div><br></div>
                     <div class="card-footer text-end">
-                        <button type="submit" class="btn btn-secondary" title="Cancel creating new object." name="cancel"
-                            value="1">Cancel</button>&nbsp;
-                        <button type="submit" class="btn btn-danger" title="Delete current object" name="delete"
-                            value="1">Delete</button>&nbsp;
-                        <button type="submit" class="btn btn-info" title="Save current work and continue editing"
-                            name="save_continue" value="1">Save & Continue</button>&nbsp;
-                        <button type="submit" class="btn btn-primary" title="Create new object." name="create"
+                        <button type="submit" class="btn btn-secondary ms-1" title="Cancel creating new object." name="cancel"
+                            value="1">Cancel</button>
+                        <button type="submit" class="btn btn-danger ms-1" title="Delete current object" name="delete"
+                            value="1"{% if db == 'lifeline' %}disabled{% endif %}>Delete</button>
+                        <button type="submit" class="btn btn-info ms-1" title="Save current work and continue editing"
+                            name="save_continue" value="1"{% if db == 'lifeline' %}disabled{% endif %}>Save & Continue</button>
+                        <button type="submit" class="btn btn-primary ms-1" title="Create new object." name="create"
                             value="1" {% if db == 'lifeline' %}disabled{% endif %}>Save</button>
                     </div>
                 </div>

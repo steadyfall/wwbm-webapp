@@ -83,10 +83,12 @@
                                             <button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown"
                                                 data-boundary="window">Actions</button>
                                             <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="#">History</a>
+                                                <a class="dropdown-item" href="{% url 'adminDBObjectHistory' log.content_type.name log.object_id %}">History</a>
+                                                {% if log.content_type.name != 'session' %}
                                                 {% if log|obj_exists %}
-                                                <a class="dropdown-item" href="#">Change</a>
-                                                <a class="dropdown-item" href="#">Delete</a>
+                                                <a class="dropdown-item" href="{% url 'adminDBObject' log.content_type.name log.object_id %}">Change</a>
+                                                <a class="dropdown-item" href="{% url 'adminDBObjectDelete' log.content_type.name log.object_id %}">Delete</a>
+                                                {% endif %}
                                                 {% endif %}
                                             </div>
                                             {% endif %}
