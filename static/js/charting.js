@@ -152,7 +152,7 @@ const config_sessionsTotal = (date_list, session_list, session_user_list, sessio
                 label: 'MEDIUM questions asked',
                 data: session_medium_list,
                 backgroundColor: '#5318db'
-            },{
+            }, {
                 label: 'HARD questions asked',
                 data: session_hard_list,
                 backgroundColor: '#db1883'
@@ -163,10 +163,10 @@ const config_sessionsTotal = (date_list, session_list, session_user_list, sessio
             legend: false,
             scales: {
                 xAxes: [{
-                    stacked: true // this should be set to make the bars stacked
+                    stacked: false // this should be set to make the bars stacked
                 }],
                 yAxes: [{
-                    stacked: true // this also..
+                    stacked: false // this also..
                 }]
             },
             maintainAspectRatio: true,
