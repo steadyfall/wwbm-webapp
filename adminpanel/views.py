@@ -113,7 +113,15 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
         )[0][0]
 
         # Chart data
-        date_list, session_list, session_user_list, session_easy_list, session_medium_list, session_hard_list, score_list = [list() for _ in range(7)]
+        (
+            date_list,
+            session_list,
+            session_user_list,
+            session_easy_list,
+            session_medium_list,
+            session_hard_list,
+            score_list,
+        ) = [list() for _ in range(7)]
         start_date = datetime.date.today() - datetime.timedelta(15)
         end_date = datetime.date.today() + datetime.timedelta(1)
         for date in daterange(start_date, end_date):
