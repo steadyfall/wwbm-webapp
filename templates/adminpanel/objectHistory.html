@@ -1,0 +1,167 @@
+{% extends "adminpanel/base.html" %}
+{% load utility %}
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        {% for numbering, obj in breadcrumbs %}
+                        {% if numbering == breadcrumbs|length %}
+                        <li class="breadcrumb-item active" aria-current="page">{{ obj|slicer:0 }}</li>
+                        {% else %}
+                        <li class="breadcrumb-item"><a href="{{ obj|slicer:1 }}">{{ obj|slicer:0 }}</a></li>
+                        {% endif %}
+                        {% endfor %}
+                    </ol>
+                </nav>
+                <!-- <div class="col-3 mt-3 ms-auto">
+                    <form method="GET" action="#" autocomplete="off" novalidate>
+                        <div class="input-icon ms-5 d-inline-block">
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                                    <path d="M21 21l-6 -6" />
+                                </svg>
+                            </span>
+                            <input type="text" name="search" class="form-control" placeholder="Search record here."
+                                aria-label="Search in website">
+                        </div>
+                    </form>
+                </div> -->
+            </div>
+        </div>
+    </div>
+    <!-- Page body -->
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
+                {% if query %}
+                <div class="table-responsive">
+                    <table class="table table-vcenter">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Time</th>
+                                <th>Change</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in query %}
+                            <tr>
+                                <td>
+                                    {{ log.user.username }}
+                                </td>
+                                <td>
+                                    {{ log.action_time|date:"d M Y H:i:s" }}
+                                </td>
+                                <td>
+                                    {{ log.get_change_message }}
+                                </td>
+                                <td>
+                                    {% if log.is_addition %}
+                                    <span class="badge bg-green me-1"></span> Added
+                                    {% elif log.is_change %}
+                                    <span class="badge bg-orange me-1"></span> Changed
+                                    {% elif log.is_deletion %}
+                                    <span class="badge bg-red me-1"></span> Deleted
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <br>
+                <div class="row" style="margin-top: 25px;">
+                    No records associated with this object.
+                </div>
+                {% endif %}
+                {% if query %}
+                <div class="d-flex align-items-center">
+                    <p class="m-0 text-muted">
+                        Showing 
+                        <span>
+                            {{ query.start_index }}
+                        </span> to 
+                        <span>
+                            {{ query.end_index }}
+                        </span> of 
+                        <span>
+                            {{ query.paginator.count }}
+                        </span> entries
+                    </p>
+                    {% if query.has_other_pages %}
+                    <ul class="pagination m-0 ms-auto">
+                        {% if query.has_previous %}
+                        <li class="page-item {% if query.has_previous %}{% else %}disabled{% endif %}">
+                            <a class="page-link" href="?page={{ query.previous_page_number }}" tabindex="-1" aria-disabled="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M15 6l-6 6l6 6" />
+                                </svg>
+                                prev
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M15 6l-6 6l6 6" />
+                                </svg>
+                                prev
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% for num in query.paginator.page_range %}
+                            {% if query.number == num %}
+                                <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                            {% elif num > query.number|add:'-2' and num < query.number|add:'2' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if query.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ query.next_page_number }}">
+                                next
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M9 6l6 6l-6 6" />
+                                </svg>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">
+                                next
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M9 6l6 6l-6 6" />
+                                </svg>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
