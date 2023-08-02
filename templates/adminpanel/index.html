@@ -153,7 +153,10 @@
                                 <div class="h1 mb-3 me-2">{{ active_users_count }}</div>
                                 <div class="me-auto">
                                     <span
-                                        class="d-inline-flex align-items-center lh-1 {% if percent_of_active_users == 0 %} text-yellow {% elif percent_of_active_users < 20 %} text-red {% else %} text-green {% endif %}">
+                                        class="d-inline-flex align-items-center lh-1 
+                                                {% if percent_of_active_users == 0 %} text-yellow 
+                                                {% elif percent_of_active_users < 20 %} text-red 
+                                                {% else %} text-green {% endif %}">
                                         {{ percent_of_active_users }}%
                                         <!-- Download SVG icon from http://tabler-icons.io/i/trending-up -->
                                         {% if percent_of_active_users == 0 %}
