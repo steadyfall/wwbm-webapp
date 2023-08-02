@@ -104,6 +104,7 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
         active_users_count = User.objects.filter(is_active=True).count()
 
         percent_of_daily_threshold = round(((daily_question_count) / 10) * 100)
+        percent_of_active_users = round((active_users_count / total_user_count) * 100)
         more_than_ten_sessions = daily_session_count / 10
         category_with_most_qs = sorted(
             list(map(lambda x: (x, x.all_questions.all().count()), total_category)),
@@ -112,13 +113,7 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
         )[0][0]
 
         # Chart data
-        date_list = []
-        session_list = []
-        session_user_list = []
-        session_easy_list = []
-        session_medium_list = []
-        session_hard_list = []
-        score_list = []
+        date_list, session_list, session_user_list, session_easy_list, session_medium_list, session_hard_list, score_list = [list() for _ in range(7)]
         start_date = datetime.date.today() - datetime.timedelta(15)
         end_date = datetime.date.today() + datetime.timedelta(1)
         for date in daterange(start_date, end_date):
@@ -133,10 +128,10 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
                 question__difficulty=Question.EASY
             )
             session_medium_query = questionorder_dateQuery.filter(
-                question__difficulty=Question.EASY
+                question__difficulty=Question.MEDIUM
             )
             session_hard_query = questionorder_dateQuery.filter(
-                question__difficulty=Question.EASY
+                question__difficulty=Question.HARD
             )
             score_query = (
                 Session.objects.filter(date_created__gte=date)
@@ -168,8 +163,13 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
             total_category_count=f"{total_category.count():,}",
             active_users_count=active_users_count,
             percent_of_daily_threshold=percent_of_daily_threshold,
+            percent_of_active_users=percent_of_active_users,
             more_than_ten_sessions=more_than_ten_sessions,
-            category_with_most_qs=f"""<a style="text-decoration: none;" href="/admin/apps/category/object/{category_with_most_qs.pk}/" title="{category_with_most_qs.name}">This cat.</a>""",
+            category_with_most_qs=f"""\
+                                <a style="text-decoration: none;" \
+                                href="{reverse_lazy("adminDBObject", kwargs={'db':'category', 'pk':category_with_most_qs.pk})}" \
+                                title="{category_with_most_qs.name}">\
+                                This cat.</a>""",
             date_list=date_list,
             session_list=session_list,
             session_user_list=session_user_list,
