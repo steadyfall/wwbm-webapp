@@ -218,7 +218,11 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
     def context_creator(self):
         smallcaseDB = self.get_url_kwargs()
         model = modelDict[smallcaseDB]
-        query = model.objects.all().annotate(key_primary=F(model._meta.pk.name))
+        query = (
+            model.objects.all()
+            .annotate(key_primary=F(model._meta.pk.name))
+            .order_by("-key_primary")
+        )
         paginator = Paginator(query, PAGINATE_NO)
         page = self.request.GET.get("page", 1)
         try:
