@@ -26,4 +26,14 @@ urlpatterns = [
         adminV.AdminDBObjectHistory.as_view(),
         name="adminDBObjectHistory",
     ),
+    path(
+        "random-question/",
+        adminV.GetQuestion.as_view(),
+        name="getQuestionAPI",
+    ),
+    path(
+        "add-questions/",
+        adminV.AddQuestion.as_view(),
+        name="addQuestionAPI",
+    ),
 ]
