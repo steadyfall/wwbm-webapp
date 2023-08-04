@@ -1,6 +1,7 @@
 from django.shortcuts import render, HttpResponseRedirect, redirect
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
+from django.http import JsonResponse, HttpResponseNotAllowed
 
 from django.views.generic import View
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -11,6 +12,7 @@ from django.forms import modelform_factory
 
 from django.db import models
 from django.db.models import F
+from django.db.models.functions import Length, Trim
 from django.contrib.auth.models import User
 from django.contrib.admin.models import LogEntry
 from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
@@ -19,6 +21,8 @@ from .mixins import SuperuserRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django.contrib.admin.options import construct_change_message
+from .serializers import QuestionEncoder
+
 from .viewsExtra import (
     pk_checker,
     safe_pk_list_converter,
@@ -32,6 +36,7 @@ from .viewsExtra import (
 )
 import datetime
 from operator import itemgetter
+import json, random
 
 
 modelDict: dict[str, models.Model] = {
@@ -688,3 +693,238 @@ class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         context = self.context_creator()
         return render(request, "adminpanel/listlog.html", context)
+
+
+class GetQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    login_url = "adminLogin"
+    raise_exception = True
+
+    def get(self, request, *args, **kwargs):
+        response = {}
+        count = self.request.GET.get("count")
+        count = int(count) if count.isdigit() else 1
+        if count > 5:
+            response["error"] = "Cannot request more than 5 objects."
+            return JsonResponse(response, safe=False, encoder=QuestionEncoder)
+        data = random.sample(list(Question.objects.all()), count)
+        response["data"] = data
+        return JsonResponse(response, safe=False, encoder=QuestionEncoder)
+
+    def post(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["GET", "PUT", "DELETE"])
+
+
+class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    login_url = "adminLogin"
+    raise_exception = True
+    statuses = {
+        # status code : status message
+        0: "Error.",
+        1: "OK.",
+        2: "Rate limited.",
+        3: "Invalid/missing data.",
+        4: "Invalid/missing parameters.",
+        5: "Validate data in parameters before sending another request.",
+    }
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])
+
+    def post(self, request, *args, **kwargs):
+        final = {}
+        result = {}
+        add_questions = []
+
+        def checkQuestion(obj):
+            def checkCategory(c):
+                if isinstance(c, str):
+                    lookup = Category.objects.filter(name__icontains=c.strip())
+                    if lookup.count() > 1:
+                        return lookup.annotate(length_name=Length("name")).order_by(
+                            "length_name"
+                        )[0]
+                    elif lookup.count() == 1:
+                        return lookup[0]
+                return Category.objects.get(pk=Category.get_default_pk())
+
+            def checkQuestionText(qn):
+                if isinstance(qn, str):
+                    lookup = Question.objects.annotate(trimmed_text=Trim("text"))
+                    lookup = lookup.filter(trimmed_text__iexact=qn.strip())
+                    if lookup.count() == 0:
+                        return qn
+                return False
+
+            def checkDifficulty(diff):
+                difficulties = ("Easy", "Medium", "Hard")
+                db_difficulties = (Question.EASY, Question.MEDIUM, Question.HARD)
+                difficulties = list(map(lambda x: x.lower(), difficulties))
+                mapped_difficulties = dict(zip(difficulties, db_difficulties))
+                if isinstance(diff, str):
+                    if diff.lower() in difficulties:
+                        return mapped_difficulties[diff.lower()]
+                return False
+
+            def checkOption(opt):
+                lookup = Option.objects.annotate(trimmed_text=Trim("text"))
+                if isinstance(opt, str) or isinstance(opt, int):
+                    lookup = lookup.filter(
+                        trimmed_text__iexact=opt if isinstance(opt, str) else str(opt)
+                    )
+                    if lookup.count() == 1:
+                        return lookup[0]
+                    elif lookup.count() == 0:
+                        new_option = Option.objects.create(text=opt)
+                        return new_option
+                return False
+
+            queryResult = {}
+            if not isinstance(obj, dict):
+                queryResult["status_code"] = 3
+                queryResult["status_message"] = self.statuses[
+                    queryResult["status_code"]
+                ]
+                return queryResult
+
+            keys = tuple(obj.keys())
+            if (
+                (not "difficulty" in keys)
+                or (not "question" in keys)
+                or (not "correct_answer" in keys)
+                or (not "incorrect_answers" in keys)
+            ):
+                queryResult["status_code"] = 4
+                queryResult["status_message"] = self.statuses[
+                    queryResult["status_code"]
+                ]
+                return queryResult
+
+            cat = obj["category"] if "category" in keys else None
+            if isinstance(cat, list):
+                cat = list(set(cat))
+                if len(cat) > 0:
+                    for i in range(len(cat)):
+                        individual_cat = cat[i]
+                        converted = checkCategory(individual_cat)
+                        cat[i] = (
+                            Category.objects.get(pk=Category.get_default_pk())
+                            if not converted
+                            else converted
+                        )
+                else:
+                    cat = [Category.objects.get(pk=Category.get_default_pk())]
+                cat = list(set(cat))
+            elif isinstance(cat, str):
+                cat = [checkCategory(cat)]
+            else:
+                cat = checkCategory(cat)
+
+            qn = checkQuestionText(obj["question"])
+            difficulty = checkDifficulty(obj["difficulty"])
+            correct_option = checkOption(obj["correct_answer"])
+
+            incorrect_options = (
+                obj["incorrect_answers"]
+                if isinstance(obj["incorrect_answers"], list)
+                else False
+            )
+            if incorrect_options:
+                incorrect_options = list(set(incorrect_options))
+                if len(incorrect_options) == 3:
+                    for i in range(len(incorrect_options)):
+                        individual_option = incorrect_options[i]
+                        converted = checkOption(individual_option)
+                        if converted:
+                            incorrect_options[i] = converted
+                        else:
+                            incorrect_options = False
+                            break
+                else:
+                    incorrect_options = False
+
+            if qn and correct_option and incorrect_options and difficulty:
+                queryResult["status_code"] = 1
+                queryResult["status_message"] = self.statuses[
+                    queryResult["status_code"]
+                ]
+                add_questions.append(
+                    (
+                        dict(
+                            text=qn,
+                            difficulty=difficulty,
+                            correct_option=correct_option,
+                        ),
+                        cat,
+                        incorrect_options,
+                    )
+                )
+                return queryResult
+            else:
+                queryResult["status_code"] = 5
+                queryResult["status_message"] = self.statuses[
+                    queryResult["status_code"]
+                ]
+                return queryResult
+
+        def updateM2Mfields(obj: Question, cat, opt):
+            obj.falls_under.set(cat)
+            obj.incorrect_options.set(opt)
+
+        data = request.body.decode("utf-8")
+        received_json_data = json.loads(data)
+        if not isinstance(received_json_data, list):
+            final["success"] = 0
+            result["status_code"] = 3
+            result["status_message"] = self.statuses[result["status_code"]]
+            final["errors"] = result
+            return JsonResponse(final, safe=False, encoder=QuestionEncoder)
+
+        count = len(received_json_data)
+        if count == 0:
+            final["success"] = 0
+            result["status_code"] = 3
+            result["status_message"] = self.statuses[result["status_code"]]
+            final["errors"] = result
+            return JsonResponse(final, safe=False, encoder=QuestionEncoder)
+
+        for idx in range(len(received_json_data)):
+            received_json_data[idx] = checkQuestion(received_json_data[idx])
+
+        status_codes_after_action = list(
+            res["status_code"] for res in received_json_data
+        )
+        if len(set(status_codes_after_action)) >= 1 and 1 not in set(
+            status_codes_after_action
+        ):
+            final["success"] = 0
+            unique_status_codes = list(
+                map(
+                    lambda x: {"status_code": x, "status_message": self.statuses[x]},
+                    set(status_codes_after_action),
+                )
+            )
+            final["errors"] = unique_status_codes
+            return JsonResponse(final, safe=False, encoder=QuestionEncoder)
+
+        final["success"] = 1
+        result["status_code"] = 1
+        result["status_message"] = f"OK. Added {len(received_json_data)} questions."
+        final["messages"] = result
+        created_questions = Question.objects.bulk_create(
+            [
+                Question(
+                    who_added=User.objects.get(pk=1),
+                    question_type=Question.MULTIPLE,
+                    **create_data[0],
+                )
+                for create_data in add_questions
+            ]
+        )
+        _ = list(
+            map(
+                lambda q, data: updateM2Mfields(q, data[1], data[2]),
+                created_questions,
+                add_questions,
+            ),
+        )
+        return JsonResponse(final, safe=False, encoder=QuestionEncoder)
