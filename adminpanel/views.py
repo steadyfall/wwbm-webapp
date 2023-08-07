@@ -17,6 +17,11 @@ from django.contrib.auth.models import User
 from django.contrib.admin.models import LogEntry
 from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
 
+from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+
 from .mixins import SuperuserRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -63,6 +68,7 @@ addressOfPages = dict(
     adminDBObjectCreate=lambda x: reverse_lazy("adminDBObjectCreate", kwargs=x),
     adminDBObjectDelete=lambda x: reverse_lazy("adminDBObjectDelete", kwargs=x),
     adminDBObjectHistory=lambda x: reverse_lazy("adminDBObjectHistory", kwargs=x),
+    APIAccess=reverse_lazy("APIAccess"),
 )
 after1stElement = itemgetter(slice(1, None))
 
@@ -695,6 +701,31 @@ class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/listlog.html", context)
 
 
+class APIAccess(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    login_url = "adminLogin"
+    raise_exception = True
+
+    def context_creator(self, request):
+        token, created = Token.objects.get_or_create(user=request.user)
+        context = dict()
+        context.update(self.kwargs)
+        context["token"] = token.key
+        context["created"] = token.created
+        context["title"] = SITE_NAME + " - " + "API Token"
+        breadcrumbs = [
+            ["Admin", addressOfPages["adminMainPage"]],
+            ["API Access", addressOfPages["APIAccess"]],
+        ]
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.context_creator(request)
+        return render(request, "adminpanel/apiaccess.html", context)
+
+
 class GetQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
     raise_exception = True
@@ -714,9 +745,9 @@ class GetQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return HttpResponseNotAllowed(["GET", "PUT", "DELETE"])
 
 
-class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = True
+class AddQuestion(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     statuses = {
         # status code : status message
         0: "Error.",
@@ -728,7 +759,7 @@ class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
     }
 
     def get(self, request, *args, **kwargs):
-        return HttpResponseNotAllowed(["POST"])
+        return JsonResponse({"error": "GET request not allowed."})
 
     def post(self, request, *args, **kwargs):
         final = {}
@@ -870,14 +901,13 @@ class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
             obj.falls_under.set(cat)
             obj.incorrect_options.set(opt)
 
-        data = request.body.decode("utf-8")
-        received_json_data = json.loads(data)
+        received_json_data = request.data
         if not isinstance(received_json_data, list):
             final["success"] = 0
             result["status_code"] = 3
             result["status_message"] = self.statuses[result["status_code"]]
             final["errors"] = result
-            return JsonResponse(final, safe=False, encoder=QuestionEncoder)
+            return JsonResponse(final, safe=False, encoder=QuestionEncoder, status=400)
 
         count = len(received_json_data)
         if count == 0:
@@ -885,7 +915,7 @@ class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
             result["status_code"] = 3
             result["status_message"] = self.statuses[result["status_code"]]
             final["errors"] = result
-            return JsonResponse(final, safe=False, encoder=QuestionEncoder)
+            return JsonResponse(final, safe=False, encoder=QuestionEncoder, status=400)
 
         for idx in range(len(received_json_data)):
             received_json_data[idx] = checkQuestion(received_json_data[idx])
@@ -904,7 +934,7 @@ class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
                 )
             )
             final["errors"] = unique_status_codes
-            return JsonResponse(final, safe=False, encoder=QuestionEncoder)
+            return JsonResponse(final, safe=False, encoder=QuestionEncoder, status=409)
 
         final["success"] = 1
         result["status_code"] = 1
@@ -913,7 +943,9 @@ class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
         created_questions = Question.objects.bulk_create(
             [
                 Question(
-                    who_added=User.objects.get(pk=1),
+                    who_added=Token.objects.get(
+                        key=request.headers["Authorization"].split().pop()
+                    ).user,
                     question_type=Question.MULTIPLE,
                     **create_data[0],
                 )
@@ -927,4 +959,4 @@ class AddQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
                 add_questions,
             ),
         )
-        return JsonResponse(final, safe=False, encoder=QuestionEncoder)
+        return JsonResponse(final, safe=False, encoder=QuestionEncoder, status=201)
