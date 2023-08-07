@@ -69,6 +69,7 @@ addressOfPages = dict(
     adminDBObjectDelete=lambda x: reverse_lazy("adminDBObjectDelete", kwargs=x),
     adminDBObjectHistory=lambda x: reverse_lazy("adminDBObjectHistory", kwargs=x),
     APIAccess=reverse_lazy("APIAccess"),
+    APIDocs=reverse_lazy("APIDocs"),
 )
 after1stElement = itemgetter(slice(1, None))
 
@@ -724,6 +725,28 @@ class APIAccess(SuperuserRequiredMixin, LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         context = self.context_creator(request)
         return render(request, "adminpanel/apiaccess.html", context)
+
+
+class APIDocs(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    login_url = "adminLogin"
+    raise_exception = True
+
+    def context_creator(self, request):
+        context = dict()
+        context.update(self.kwargs)
+        context["title"] = SITE_NAME + " - " + "API Docs"
+        breadcrumbs = [
+            ["Admin", addressOfPages["adminMainPage"]],
+            ["API Docs", addressOfPages["APIDocs"]],
+        ]
+        context["breadcrumbs"] = list(
+            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.context_creator(request)
+        return render(request, "adminpanel/apidocs.html", context)
 
 
 class GetQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
