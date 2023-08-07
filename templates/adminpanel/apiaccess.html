@@ -1,0 +1,59 @@
+{% extends "adminpanel/base.html" %}
+{% load utility %}
+{% load static %}
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            {% for numbering, obj in breadcrumbs %}
+                            {% if numbering == breadcrumbs|length %}
+                            <li class="breadcrumb-item active" aria-current="page">{{ obj|slicer:0 }}</li>
+                            {% else %}
+                            <li class="breadcrumb-item"><a href="{{ obj|slicer:1 }}">{{ obj|slicer:0 }}</a></li>
+                            {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="mb-3"><u>Access to API</u></h1>
+                        <p class="text-black">We are giving administrators access to the "Who Wants to be a Millionaire" API 
+                            for them to be able to seamlessly add questions in bulk without any hassle. 
+                        </p>
+                        <div class="d-flex">
+                            <div class="text-black me-3 mt-3">Here is your unique API token:</div>
+                            <pre>{{ token }}</pre>
+                        </div>
+                        <span class="text-muted">Kindly do not leak this token to anyone and if 
+                            it does get leaked accidentally, kindly contact the superadmin.</span>
+                        <div class="mb-3"></div>
+                        <p>This key has been generated since: <b>{{ created|date:"d M Y H:i:s" }}</b> GMT.</p>
+                    </div>
+                    <div><br></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script>
+    $('.table-responsive').on('show.bs.dropdown', function () {
+        $('.table-responsive').css("overflow", "inherit");
+    });
+
+    $('.table-responsive').on('hide.bs.dropdown', function () {
+        $('.table-responsive').css("overflow", "auto");
+    })
+</script>
+{% endblock %}
