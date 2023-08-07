@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 from . import views as adminV
 
 urlpatterns = [
@@ -27,13 +28,18 @@ urlpatterns = [
         name="adminDBObjectHistory",
     ),
     path(
+        "api-access/",
+        adminV.APIAccess.as_view(),
+        name="APIAccess",
+    ),
+    path(
         "random-question/",
         adminV.GetQuestion.as_view(),
         name="getQuestionAPI",
     ),
     path(
         "add-questions/",
-        adminV.AddQuestion.as_view(),
+        csrf_exempt(adminV.AddQuestion.as_view()),
         name="addQuestionAPI",
     ),
 ]
