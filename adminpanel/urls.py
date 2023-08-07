@@ -33,6 +33,11 @@ urlpatterns = [
         name="APIAccess",
     ),
     path(
+        "api-docs/",
+        adminV.APIDocs.as_view(),
+        name="APIDocs",
+    ),
+    path(
         "random-question/",
         adminV.GetQuestion.as_view(),
         name="getQuestionAPI",
