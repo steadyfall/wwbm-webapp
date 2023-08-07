@@ -1,0 +1,185 @@
+{% extends "adminpanel/base.html" %}
+{% load utility %}
+{% load static %}
+{% block content %}
+    <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            {% for numbering, obj in breadcrumbs %}
+                            {% if numbering == breadcrumbs|length %}
+                            <li class="breadcrumb-item active" aria-current="page">{{ obj|slicer:0 }}</li>
+                            {% else %}
+                            <li class="breadcrumb-item"><a href="{{ obj|slicer:1 }}">{{ obj|slicer:0 }}</a></li>
+                            {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="mb-3"><u>API Documentation</u></h1>
+                        <h3 class="mb-2">> Token Authenticaton</h3>
+                        To be able to use the API, the <u>token key should be included in the Authorization HTTP header</u>.
+                        The key should be prefixed by the string literal "Token", with whitespace separating the two strings.
+                        For example:
+                        <pre class="mt-2">Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b</pre>
+                        <u>Unauthenticated responses</u> that are <u>denied permission</u> will result in an <u>HTTP 401 Unauthorized response</u> 
+                        with an appropriate WWW-Authenticate header. 
+                        Sending GET requests would result in the same, if the HTTP header does not contain <i>'Authorization'</i>. 
+                        For example:
+                        <pre class="mt-2">WWW-Authenticate: Token</pre>
+                        <br>
+                        <h3 class="mb-2">> Data</h3>
+                        - Data to be sent in request body should follow the following rules:
+                        <ol style="text-indent: 20px;">
+                            <li>Should be of JSON format.</li>
+                            <li>All questions should be in an array, even if one question is being added.</li>
+                            <li>Each question should be a JSON object with the following properties: 
+                                <u><i>question</i></u><span class="text-red">^^</span>, 
+                                <u><i>correct_answer</i></u><span class="text-red">^^</span>,
+                                <u><i>incorrect_answers</i></u><span class="text-red">^^</span>,
+                                <u><i>category</i></u>, and
+                                <u><i>difficulty</i></u><span class="text-red">^^</span>.
+                            </li>
+                            <li><u><i>incorrect_answers</i></u> and <u><i>category</i></u> can have multiple values, which implies
+                                that they can be either a <i class="text-red">string</i> (when in singularity) or <i class="text-red">list</i>, whereas
+                                other fields can only be <i class="text-red">strings</i>.
+                            </li>
+                            <li>A question can have only 3 <u><i>incorrect_answers</i></u>.
+                            </li>
+                            [<span class="text-red">^^</span> means that the field is compulsory for the question to be added.]
+                        </ol>
+                        - Causes for error include the following:
+                        <ul style="text-indent: 20px;">
+                            <li>Is not in JSON format.</li>
+                            <li>Is not a list.</li>
+                            <li>Data in the fields is not validated.</li>
+                            <li>In an Question object, out of the 4 compulsory fields, some are not found.</li>
+                            <li>A question has more or less than 3 incorrect answers.</li>
+                            <li>Question already exists in the database.</li>
+                        </ul>
+                        <div class="row row-cards mt-1">
+                            <div class="col-md-3">
+                                <div class="card card-link card-link-pop">
+                                    <pre style="font-size: x-small;">
+[{
+    "question": "What is the capital of Gujarat?",
+    "correct_answer": "Gandhinagar",
+    "incorrect_answers": [
+        "Rajkot",
+        "Ahmedabad",
+        "Bhavnagar"
+    ],
+    "category": ["General Knowledge"],
+    "difficulty": "EasY"
+}]
+                                    </pre>
+                                    <div class="card-body">
+                                        <h4 class="card-title text-green text-center">Correct</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card card-link card-link-pop">
+                                    <pre style="font-size: x-small;">
+{
+    "question": "What is the capital of Gujarat?",
+    "correct_answer": "Gandhinagar",
+    "incorrect_answers": [
+        "Rajkot",
+        "Ahmedabad",
+        "Bhavnagar"
+    ],
+    "category": ["General Knowledge"],
+    "difficulty": "EasY"
+}
+                                    </pre>
+                                    <div class="card-body">
+                                        <h4 class="card-title text-red text-center">Wrong</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card card-link card-link-pop">
+                                    <pre style="font-size: xx-small;">
+[{
+    "question": "What is the capital of Gujarat?",
+    "correct_answer": "Gandhinagar",
+    "incorrect_answers": [
+        "Rajkot",
+        "Ahmedabad",
+        "Bhavnagar"
+    ],
+    "category": ["General Knowledge"],
+    "difficulty": "EasY"
+},{
+    "question": "What is the capital of Maharashtra?",
+    "correct_answer": "Mumbai",
+    "incorrect_answers": [
+        "Nagpur",
+        "Pune",
+        "Nashik"
+    ],
+    "difficulty": "EasY"
+}]
+                                    </pre>
+                                    <div class="card-body">
+                                        <h4 class="card-title text-green text-center">Correct</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card card-link card-link-pop">
+                                    <pre style="font-size: xx-small;">
+[{
+    "question": "What is the capital of Gujarat?",
+    "correct_answer": "Gandhinagar",
+    "incorrect_answers": [
+        "Rajkot",
+        "Ahmedabad",
+        "Bhavnagar"
+    ],
+    "category": ["General Knowledge"],
+    "difficulty": "EasY"
+},{
+    "question": "What is the capital of Maharashtra?",
+    "correct_answer": "Mumbai",
+    "difficulty": "EasY"
+}]
+                                    </pre>
+                                    <div class="card-body">
+                                        <h4 class="card-title text-red text-center">Wrong</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <br><br><br><br>
+                        <h3>> Examples to use the API:</h3>
+                        <div class="row row-cards mt-1">
+                            <div class="col-md-6">
+                                <div class="card card-link card-link-pop">
+                                    <img src="{% static 'img/cURL_API_usage.png' %}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-link card-link-pop">
+                                    <img src="{% static 'img/Python_API_usage.png' %}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div><br></div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
