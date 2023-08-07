@@ -2,8 +2,6 @@
 {% load utility %}
 {% load static %}
 {% block content %}
-<form method="post">
-    {% csrf_token %}
     <div class="page-wrapper">
         <!-- Page header -->
         <div class="page-header d-print-none">
@@ -46,14 +44,4 @@
             </div>
         </div>
     </div>
-</form>
-<script>
-    $('.table-responsive').on('show.bs.dropdown', function () {
-        $('.table-responsive').css("overflow", "inherit");
-    });
-
-    $('.table-responsive').on('hide.bs.dropdown', function () {
-        $('.table-responsive').css("overflow", "auto");
-    })
-</script>
 {% endblock %}
