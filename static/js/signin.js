@@ -25,10 +25,10 @@ function passwordRegex(pwd) {
     var username = document.getElementById('usernameInput').value.toLowerCase();
     // console.log(username);
     var isValid = (pwd.length >= 8) && (notNumericPasswordRegex.test(pwd)) && (username && (pwd.indexOf(username) === -1));
-    /* console.log("pwd: ", pwd, "| >= 8:", (pwd.length >= 8), 
-                "| all not numbers:", (~notNumericPasswordRegex.test(pwd)), 
-                "| username:", username, 
-                "| username not in password:", (pwd.indexOf(username) === -1), 
+    /* console.log("pwd: ", pwd, "| >= 8:", (pwd.length >= 8),
+                "| all not numbers:", (~notNumericPasswordRegex.test(pwd)),
+                "| username:", username,
+                "| username not in password:", (pwd.indexOf(username) === -1),
                 "| result:",isValid); */
     return isValid;
 }

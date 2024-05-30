@@ -49,12 +49,12 @@
             {% if messages %}
             <ul class="messages">
                 {% for message in messages %}
-                <li{% if message.tags %} 
+                <li{% if message.tags %}
                 {% if message.tags == 'error' %}
                 class="alert alert-danger"
                 {% else %}
                 class="alert alert-{{ message.tags }}"
-                {% endif %} 
+                {% endif %}
                 {% endif %}>
                     {{ message }}
                 </li>
@@ -78,7 +78,7 @@
                 </div>
             </div>
             <div class="text-center whitesmoke mt-3">
-                Return back to 
+                Return back to
                 <a href="{% url 'mainpage' %}" tabindex="-1" style="text-decoration: none; color: rgb(251, 255, 0);">main page.</a>
             </div>
         </div>

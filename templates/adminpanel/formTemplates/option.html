@@ -26,7 +26,7 @@
     <div class="form-label required mt-2" id="{{ form.text.id_for_label }}">
         Option Text:
     </div>
-    <input class="form-control w-75 ms-3" name="{{ form.text.html_name }}" id="{{ form.text.html_name }}" placeholder="Write the option here!" 
+    <input class="form-control w-75 ms-3" name="{{ form.text.html_name }}" id="{{ form.text.html_name }}" placeholder="Write the option here!"
     value="{% if form.instance.text %}{{ form.instance.text }}{% elif form.data.text %}{{ form.data.text }}{% elif form.text.value %}{{ form.text.value }}{% endif %}">
 </div>
 <div class="mb-3 d-flex">

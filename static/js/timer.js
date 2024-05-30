@@ -84,7 +84,7 @@ $('#sendAnswer').on("click submit", function submitChecker(e) {
     var arr = [];
     var common = "#option_";
     for (i = 0; i <= 3; i++) {
-        var newcommon = (' ' + common).slice(1) + String.fromCharCode(97+i); 
+        var newcommon = (' ' + common).slice(1) + String.fromCharCode(97+i);
         arr[i] = newcommon;
     }
     var option = arr.some(o => $(o).is(":checked"));

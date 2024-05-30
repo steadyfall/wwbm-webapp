@@ -56,12 +56,12 @@
                     <h2 class="h2 text-center mb-4 whitesmoke">Login</h2>
                     <ul class="messages text-center" style="list-style-type: none; padding: 0;" id="allAlerts">
                         {% for message in messages %}
-                        <li{% if message.tags %} 
+                        <li{% if message.tags %}
                         {% if message.tags == 'error' %}
                         class="alert alert-danger"
                         {% else %}
                         class="alert alert-{{ message.tags }}"
-                        {% endif %} 
+                        {% endif %}
                         {% endif %}>
                             {{ message }}
                         </li>
