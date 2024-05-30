@@ -32,9 +32,9 @@
                         The key should be prefixed by the string literal "Token", with whitespace separating the two strings.
                         For example:
                         <pre class="mt-2">Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b</pre>
-                        <u>Unauthenticated responses</u> that are <u>denied permission</u> will result in an <u>HTTP 401 Unauthorized response</u> 
-                        with an appropriate WWW-Authenticate header. 
-                        Sending GET requests would result in the same, if the HTTP header does not contain <i>'Authorization'</i>. 
+                        <u>Unauthenticated responses</u> that are <u>denied permission</u> will result in an <u>HTTP 401 Unauthorized response</u>
+                        with an appropriate WWW-Authenticate header.
+                        Sending GET requests would result in the same, if the HTTP header does not contain <i>'Authorization'</i>.
                         For example:
                         <pre class="mt-2">WWW-Authenticate: Token</pre>
                         <br>
@@ -43,8 +43,8 @@
                         <ol style="text-indent: 20px;">
                             <li>Should be of JSON format.</li>
                             <li>All questions should be in an array, even if one question is being added.</li>
-                            <li>Each question should be a JSON object with the following properties: 
-                                <u><i>question</i></u><span class="text-red">^^</span>, 
+                            <li>Each question should be a JSON object with the following properties:
+                                <u><i>question</i></u><span class="text-red">^^</span>,
                                 <u><i>correct_answer</i></u><span class="text-red">^^</span>,
                                 <u><i>incorrect_answers</i></u><span class="text-red">^^</span>,
                                 <u><i>category</i></u>, and

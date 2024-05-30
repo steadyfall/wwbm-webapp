@@ -39,10 +39,10 @@
                             <div class="d-flex align-items-baseline">
                                 <div class="h1 mb-0 me-2">{{ total_session_count }}</div>
                                 <div class="me-auto">
-                                    <span class="d-inline-flex align-items-center lh-1 
+                                    <span class="d-inline-flex align-items-center lh-1
                                         {% if more_than_ten_sessions > 0.2 %}
-                                        text-green 
-                                        {% else %} 
+                                        text-green
+                                        {% else %}
                                         text-red
                                         {% endif %}">
                                         {{ more_than_ten_sessions|multiply:100 }}%
@@ -153,9 +153,9 @@
                                 <div class="h1 mb-3 me-2">{{ active_users_count }}</div>
                                 <div class="me-auto">
                                     <span
-                                        class="d-inline-flex align-items-center lh-1 
-                                                {% if percent_of_active_users == 0 %} text-yellow 
-                                                {% elif percent_of_active_users < 20 %} text-red 
+                                        class="d-inline-flex align-items-center lh-1
+                                                {% if percent_of_active_users == 0 %} text-yellow
+                                                {% elif percent_of_active_users < 20 %} text-red
                                                 {% else %} text-green {% endif %}">
                                         {{ percent_of_active_users }}%
                                         <!-- Download SVG icon from http://tabler-icons.io/i/trending-up -->
@@ -393,29 +393,29 @@
 </div>
 <script type="module">
     import { config_useractive, config_sessions, config_scores, config_sessionsTotal } from "{% static 'js/charting.js' %}";
-    const dateList = {{ date_list|safe }}; 
+    const dateList = {{ date_list|safe }};
     const sessionList = {{ session_list|safe }};
     const sessionUserList = {{ session_user_list|safe }};
     const sessionEasyList = {{ session_easy_list|safe }};
     const sessionMediumList = {{ session_medium_list|safe }};
     const sessionHardList = {{ session_hard_list|safe }};
     const scoreList = {{ score_list|safe }};
-    const activeUsersLabels = {{ active_users_labels|safe }}; 
-    const activeUsersActivity = {{ active_users_activity|safe }}; 
+    const activeUsersLabels = {{ active_users_labels|safe }};
+    const activeUsersActivity = {{ active_users_activity|safe }};
     window.onload = function () {
     // new Chart(document.getElementById('category_stats').getContext('2d'), config_ctg);
-    new Chart(document.getElementById('session_stats').getContext('2d'), 
+    new Chart(document.getElementById('session_stats').getContext('2d'),
             config_sessions(dateList, sessionList));
-    new Chart(document.getElementById('score_stats').getContext('2d'), 
+    new Chart(document.getElementById('score_stats').getContext('2d'),
             config_scores(dateList, scoreList));
-    new Chart(document.getElementById('users_stats').getContext('2d'), 
+    new Chart(document.getElementById('users_stats').getContext('2d'),
             config_useractive(activeUsersLabels, activeUsersActivity));
-    new Chart(document.getElementById('main_stats').getContext('2d'), 
-            config_sessionsTotal(dateList, 
-                                sessionList, 
-                                sessionUserList, 
-                                sessionEasyList, 
-                                sessionMediumList, 
+    new Chart(document.getElementById('main_stats').getContext('2d'),
+            config_sessionsTotal(dateList,
+                                sessionList,
+                                sessionUserList,
+                                sessionEasyList,
+                                sessionMediumList,
                                 sessionHardList)
             );
     // new Chart(document.getElementById('document_stats').getContext('2d'), config_useract);

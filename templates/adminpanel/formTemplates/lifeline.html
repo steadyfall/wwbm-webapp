@@ -28,7 +28,7 @@
     <div class="form-label required mt-2" id="{{ form.name.id_for_label }}">
         Lifeline name:
     </div>
-    <input class="form-control w-75 ms-3" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" placeholder="Write the lifeline name here!" 
+    <input class="form-control w-75 ms-3" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" placeholder="Write the lifeline name here!"
     value="{% if form.instance.name %}{{ form.instance.name }}{% elif form.data.name %}{{ form.data.name }}{% elif form.name.value %}{{ form.name.value }}{% endif %}">
 </div>
 <div class="mb-3 d-flex">
