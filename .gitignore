@@ -9,3 +9,4 @@ gitcmds.txt
 formatter.ps1
 formatter.txt
 .vscode
+.env
