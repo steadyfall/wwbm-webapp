@@ -22,4 +22,5 @@ urlpatterns = [
     path("admin/", include("adminpanel.urls")),
     path("", include("game.urls")),
     path("auth/", include("auth.urls")),
+    path("__reload__/", include("django_browser_reload.urls")),
 ]
