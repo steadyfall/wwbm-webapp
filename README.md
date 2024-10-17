@@ -6,9 +6,8 @@
 
 "Trivivo" is a website developed by me that aims to test you with 15 questions of varying difficulty and topics, with staggering timeouts. The aim is to score the highest among the quiz-takers!
 
-## To-do
-- [ ] make a script that would populate the database and make the game running
-- [ ] revamp frontend using TailwindCSS
+## Trello
+The Trello board is [here](https://trello.com/b/r301JdtS/trivivo).
 
 
 ## Project Structure
