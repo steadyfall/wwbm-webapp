@@ -1,4 +1,4 @@
-import asyncio, requests, itertools
+import asyncio, aiohttp, itertools
 from html import unescape
 
 difficulty_choices = list(
@@ -11,13 +11,10 @@ difficulty_choices = list(
 )  # regex : (?:([emh])(?!.*\1))+
 
 
-def html_get_sync(link):
-    result = requests.get(link)
-    return result.json()
-
-
-async def html_get(link):
-    return await asyncio.to_thread(html_get_sync, link)
+async def html_get(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
 
 
 async def category_lookup():

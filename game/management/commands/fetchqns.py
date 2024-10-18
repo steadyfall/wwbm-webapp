@@ -263,7 +263,7 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--enable-logging", action="store_true", help="Disable logging completely."
+            "--enable-logging", action="store_true", help="Enable logging."
         )
 
     def handle(self, *args, **options):
