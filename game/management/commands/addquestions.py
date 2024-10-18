@@ -1,4 +1,5 @@
 import json, logging
+from itertools import islice
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ImproperlyConfigured
 from game.models import Question, Option, Category
@@ -47,10 +48,20 @@ class Command(BaseCommand):
         parser.add_argument(
             "--enable-logging", action="store_true", help="Enable logging completely."
         )
+        parser.add_argument(
+            "--force-update",
+            action="store_true",
+            help="Forcefully update existing questions.",
+        )
 
     def handle(self, *args, **options):
+        def lazy_list_generator(l):
+            for obj in l:
+                yield obj
+
         json_file = options["json_file"]
         enable_logging = options.get("enable_logging", False)
+        force_update = options.get("force_update")
 
         # Configure logger based on argument
         self.logger = configure_logger(enable_logging)
@@ -76,8 +87,45 @@ class Command(BaseCommand):
             """
             item["category"] = item["category"].replace("&amp;", "&")
 
-            self.logger.info(
-                f"who_added={user.username}, \
+            incorrect_options = []
+            for incorrect_answer in item["incorrect_answers"]:
+                option = Option.objects.get(text=incorrect_answer)
+                incorrect_options.append(option)
+
+            if item["category"] not in category_mapping:
+                category = Category.objects.get(name=item["category"])
+                category_mapping[item["category"]] = category
+            else:
+                category = category_mapping[item["category"]]
+
+            if Question.objects.filter(text=item["question"]).exists():
+                question = Question.objects.get(text=item["question"])
+                if force_update:
+                    question.correct_option = Option.objects.get(
+                        text=item["correct_answer"]
+                    )
+                    question.question_type = (
+                        Question.MULTIPLE
+                    )  # Assuming all are multiple type
+                    question.difficulty = item["difficulty"].upper()
+                    question.falls_under.add(category)
+                    question.incorrect_options.set(incorrect_options)
+                    question.save()
+                    self.logger.info(
+                        f"^ Updated question : ({item['difficulty'].upper()}) {item['question']}"
+                    )
+                else:
+                    self.logger.info(
+                        f"- Unchanged question : ({item['difficulty'].upper()}) {item['question']}"
+                    )
+                item["question"] = ""
+                continue
+            else:
+                self.logger.info(
+                    f"+ Added question : ({item['difficulty'].upper()}) {item['question']}"
+                )
+                self.logger.info(
+                    f"who_added={user.username}, \
 date_added={timezone.now()}, \
 falls_under={item['category']}, \
 text={item['question']}, \
@@ -85,7 +133,7 @@ question_type=MULTIPLE, \
 difficulty={item['difficulty'].upper()}, \
 correct_option={item['correct_answer']}, \
 incorrect_answers={item['incorrect_answers']}"
-            )
+                )
 
             question = Question(
                 who_added=user,
@@ -97,22 +145,25 @@ incorrect_answers={item['incorrect_answers']}"
             )
             questions_to_create.append(question)
 
-            incorrect_options = []
-            for incorrect_answer in item["incorrect_answers"]:
-                option = Option.objects.get(text=incorrect_answer)
-                incorrect_options.append(option)
             item["incorrect_answers"] = incorrect_options
 
-            if item["category"] not in category_mapping:
-                category = Category.objects.get(name=item["category"])
-                category_mapping[item["category"]] = category
+        if questions_to_create:
+            batch_size = 90
+            questions_generator = lazy_list_generator(questions_to_create)
+            while True:
+                questions_batch = list(islice(questions_generator, batch_size))
+                if not questions_batch:
+                    break
+                Question.objects.bulk_create(questions_batch, batch_size)
 
-        Question.objects.bulk_create(questions_to_create)
+            data = list(
+                filter(lambda x: True if len(x["question"]) > 0 else False, data)
+            )
 
-        for question, item in zip(questions_to_create, data):
-            category = category_mapping[item["category"]]
-            question.falls_under.add(category)
-            question.incorrect_options.set(item["incorrect_answers"])
+            for question, item in zip(questions_to_create, data):
+                category = category_mapping[item["category"]]
+                question.falls_under.add(category)
+                question.incorrect_options.set(item["incorrect_answers"])
 
         self.stdout.write(
             self.style.SUCCESS(
