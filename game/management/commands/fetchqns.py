@@ -2,7 +2,7 @@ import asyncio, aiohttp, random, json
 import logging
 from html import unescape
 from time import perf_counter, time
-from ._fetchqns import difficulty_choices, html_get
+from ._private import difficulty_choices, html_get
 
 from django.core.management.base import BaseCommand
 
