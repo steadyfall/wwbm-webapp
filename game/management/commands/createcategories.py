@@ -34,7 +34,7 @@ def configure_logger(enable_logging):
 
 
 class Command(BaseCommand):
-    help = "USE ONLY WHEN INITIALIZING! Fetch categories from OpenTriviaDB and insert them into the database."
+    help = "USE ONLY WHEN INITIALIZING THE APP! Fetch categories from OpenTriviaDB and insert them into the database. (for Category model)"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
