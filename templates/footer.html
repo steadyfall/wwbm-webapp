@@ -1,32 +1,12 @@
-{% load static %}
-<footer class="page-footer text-center text-lg-start blurr"
-    style="padding-left: 25px; padding-top: 25px; padding-right: -150px;">
-    <div class="unblurr">
-        <div class="row unblurr">
-            <div class="col-lg-4 col-md-6 logo-div unblurr"
-                style="padding-top: 65px; padding-bottom: 30px; padding-right: 100px; text-align: bottom;">
-                <span>
-                    <img class="img-responsive brand" src="{% static 'img/wwbmicon.ico' %}" />
-                    <a class="navbar-brand mr-4 bg-steel" href="{% url 'mainpage' %}"><b>Who Wants to be a Millionaire?</b></a>
-                    <h5 class="h1 text-white"></h5>
-                    <a class="footer-nav-link" href="{% url 'mainpage' %}">wwbmillionaire.com</a>
-                </span>
-            </div>
-            <div class="col-lg-2 col-md-6"></div>
-            <div class="col-lg-2 col-md-6 unblurr" style="padding-top: 30px;">
-                <h5 class="text-white mb-3"><b>Quick Links</b></h5>
-                <ul class="list-unstyled">
-                    <li><a class="footer-nav-link" href="{% url 'mainpage' %}">Home</a></li>
-                    <li><a class="footer-nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
-                    <li><a class="footer-nav-link" href="{% url 'scores' %}">Scores</a></li>
-                    <li><a class="footer-nav-link" href="{% url 'about' %}">About</a></li>
-                </ul>
-            </div>
-            <div class="col-lg-4 col-md-6 unblurr"
-                style="padding-top: 65px; padding-right: 0px; padding-left: 230px; text-align: bottom; bottom: 0; overflow-x: hidden;">
-                <h5 class="text-white mb-3"><strong>CONTACT US!</strong></h5>
-                <a class="footer-nav-link" href="#">Click here to contact us!</a>
-            </div>
-        </div>
-    </div>
-</footer>
+{% load static tailwind_tags %}
+<div class="z-10 blur-bg">
+    <nav class="py-4 text-center relative">
+        <a href="{% url 'mainpage' %}" class="mx-2 hover:text-blue-400">Home</a>
+        <a href="{% url 'leaderboard' %}" class="mx-2 hover:text-blue-400">Leaderboard</a>
+        <a href="{% url 'scores' %}" class="mx-2 hover:text-blue-400">Scores</a>
+        <a href="{% url 'about' %}" class="mx-2 hover:text-blue-400">About</a>
+    </nav>
+    <footer class="py-4 text-center text-sm relative">
+        <p>&copy; 2024 <span class="logo-gradient inline-block text-transparent bg-clip-text">Trivivo</span> | <a href="{% url 'mainpage' %}" class="hover:text-blue-400">Contact Us</a></p>
+    </footer>
+</div>

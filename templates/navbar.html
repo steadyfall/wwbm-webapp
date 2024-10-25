@@ -1,32 +1,16 @@
-{% load static %}
-<header class="site-header">
-    <nav class="navbar navbar-expand-md fixed-top blurr">
-        <div class="container-fluid unblurr">
-            <img class="img-responsive brand" src="{% static 'img/wwbmicon.ico' %}" />
-            <a class="navbar-brand mr-4 bg-purple" href="{% url 'mainpage' %}"><b style="font-size: medium;">Who
-                    Wants to be a Millionaire?</b></a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
-                aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarToggle">
-                <div class="navbar-nav mr-auto">
-                    <a class="nav-item nav-link" href="{% url 'mainpage' %}">Home</a>
-                    <a class="nav-item nav-link" href="{% url 'leaderboard' %}">Leaderboard</a>
-                    <a class="nav-item nav-link" href="{% url 'scores' %}">Scores</a>
-                    <a class="nav-item nav-link" href="{% url 'about' %}">About</a>
-                </div>
-                <!-- Navbar Right Side -->
-                <div class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                    <u><i><small class="nav-item nav-link">{{ request.user.username }}</small></i></u>
-                    <a class="nav-item nav-link" href="{% url 'logout' %}">Logout</a>
-                    {% else %}
-                    <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
-                    <a class="nav-item nav-link" href="{% url 'register' %}">Register</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </nav>
+{% load static tailwind_tags %}
+<header class="p-4 flex justify-between items-center relative z-10 blur-bg">
+    <div class="flex items-center">
+        <img src="{% static 'img/wwbmicon.ico' %}" alt="Logo" class="w-10 h-10 mr-2">
+        <span class="text-xl font-bold logo-gradient inline-block text-transparent bg-clip-text">Trivivo</span>
+    </div>
+    <div>
+        {% if user.is_authenticated %}
+        <span class="text-sm mr-4 hover:text-emerald-400">{{ request.user.username }}</span>
+        <a class="text-sm hover:text-blue-400" href="{% url 'logout' %}">Logout</a>
+        {% else %}
+        <a href="{% url 'login' %}" class="text-sm mr-4 hover:text-blue-400">Login</a>
+        <a href="{% url 'register' %}" class="text-sm hover:text-blue-400">Register</a>
+        {% endif %}
+    </div>
 </header>
