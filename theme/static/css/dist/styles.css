@@ -1088,6 +1088,16 @@ select{
   height: 1.25rem;
 }
 
+.size-7{
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.size-6{
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 .h-10{
   height: 2.5rem;
 }
@@ -1369,14 +1379,14 @@ select{
   line-height: 2.25rem;
 }
 
-.text-4xl{
-  font-size: 2.25rem;
-  line-height: 2.5rem;
-}
-
 .text-5xl{
   font-size: 3rem;
   line-height: 1;
+}
+
+.text-lg{
+  font-size: 1.125rem;
+  line-height: 1.75rem;
 }
 
 .text-sm{
@@ -1387,16 +1397,6 @@ select{
 .text-xl{
   font-size: 1.25rem;
   line-height: 1.75rem;
-}
-
-.text-lg{
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-}
-
-.text-base{
-  font-size: 1rem;
-  line-height: 1.5rem;
 }
 
 .font-bold{
@@ -1606,9 +1606,9 @@ body {
     line-height: 1.5rem;
   }
 
-  .sm\:text-5xl{
-    font-size: 3rem;
-    line-height: 1;
+  .sm\:text-lg{
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 }
 
@@ -1627,6 +1627,16 @@ body {
     height: 1.5rem;
   }
 
+  .md\:size-9{
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .md\:size-7{
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
   .md\:w-\[50rem\]{
     width: 50rem;
   }
@@ -1638,5 +1648,15 @@ body {
   .md\:text-5xl{
     font-size: 3rem;
     line-height: 1;
+  }
+
+  .md\:text-xl{
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  .md\:text-lg{
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 }
