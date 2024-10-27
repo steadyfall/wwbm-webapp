@@ -1,35 +1,32 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static tailwind_tags %}
 {% load utility %}
+{% block header %}
+{% include 'navbar.html' %}
+{% endblock header %}
 {% block content %}
 <iframe src="{% static 'audio/introduction.mp3' %}" allow="autoplay" id="audio" style="display:none"></iframe>
-<form method="post" id="newform">
-    {% csrf_token %}
-    <div class="content blurr">
-        <div class="content unblurr">
-            <div class="row d-flex" style="font-family: 'Open Sans', sans-serif; font-size: 35px;">
-                <b>
-                    <h1>RULES</h1>
-                </b>
-            </div>
-            <br style="clear: both" />
-            <br style="clear: both" />
-            {% include 'gamerules.html' %}
-            <br style="clear: both" />
-            <br style="clear: both" />
-            <div class="row d-flex">
-                <div class="col text-sm-end">You have read the rules and are liable to them. <br>
-                    Are you ready to <span style="color: #00ff0d;">PLAY</span>?</div>
-                <div class="small-bttn align-items-center">
-                    <button type="submit" class="btn btn-danger" title="I am not ready to play" name="agreed"
-                        value="no">No</button>
-                </div>
-                <div class="small-bttn align-items-center">
-                    <button type="submit" class="btn btn-success" title="Let's play Who Wants to Be a Millionaire?"
-                        name="agreed" value="yes">Yes</button>
-                </div>
+<div class="rounded-lg blur-bg mb-4">
+    <h1 class="text-4xl font-bold mb-2 ml-6">RULES</h1>
+    <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 p-6">
+        {% include 'gamerules.html' %}
+        <div class="md:col-span-3 text-right">
+            <p>You have read the rules and are liable to them.</p>
+            <p>Are you ready to <span class="text-green-400">PLAY</span>?</p>
+            <div class="mt-4 space-x-4">
+                <form method="post" id="newform">
+                    {% csrf_token %}
+                    <button class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 transition-colors"
+                    type="submit" title="I am not ready to play" name="agreed" value="no">
+                        No
+                    </button>
+                    <button class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition-colors"
+                    type="submit" title="Let's play Trivivo!" name="agreed" value="yes">
+                        Yes
+                    </button>
+                </form>
             </div>
         </div>
     </div>
-</form>
+</div>
 {% endblock %}

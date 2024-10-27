@@ -1,64 +1,60 @@
-{% load static %}
-<div class="containder">
-    <div class="row">
-        <div class="col-sm-4">
-            <img src="{% static 'img/levels.png' %}" style="height: 750px; ">
-        </div>
-        <div class="col-md-8">
-            Build your fortune by answering <span class="text-warning">multiple-choice questions</span>
-            correctly and moving up the ladder
-            toward <span class="text-success">$1,000,000</span>! <br>
-            <br>
-            This game is a series of <span class="text-warning">multiple-choice questions</span> that each
-            have four possible answers
-            (A,B,C,D). The contestant must answer 15 of these questions correctly,
-            one at a time, to win <span class="text-success">$1,000,000</span>. As soon as the contestant
-            answers a question <span class="text-danger">INCORRECTLY</span>, the
-            game is <span class="text-danger">OVER</span> and they receive 1% of the collected prize money.
-            Contestants also get three lifelines to assist them if they get stuck on a particular question.
-            <br>
-            <br>
-            The <i>Who Wants to Be a Millionaire </i> questions are structured according to <span
-                class="text-primary">4 different states</span>
-            with each states increasing in difficulty.
-            Questions that are grouped into the same states will all be of similar difficulty.
-            <ul>
-                <li>The <span class="text-info">1st state (Questions 1 – 5)</span> will contain the easiest
-                    questions. [<span class="text-danger">20 sec</span> per question]
-                </li>
-                <li>
-                    The <span class="text-info">2nd state (Questions 6 – 9)</span> will be slightly more
-                    difficult [<span class="text-danger">40 sec</span> per question], followed by the
-                    <span class="text-info">3rd state (Questions 10 – 12)</span>. [<span
-                        class="text-danger">50 sec</span> per question]
-                </li>
-                <li>The <span class="text-info">4th state (Questions 13 – 15)</span> will pose the most
-                    difficult questions of the game. [<span class="text-danger">60 sec</span> per question]
-                </li>
-            </ul>
-            <br><br><br>
-            <u>
-                <h4>Lifelines</h4>
-            </u>
-            Contestants are allowed three lifelines that they can use at any point during the game. <br>
-            Each Lifeline can only be used once. <br>
-            <br>
-            <ol>
-                {% for lifeline in lifelines %}
-                <li>
-                    {% if lifeline.name == "Fifty-50" %}
-                    <span title="{{ lifeline.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
-                    {% elif lifeline.name == "Audience Poll" %}
-                    <span title="{{ lifeline.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
-                    {% elif lifeline.name == "Expert Answer" %}
-                    <span title="{{ lifeline.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
-                    {% endif %}
-                    | <span style="color: greenyellow;">
-                        {{ lifeline.name }}
-                    </span> –– {{ lifeline.description }}
-                </li>
-                {% endfor %}
-            </ol>
-        </div>
+{% load static tailwind_tags %}
+{% load humanize %}
+<div class="md:col-span-1">
+    <div class="space-y-2 text-right">
+        {% for level in levels %}
+            {% if level.level_number >= 1 and level.level_number < 16 %}
+                <div class="flex justify-between">
+                    <span class="text-blue-300">{{ level.level_number }}</span>
+                    <span class="text-orange-400 font-bold">${{ level.money|intcomma }}</span>
+                </div>
+            {% endif %}
+        {% endfor %}
     </div>
+</div>
+<div class="rounded-lg blur-bg md:col-span-2 space-y-6">
+    <p>
+        Build your fortune by answering <span class="text-yellow-400">multiple-choice questions</span> correctly and moving up the ladder
+        toward <span class="text-green-400">$1,000,000</span>!
+    </p>
+    <p>
+        This game is a series of <span class="text-yellow-400">multiple-choice questions</span> that each have four possible answers (A,B,C,D).
+        The contestant must answer 15 of these questions correctly, one at a time, to win <span class="text-green-400">$1,000,000</span>. As soon
+        as the contestant answers a question <span class="text-red-500">INCORRECTLY</span>, the game is <span class="text-red-500">OVER</span> and they receive 1% of the
+        collected prize money. Contestants also get three lifelines to assist them if they get stuck on a
+        particular question.
+    </p>
+    <p>
+        The <i>Trivivo</i> questions are structured according to <span class="text-blue-400">4 different states</span> with
+        each states increasing in difficulty. Questions that are grouped into the same states will all be of
+        similar difficulty.
+    </p>
+    <ul class="list-disc list-inside space-y-2">
+        <li>The <span class="text-cyan-400">1st state (Questions 1 – 5)</span> will contain the easiest questions. [<span class="text-red-400">20 sec</span> per question]</li>
+        <li>The <span class="text-cyan-400">2nd state (Questions 6 – 9)</span> will be slightly more difficult [<span class="text-red-400">40 sec</span> per question], followed by
+            the <span class="text-cyan-400">3rd state (Questions 10 – 12)</span>. [<span class="text-red-400">50 sec</span> per question]</li>
+        <li>The <span class="text-cyan-400">4th state (Questions 13 – 15)</span> will pose the most difficult questions of the game. [<span class="text-red-400">60 sec</span> per
+            question]</li>
+    </ul>
+    <h2 class="text-2xl font-bold mt-6">Lifelines</h2>
+    <p>
+        Contestants are allowed three lifelines that they can use at any point during the game.
+        Each Lifeline can only be used once.
+    </p>
+    <ul class="space-y-4">
+        {% for lifeline in lifelines %}
+            <li class="flex items-start gap-2">
+                {% if lifeline.name == "Fifty-50" %}
+                <span title="{{ lifeline.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
+                {% elif lifeline.name == "Audience Poll" %}
+                <span title="{{ lifeline.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
+                {% elif lifeline.name == "Expert Answer" %}
+                <span title="{{ lifeline.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
+                {% endif %}
+                <div>
+                    <span class="text-yellow-400 font-bold">{{ lifeline.name }}</span> — {{ lifeline.description }}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
 </div>

@@ -1,18 +1,12 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static tailwind_tags %}
 {% block header %}
 {% include 'navbar.html' %}
 {% endblock header %}
 {% block content %}
-<div class="content blurr">
-    <div class="content unblurr">
-        <div class="row d-flex" style="font-family: 'Open Sans', sans-serif; font-size: 35px;">
-            <b>
-                <h1>RULES</h1>
-            </b>
-        </div>
-        <br style="clear: both" />
-        <br style="clear: both" />
+<div class="rounded-lg blur-bg mb-4">
+    <h1 class="text-4xl font-bold mb-2 ml-6">RULES</h1>
+    <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 p-6">
         {% include 'gamerules.html' %}
     </div>
 </div>
