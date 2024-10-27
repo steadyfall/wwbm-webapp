@@ -18,6 +18,7 @@ class Base(Configuration):
         "django.contrib.messages",
         "django.contrib.staticfiles",
         "django.forms",
+        "django.contrib.humanize",
         "game.apps.GameConfig",
         "rest_framework",
         "rest_framework.authtoken",
