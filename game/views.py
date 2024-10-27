@@ -22,7 +22,7 @@ def pageChecker(request):
 
 
 def rules(request):
-    context = {"lifelines": Lifeline.objects.all()}
+    context = {"lifelines": Lifeline.objects.all(), "levels": Level.objects.all()}
     return render(request, "rules.html", context)
 
 
@@ -69,7 +69,11 @@ class MainPage(View):
 
 class About(View):
     def get(self, request, *args, **kwargs):
-        context = {"title": "About The Game", "lifelines": Lifeline.objects.all()}
+        context = {
+            "title": "About The Game",
+            "lifelines": Lifeline.objects.all(),
+            "levels": Level.objects.all(),
+        }
         return render(request, "about.html", context)
 
 
@@ -95,6 +99,7 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
                 context = {
                     "title": "Rules (game about to begin)",
                     "lifelines": Lifeline.objects.all(),
+                    "levels": Level.objects.all(),
                 }
                 return render(request, "rules.html", context)
         return redirect("mainpage", permanent=True)
@@ -541,7 +546,6 @@ class ScoreBoard(LoginRequiredMixin, View):
                 ses.correct_qns.all().count(),
                 (True if ses.wrong_qn.pk == Question.get_default_pk() else False),
                 ses.used_lifelines.all().count(),
-                ses.left_lifelines.all().count(),
             )
             for ses in Session.objects.filter(session_user=self.request.user).order_by(
                 "-score", "-date_created"
