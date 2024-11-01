@@ -1,73 +1,44 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static tailwind_tags %}
 {% load utility %}
 {% block header %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/bannerwrongQ.css' %}" />
 {% include 'navbar.html' %}
+{% if mode == "finished" %}
+<script defer src="{% static 'js/confetti.js' %}"></script>
+{% endif %}
 {% endblock header %}
 {% block content %}
-<div class="row gy-10">
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
+{% if mode == "finished" %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/confetti.css' %}" />
+<div class="main-confetti fixed inset-0 pointer-events-none overflow-hidden"></div>
+<svg class="hidden">
+    <defs>
+        <symbol id="svg-confetti">
+            <path fill="currentColor" d="M-.017 6.91L4.035.012l2.587 1.52L2.57 8.43z"></path>
+        </symbol>
+    </defs>
+</svg>
+{% endif %}
+<div
+    class='
+    {% if mode == "over" or mode == "wrong" %}bg-[#ff7792]{% else %}bg-[#38fa5f]{% endif %}
+    rounded-lg shadow-lg max-w-2xl w-full p-6 mb-4'
+>
+    <h1 class="text-4xl text-black mb-4 text-center">
+        {{ mainMessage|safe }}
+    </h1>
+    <p class="text-xl text-black text-center">
+        {{ message|safe }}
+    </p>
 </div>
-<div class="row">
-    <div class="col-md-1 offset-2"></div>
-    <!-- Wide Button -->
-    <div class="col-md-6">
-        <a href="#" class="hpd hpd-wide">
-            &nbsp;
-            <div class="hpd-body">
-                <h3 class="hpd-title"><b>{{ mainMessage }}</b></h3>
-                <p class="hpd-desc">{{ message|safe }}</p>
-            </div>
-            &nbsp;
-        </a>
+<div class="blur-bg rounded-lg py-1 pl-1 mb-3">
+    <div class="text-center relative">
+        Return to:
+        <a href="{% url 'leaderboard' %}" class="mx-2 hover:text-blue-400">Leaderboard</a> |
+        <a href="{% url 'mainpage' %}" class="mx-2 hover:text-blue-400">Main Page</a>
     </div>
-    <div class="col-md-1 offset-2"></div>
-</div>
-<div class="row gy-10">
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-</div>
-<div class="row gy-10">
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4 d-flex align-items-center" style="background-color:rgb(40, 106, 231); text-align: center;">
-        <span style="color: black">Go back to: </span>
-        <a href="{% url 'leaderboard' %}" class="col text-sm" style="text-decoration: none; color: whitesmoke;">Leaderboard</a>
-        |
-        <a href="{% url 'mainpage' %}" class="col text-sm" style="text-decoration: none; color:whitesmoke;">Main Page</a>
-    </div>
-</div>
-<div class="row gy-10">
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-1 offset-3"></div>
-    <div class="col-md-4">&nbsp;</div>
-    <div class="col-md-1 offset-3"></div>
 </div>
 {% endblock %}
+{% block footer %}
+{% include 'footer.html' %}
+{% endblock footer %}
