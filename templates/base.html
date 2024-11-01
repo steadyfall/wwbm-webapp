@@ -22,8 +22,8 @@
     <div id="smooth-grid" class="fixed inset-0 z-0"></div>
     {% block header %}{% endblock %}
 
-    {% if messages %}
     <div class="flex flex-col w-full relative z-10">
+        {% if messages %}
         {% for message in messages %}
         <div
             {% if message.tags %}
@@ -47,8 +47,26 @@
             <strong class="text-xl cursor-pointer close-alert ml-4">&times;</strong>
         </div>
         {% endfor %}
+        {% endif %}
+
+        {% if expertAnswerText or audiencePollText or fifty50Text %}
+        <div class="bg-green-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center" role="alert">
+            <span class="text-center flex-grow">
+                {% if expertAnswerText %}
+                {{ expertAnswerText|safe }}
+                {% elif audiencePollText %}
+                Audience Poll tells us the following:
+                <ul class="text-center p-0 list-none">
+                    {{ audiencePollText|safe }}
+                </ul>
+                {% elif fifty50Text %}
+                <span class="text-danger">{{ fifty50Text|safe }}</span>
+                {% endif %}
+            </span>
+            <strong class="text-xl cursor-pointer close-alert ml-4">&times;</strong>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 
     <main class="flex-grow flex flex-col items-center justify-center relative z-10 mt-5">
         {% block content %}{% endblock %}
@@ -68,6 +86,11 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"
+    ></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
         integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
         crossorigin="anonymous"></script> -->

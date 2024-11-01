@@ -1,232 +1,171 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static tailwind_tags %}
 {% load utility %}
+{% load humanize %}
 {% block content %}
-<div class="modal fade" id="staticBackdropLifeline" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-    aria-labelledby="staticBackdropLifelineLabel" aria-hidden="true">
-    <div class="modal-dialog rounded">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="staticBackdropLifelineLabel">Assistance</h1>
-            </div>
-            <div class="modal-body">
-                Lifelines that you have left are: &nbsp; &nbsp;
+<!-- Modal -->
+<div id="lifelineModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-black rounded-lg shadow-lg w-96 p-6">
+        <h2 class="text-xl font-bold mb-4">Select a Lifeline</h2>
+        <form method="post" id="lifeline" class="max-w-sm mx-auto">
+            {% csrf_token %}
+            <label for="countries" class="block mb-2 text-sm font-medium text-white">Which lifeline would you like to use?</label>
+            <select class="border text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" name="lifeline" id="options">
                 {% for life in session.left_lifelines.all %}
-                {% if life.name == 'Fifty-50' %}
-                <span title="{{ life.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
-                {% elif life.name == 'Audience Poll' %}
-                <span title="{{ life.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
-                {% elif life.name == 'Expert Answer' %}
-                <span title="{{ life.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
-                {% endif %}
-                {% empty %}
+                    <option value="{{ life.name }}">{{ life.name }}</option>
                 {% endfor %}
-                <br>
-                <label for="lifeline">Which lifeline would you like to use? </label>
-                <form method="post" id="lifeline" style="margin-left: 25%;">
-                    {% csrf_token %}
-                    <div class="input-group mt-1">
-                        <select class="form-select-sm" name="lifeline" id="options">
-                            {% for life in session.left_lifelines.all %}
-                            <option value="{{ life.name }}">{{ life.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <input type="hidden" id="timeLeftAfterLifeline" name="timeLeftAfterLifeline" value="">
-                        &nbsp;&nbsp;
-                        <div class="input-group-addon">
-                            <button type="submit" class="btn btn-primary btn-sm" id="confirmLifeline"
-                                name="lifelineSubmit" value="yes">
-                                Choose
-                            </button>
-                        </div>
-                    </div>
-                </form>
+            </select>
+            <div class="mt-4">
+                <span class="text-lg text-gray-200">Brief description of the lifelines:</span>
+                <ul class="space-y-1">
+                    {% for life in session.left_lifelines.all %}
+                    {% if life.name == 'Fifty-50' %}
+                        <span title="{{ life.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
+                        <li>{{ life.name }} : Remove two incorrect answers.</li>
+                    {% elif life.name == 'Audience Poll' %}
+                        <span title="{{ life.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
+                        <li>{{ life.name }} : Show audience poll results.</li>
+                    {% elif life.name == 'Expert Answer' %}
+                        <span title="{{ life.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
+                        <li>{{ life.name }} : Get advice from the expert.</li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                    id="closeLifeline">Close</button>
+            <input type="hidden" id="timeLeftAfterLifeline" name="timeLeftAfterLifeline" value="">
+            <div class="mt-6 flex justify-end space-x-4">
+                <button onclick="toggleModal()" id="closeLifeline" type="button" class="bg-red-500 text-white px-4 py-2 rounded-md">Cancel</button>
+                <button type="submit" id="confirmLifeline" name="lifelineSubmit" value="yes"
+                class="bg-green-500 text-white px-4 py-2 rounded-md"
+                >
+                    Use Lifeline
+                </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 <form method="post" id="newform">
     {% csrf_token %}
-    <div class="content">
-        {% if expertAnswerText %}
-        <div class="alert alert-success">
-            {{ expertAnswerText|safe }}
-        </div>
-        {% elif audiencePollText %}
-        <div class="alert alert-success">
-            Audience Poll tells us the following:
-            <ul class="text-center" style="padding: 0; list-style-type: none;">
-                {{ audiencePollText|safe }}
-            </ul>
-        </div>
-        {% elif fifty50Text %}
-        <div class="alert alert-success">
-            <span class="text-danger">{{ fifty50Text|safe }}</span>
-        </div>
-        {% endif %}
-        </div>
-        <br style="clear: both" />
-        <div class="row d-flex">
-            <div class="bttn blurr" style="align-self: flex-start;">
-                <div class="unblurr" style="padding-top: 12px; text-align: center;">
-                    Question for <span style="color: red;">${{ forAmount }}</span>
-                </div>
-            </div>
-            <div class="col-sm"></div>
-            <div class="big-bttn blurr" style="align-self: center;">
-                <div class="unblurr" style="padding-top: 12px; text-align: center;">
-                    Lifelines Left <b>:</b> &nbsp; &nbsp;
+    <div class="w-full max-w-4xl mx-auto p-4 space-y-6">
+        <!-- Top bar -->
+        <div class="flex flex-col sm:flex-row justify-between items-center text-white space-y-6 sm:space-y-0">
+            <div class="text-lg font-bold">Question for <span class="text-red-500">${{ forAmount|intcomma }}</span></div>
+            <div class="flex items-center space-x-4">
+                <div class="text-sm sm:text-base">Lifelines:</div>
+                <div class="flex space-x-2">
                     {% for life in session.left_lifelines.all %}
-                    {% if life.name == 'Fifty-50' %}
-                    <span title="{{ life.name }}">{% include "lifelineSVG/fifty50.html" %}</span>
-                    {% elif life.name == 'Audience Poll' %}
-                    <span title="{{ life.name }}">{% include "lifelineSVG/audiencePoll.html" %}</span>
-                    {% elif life.name == 'Expert Answer' %}
-                    <span title="{{ life.name }}">{% include "lifelineSVG/expertAnswer.html" %}</span>
-                    {% endif %}
+                    <span title="{{ life.name }}" class="text-yellow-400">
+                        {% if life.name == 'Fifty-50' %}
+                            {% include "lifelineSVG/fifty50.html" %}
+                        {% elif life.name == 'Audience Poll' %}
+                            {% include "lifelineSVG/audiencePoll.html" %}
+                        {% elif life.name == 'Expert Answer' %}
+                            {% include "lifelineSVG/expertAnswer.html" %}
+                        {% endif %}
+                    </span>
                     {% empty %}
-                    <button type="button" id="lifelineButton" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#staticBackdropLifeline" disabled>USE A LIFELINE</button>
+                    <button onclick="toggleModal()" type="button" id="lifelineButton" disabled
+                        class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm transition-colors">
+                        Use Lifeline
+                    </button>
                     {% endfor %}
-                    &nbsp; &nbsp; &nbsp;
-                    {% if session.left_lifelines.all %}
-                    <button type="button" id="lifelineButton" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#staticBackdropLifeline" {% if usedLifelineRecently %}disabled{% endif %}>USE A
-                        LIFELINE</button>
-                    {% endif %}
                 </div>
             </div>
-            <div class="col"></div>
-            <div class="bttn blurr" style="align-self: flex-end;">
-                <div class="unblurr" style="padding-top: 12px; text-align:end;">
-                    Total Amount: $<span>{{ total }}</span>
-                </div>
-            </div>
-            <div class="col-sm"></div>
-            <div class="bttn blurr" style="align-self: flex-end;">
-                <div class="unblurr" style="padding-top: 12px; text-align: end;">
-                    Time left: <span id="time-left">{{ timer }}</span> s
-                </div>
-            </div>
-        </div>
-        <br style="clear: both" />
 
-        <br style="clear: both" />
-        <br style="clear: both" />
-        <div class="row d-flex" style="justify-content: center;">
-            <div class="question"
-                style="display: flex; padding-top: 35px; padding-bottom: 50px; justify-content: center;">
-                <div style="max-width: 900px; font-size: larger; word-wrap: break-word;">
-                    <b>{{ question.text }}</b>
-                </div>
+            {% if session.left_lifelines.all %}
+                <button onclick="toggleModal()" type="button" id="lifelineButton" {% if usedLifelineRecently %}disabled{% endif %}
+                    class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm transition-colors">
+                    Use Lifeline
+                </button>
+            {% endif %}
+
+            <div class="text-white text-sm sm:text-base">
+                <div>Time Left: <span class="font-bold" id="time-left">{{ timer }}</span>s</div>
             </div>
         </div>
-        <br style="clear: both" />
-        <div class="row d-flex" style="justify-content: center;">
-            <div class="row d-flex" style="justify-content: center;">
-                <div class="options"
-                    style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
-                    <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
-                        {% if option1 %}
-                        <span style="color: aqua;">A. </span>
-                        <b>{{ option1 }}</b>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-sm"></div>
-                <div class="options"
-                    style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
-                    <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
-                        {% if option2 %}
-                        <span style="color: aqua;">B. </span>
-                        <b>{{ option2 }}</b>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="row">&nbsp;</div>
-            <div class="row d-flex" style="justify-content: center;">
-                <div class="options"
-                    style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
-                    <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
-                        {% if option3 %}
-                        <span style="color: aqua;">C. </span>
-                        <b>{{ option3 }}</b>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-sm"></div>
-                <div class="options"
-                    style="padding-left: 40px; padding-top: 15px; padding-bottom: 10px; align-self: flex-end;">
-                    <div style="max-width: 400px; font-size: larger; word-wrap: break-word; text-align: center;">
-                        {% if option4 %}
-                        <span style="color: aqua;">D. </span>
-                        <b>{{ option4 }}</b>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+        <!-- Question -->
+        <div class="bg-blue-900 text-white text-center py-6 px-4 rounded-2xl text-lg sm:text-xl md:text-2xl shadow-lg">
+            {{ question.text }}
         </div>
-        <br style="clear: both" />
-        <br style="clear: both" />
-        <br style="clear: both" />
-        <div class="row d-flex">
-            <div class="big-bttn blurr" style="align-self: center;">
-                <div class="unblurr" style="padding-top: 12px; text-align: center;">
-                    Your option is <b>:</b> &nbsp;
-                    {% if option1 %}
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_a"
-                            value="{{ option1 }}">
-                        <label class="form-check-label" for="option_a">
-                            {% include "optionSVG/optionA.html" %}
-                        </label>
-                    </div>
-                    {% endif %}
-                    {% if option2 %}
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_b"
-                            value="{{ option2 }}">
-                        <label class="form-check-label" for="option_b">
-                            {% include "optionSVG/optionB.html" %}
-                        </label>
-                    </div>
-                    {% endif %}
-                    {% if option3 %}
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_c"
-                            value="{{ option3 }}">
-                        <label class="form-check-label" for="option_c">
-                            {% include "optionSVG/optionC.html" %}
-                        </label>
-                    </div>
-                    {% endif %}
-                    {% if option4 %}
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="userAnswer" id="option_d"
-                            value="{{ option4 }}">
-                        <label class="form-check-label" for="option_d">
-                            {% include "optionSVG/optionD.html" %}
-                        </label>
-                    </div>
-                    {% endif %}
-                </div>
+        <!-- Answer options -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {% if option1 %}
+            <button class="bg-blue-800 hover:bg-blue-700 text-white py-4 px-6 rounded-xl text-left text-lg transition-colors">
+                <span class="text-cyan-400 font-bold mr-2">A.</span> {{ option1 }}
+            </button>
+            {% endif %}
+            {% if option2 %}
+            <button class="bg-blue-800 hover:bg-blue-700 text-white py-4 px-6 rounded-xl text-left text-lg transition-colors">
+                <span class="text-cyan-400 font-bold mr-2">B.</span> {{ option2 }}
+            </button>
+            {% endif %}
+            {% if option3 %}
+            <button class="bg-blue-800 hover:bg-blue-700 text-white py-4 px-6 rounded-xl text-left text-lg transition-colors">
+                <span class="text-cyan-400 font-bold mr-2">C.</span> {{ option3 }}
+            </button>
+            {% endif %}
+            {% if option4 %}
+            <button class="bg-blue-800 hover:bg-blue-700 text-white py-4 px-6 rounded-xl text-left text-lg transition-colors">
+                <span class="text-cyan-400 font-bold mr-2">D.</span> {{ option4 }}
+            </button>
+            {% endif %}
+        </div>
+        <!-- Game info and submit button -->
+        <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+            <div class="text-white text-sm sm:text-base">
+                <div>Total Amount: <span class="font-bold">${{ total|intcomma }}</span></div>
             </div>
-            <div class="col-md-6"></div>
-            <div class="small-bttn">
-                <button type="submit" title="Exit with collected money" class="btn btn-danger" name="submitBtn"
-                    value="exit">Exit</button>
-            </div>
-            <div class="small-bttn">
-                <button type="submit" class="btn btn-success" title="Submit your answer" name="submitBtn" id="sendAnswer"
-                    value="yes">Submit</button>
+            <div class="text-white text-lg">
+                Your option is:
+                {% if option1 %}
+                    <label class="ml-3">
+                        <input type="radio" name="userAnswer" id="option_a" value="{{ option1 }}" class="mr-2">
+                        A
+                    </label>
+                {% endif %}
+                {% if option2 %}
+                    <label class="ml-3">
+                        <input type="radio" name="userAnswer" id="option_b" value="{{ option2 }}" class="mr-2">
+                        B
+                    </label>
+                {% endif %}
+                {% if option3 %}
+                    <label class="ml-3">
+                        <input type="radio" name="userAnswer" id="option_c" value="{{ option3 }}" class="mr-2">
+                        C
+                    </label>
+                {% endif %}
+                {% if option4 %}
+                    <label class="ml-3">
+                        <input type="radio" name="userAnswer" id="option_d" value="{{ option4 }}" class="mr-2">
+                        D
+                    </label>
+                {% endif %}
+            <div>
+            <div class="space-x-4">
+                <button class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-md transition-colors"
+                    type="submit" title="Exit with collected money" name="submitBtn" value="exit"
+                >
+                    Exit
+                </button>
+                <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md transition-colors"
+                    type="submit" title="Submit your answer" name="submitBtn" id="sendAnswer" value="yes"
+                >
+                    Submit
+                </button>
             </div>
         </div>
     </div>
 </form>
 <script defer src="{% static 'js/timer.js' %}"></script>
+<script>
+    function toggleModal() {
+        const modal = document.getElementById('lifelineModal');
+        modal.classList.toggle('hidden');
+    }
+
+    function useLifeline() {
+        toggleModal();
+    }
+</script>
 {% endblock %}
