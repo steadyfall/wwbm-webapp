@@ -15,6 +15,7 @@ django-cache-url==3.4.5
 django-configurations==2.5.1
 django-crispy-forms==2.0
 djangorestframework==3.14.0
+django-tailwind==3.8.0
 filelock==3.14.0
 identify==2.5.36
 idna==3.4

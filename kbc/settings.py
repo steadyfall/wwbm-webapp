@@ -24,7 +24,7 @@ class Base(Configuration):
         "rest_framework.authtoken",
         "configurations",
         "tailwind",
-        "theme",
+        "tailwind_theme",
         "django_browser_reload",
     ]
 
@@ -117,7 +117,7 @@ class Base(Configuration):
         ]
     }
 
-    TAILWIND_APP_NAME = "theme"
+    TAILWIND_APP_NAME = "tailwind_theme"
     INTERNAL_IPS = [
         "127.0.0.1",
     ]
