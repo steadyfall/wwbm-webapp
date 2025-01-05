@@ -87,7 +87,7 @@ class Command(BaseCommand):
 
         if not options_to_create:
             self.logger.info("No new options to add.")
-            self.stdout.write(self.style.SUCCESS("No new options to add."))
+            self.stderr.write(self.style.SUCCESS("No new options to add."))
 
         batch_size = 100
         options_generator = lazy_option_generator(options_to_create)
@@ -97,8 +97,10 @@ class Command(BaseCommand):
                 break
             Option.objects.bulk_create(options_batch, batch_size)
 
-        self.stdout.write(
+        self.stderr.write(
             self.style.SUCCESS(
                 f"{len(options_to_create)} unique options added to the database."
             )
         )
+
+        self.stdout.write(json_file, ending="")
