@@ -33,7 +33,7 @@ def configure_logger(enable_logging):
 
 class Command(BaseCommand):
     help = """
-        Extract questions from a JSON file a JSON file generated via `manage.py fetchdb` command and adds them to the database.
+        Extract questions from a JSON file a JSON file generated via `manage.py fetchqns` command and adds them to the database.
         Ensure that `manage.py createcategories` and `manage.py extractoptions` commands have been run before running this command.
     """
 

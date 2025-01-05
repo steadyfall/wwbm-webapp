@@ -30,7 +30,7 @@ def configure_logger(enable_logging):
 
 
 class Command(BaseCommand):
-    help = "Extracts all unique options from a JSON file generated via `manage.py fetchdb` command."
+    help = "Extracts all unique options from a JSON file generated via `manage.py fetchqns` command."
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
