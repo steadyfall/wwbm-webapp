@@ -47,6 +47,7 @@ class Command(BaseCommand):
         }
         self._difficulty_choices = difficulty_choices
         self._categories = list(x for x in range(9, 32 + 1)) + ["any"]
+        self._categories_cli = list(str(x) for x in range(9, 32 + 1)) + ["any"]
         self._category_text = '9-32 (both inclusive) or "any"'
         self.logger = None
 
@@ -175,7 +176,7 @@ class Command(BaseCommand):
 
         msg = f"Added categories ({len(retrieved_categories)}): {', '.join(retrieved_categories)}"
         self.logger.info(msg)
-        self.stdout.write(self.style.NOTICE(msg))
+        self.stderr.write(self.style.NOTICE(msg))
         return responses
 
     async def _handle(self, queries, amount, category, difficulty):
@@ -192,16 +193,18 @@ class Command(BaseCommand):
         end = perf_counter()
         msg = f"Questions generated in {end-start} seconds."
         self.logger.info(msg)
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stderr.write(self.style.SUCCESS(msg))
 
         start = perf_counter()
         responses = await self._fetch_questions(query_links)
-        with open(f"fetched_questions_{time()}.json", "w") as f:
+        filename = f"fetched_questions_{time()}.json"
+        with open(filename, "w") as f:
             json.dump(responses, f, indent=4)
         end = perf_counter()
         msg = f"Questions fetched in {end-start} seconds."
         self.logger.info(msg)
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stderr.write(self.style.SUCCESS(msg))
+        self.stdout.write(filename, ending="")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -228,7 +231,7 @@ class Command(BaseCommand):
             metavar="",
             nargs="*",
             type=str,
-            choices=self._categories,
+            choices=self._categories_cli,
             default="any",
             help="Categories available to pull from. Allowed values include: "
             + self._category_text,
