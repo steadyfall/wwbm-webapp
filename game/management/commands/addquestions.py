@@ -98,8 +98,16 @@ class Command(BaseCommand):
             else:
                 category = category_mapping[item["category"]]
 
-            if Question.objects.filter(text=item["question"]).exists():
-                question = Question.objects.get(text=item["question"])
+            question_query = Question.objects.filter(text=item["question"]).order_by(
+                "-date_added"
+            )
+            if question_query.exists():
+                """self.logger.info(
+                    f"{item['question']} : {question_query.count()} queries"
+                )"""
+                question = question_query.first()
+                if question_query.count() > 1:
+                    question_query.exclude(id=question.id).delete()
                 if force_update:
                     question.correct_option = Option.objects.get(
                         text=item["correct_answer"]
@@ -165,8 +173,10 @@ incorrect_answers={item['incorrect_answers']}"
                 question.falls_under.add(category)
                 question.incorrect_options.set(item["incorrect_answers"])
 
-        self.stdout.write(
+        self.stderr.write(
             self.style.SUCCESS(
                 f"Successfully added {len(questions_to_create)} questions."
             )
         )
+
+        self.stdout.write(json_file, ending="")
