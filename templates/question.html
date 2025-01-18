@@ -46,45 +46,47 @@
 </div>
 <form method="post" id="newform">
     {% csrf_token %}
-    <div class="w-full max-w-4xl mx-auto p-4 space-y-6">
+    <div class="w-full max-w-4xl mx-auto p-4 space-y-6 min-w-[320px]">
         <!-- Top bar -->
-        <div class="flex flex-col sm:flex-row justify-between items-center text-white space-y-6 sm:space-y-0">
-            <div class="text-lg font-bold">Question for <span class="text-red-500">${{ forAmount|intcomma }}</span></div>
-            <div class="flex items-center space-x-4">
-                <div class="text-sm sm:text-base">Lifelines:</div>
-                <div class="flex space-x-2">
-                    {% for life in session.left_lifelines.all %}
-                    <span title="{{ life.name }}" class="text-yellow-400">
-                        {% if life.name == 'Fifty-50' %}
-                            {% include "lifelineSVG/fifty50.html" %}
-                        {% elif life.name == 'Audience Poll' %}
-                            {% include "lifelineSVG/audiencePoll.html" %}
-                        {% elif life.name == 'Expert Answer' %}
-                            {% include "lifelineSVG/expertAnswer.html" %}
-                        {% endif %}
-                    </span>
-                    {% empty %}
-                    <button onclick="toggleModal()" type="button" id="lifelineButton" disabled
-                        class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm transition-colors">
-                        Use Lifeline
-                    </button>
-                    {% endfor %}
-                </div>
+        <div class="flex flex-col sm:flex-row justify-between items-center text-white w-full gap-4 sm:gap-8">
+            <!-- Amount section -->
+            <div class="text-lg font-bold whitespace-nowrap">
+                Question for <span class="text-red-500">${{ forAmount|intcomma }}</span>
             </div>
 
-            {% if session.left_lifelines.all %}
-                <button onclick="toggleModal()" type="button" id="lifelineButton" {% if usedLifelineRecently %}disabled{% endif %}
-                    class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm transition-colors">
-                    Use Lifeline
-                </button>
-            {% endif %}
+            <!-- Lifelines section -->
+            <div class="flex flex-col sm:flex-row items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="text-sm sm:text-base whitespace-nowrap">Lifelines:</div>
+                    <div class="flex gap-2">
+                        {% for life in session.left_lifelines.all %}
+                        <span title="{{ life.name }}" class="text-yellow-400">
+                            {% if life.name == 'Fifty-50' %}
+                                {% include "lifelineSVG/fifty50.html" %}
+                            {% elif life.name == 'Audience Poll' %}
+                                {% include "lifelineSVG/audiencePoll.html" %}
+                            {% elif life.name == 'Expert Answer' %}
+                                {% include "lifelineSVG/expertAnswer.html" %}
+                            {% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if session.left_lifelines.all %}
+                    <button onclick="toggleModal()" type="button" id="lifelineButton" {% if usedLifelineRecently %}disabled{% endif %}
+                        class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-md text-sm transition-colors whitespace-nowrap">
+                        Use Lifeline
+                    </button>
+                {% endif %}
+            </div>
 
-            <div class="text-white text-sm sm:text-base">
+            <!-- Timer section -->
+            <div class="text-white text-sm sm:text-base whitespace-nowrap">
                 <div>Time Left: <span class="font-bold" id="time-left">{{ timer }}</span>s</div>
             </div>
         </div>
         <!-- Question -->
-        <div class="bg-blue-900 text-white text-center py-6 px-4 rounded-2xl text-lg sm:text-xl md:text-2xl shadow-lg">
+        <div class="bg-blue-900 text-white text-center py-6 px-4 rounded-2xl text-lg sm:text-xl md:text-2xl shadow-lg w-full">
             {{ question.text }}
         </div>
         <!-- Answer options -->
@@ -141,8 +143,10 @@
                         D
                     </label>
                 {% endif %}
-            <div>
-            <div class="space-x-4">
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row justify-end items-center space-y-4 sm:space-y-0">
+            <div class="space-x-4 sm:space-y-4">
                 <button class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-md transition-colors"
                     type="submit" title="Exit with collected money" name="submitBtn" value="exit"
                 >

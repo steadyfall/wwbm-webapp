@@ -51,22 +51,32 @@
                 <a href="{% if allSessions.has_previous %}?page={{ allSessions.previous_page_number }}{% else %}#{% endif %}">&lt;</a>
             </button>
             {% for num in allSessions.paginator.page_range %}
-                <button
-                    {% if allSessions.number == num %}
-                        class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    {% elif num > allSessions.number|add:'-2' and num < allSessions.number|add:'2' %}
-                        class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
-                    {% endif %}
-                >
-                    <a href="?page={{ num }}">{{ num }}</a>
-                </button>
+                {% if allSessions.number == num %}
+                    <a href="?page={{ num }}">
+                        <button
+                            class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                        {{ num }}
+                        </button>
+                    </a>
+                {% elif num > allSessions.number|add:'-2' and num < allSessions.number|add:'2' %}
+                    <a href="?page={{ num }}">
+                        <button
+                            class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
+                        >
+                            {{ num }}
+                        </button>
+                    </a>
+                {% endif %}
             {% endfor %}
-            <button
-                class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
-                {% if allSessions.has_next %}{% else %}disabled{% endif %}
-            >
-                <a href="{% if allSessions.has_next %}?page={{ allSessions.next_page_number }}{% else %}#{% endif %}">&gt;</a>
-            </button>
+            <a href="{% if allSessions.has_next %}?page={{ allSessions.next_page_number }}{% else %}#{% endif %}">
+                <button
+                    class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
+                    {% if allSessions.has_next %}{% else %}disabled{% endif %}
+                >
+                    &gt;
+                </button>
+            </a>
         </div>
         {% endif %}
     </div>

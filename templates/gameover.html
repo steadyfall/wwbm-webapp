@@ -19,17 +19,19 @@
     </defs>
 </svg>
 {% endif %}
-<div
-    class='
-    {% if mode == "over" or mode == "wrong" %}bg-[#ff7792]{% else %}bg-[#38fa5f]{% endif %}
-    rounded-lg shadow-lg max-w-2xl w-full p-6 mb-4'
->
-    <h1 class="text-4xl text-black mb-4 text-center">
-        {{ mainMessage|safe }}
-    </h1>
-    <p class="text-xl text-black text-center">
-        {{ message|safe }}
-    </p>
+<div class="px-4 sm:px-6 md:px-8">
+    <div
+        class='
+        {% if mode == "over" or mode == "wrong" %}bg-[#ff7792]{% else %}bg-[#38fa5f]{% endif %}
+        rounded-lg shadow-lg max-w-2xl mx-auto p-6 mb-4'
+    >
+        <h1 class="text-4xl text-black mb-4 text-center">
+            {{ mainMessage|safe }}
+        </h1>
+        <p class="text-lg text-black text-center">
+            {{ message|safe }}
+        </p>
+    </div>
 </div>
 <div class="blur-bg rounded-lg py-1 pl-1 mb-3">
     <div class="text-center relative">

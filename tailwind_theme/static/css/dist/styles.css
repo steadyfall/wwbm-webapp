@@ -1358,6 +1358,16 @@ select{
   border-color: rgb(31 41 55 / var(--tw-border-opacity, 1));
 }
 
+.border-gray-300{
+  --tw-border-opacity: 1;
+  border-color: rgb(209 213 219 / var(--tw-border-opacity, 1));
+}
+
+.border-gray-500{
+  --tw-border-opacity: 1;
+  border-color: rgb(107 114 128 / var(--tw-border-opacity, 1));
+}
+
 .bg-\[\#38fa5f\]{
   --tw-bg-opacity: 1;
   background-color: rgb(56 250 95 / var(--tw-bg-opacity, 1));
@@ -1711,6 +1721,14 @@ select{
 .text-yellow-400{
   --tw-text-opacity: 1;
   color: rgb(250 204 21 / var(--tw-text-opacity, 1));
+}
+
+.underline{
+  text-decoration-line: underline;
+}
+
+.underline-offset-2{
+  text-underline-offset: 2px;
 }
 
 .placeholder-gray-400::-moz-placeholder{
