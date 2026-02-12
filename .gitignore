@@ -1,3 +1,4 @@
+.venv
 venv
 db.sqlite3
 sqlite3.exe
@@ -5,3 +6,4 @@ __pycache__
 misc
 .vscode
 .env
+.env.mcp
