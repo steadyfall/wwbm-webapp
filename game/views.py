@@ -68,8 +68,7 @@ class MainPage(View):
                     session_id=Session.get_unused_sessionId(),
                     session_user=self.request.user,
                 )
-                # TODO: Change [2,3,4] logic to more sound one. Game will FAIL here unless changed to [1,2,3]
-                new_session.left_lifelines.set([2, 3, 4])
+                new_session.left_lifelines.set(Lifeline.objects.values_list("id", flat=True))
                 return redirect("rules", session=new_session.session_id, permanent=True)
             else:
                 return redirect("login")
