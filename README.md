@@ -35,7 +35,6 @@ The Trello board is [here](https://trello.com/b/r301JdtS/trivivo).
 |---|---|
 | `accessibility` | Breaks keyboard or screen reader access |
 | `design` | CSS inconsistency, unfinished migration, or design debt |
-| `documentation` | Improvements or additions to documentation |
 
 ### Area
 | Label | Description |
@@ -53,23 +52,20 @@ The Trello board is [here](https://trello.com/b/r301JdtS/trivivo).
 | `critical` | Crash, data loss, or auth bypass risk |
 | `security` | Vulnerability or exploitable behaviour |
 | `refactor` | Restructure code without changing behaviour |
+| `feature` | New feature or request |
 
 ### Dev
 | Label | Description |
 |---|---|
 | `infra` | CI/CD, GitHub Actions, or deployment configs |
 | `tests` | Missing, empty, or broken test coverage |
+| `docs` | Improvements or additions to documentation |
 
 ### Flow
 | Label | Description |
 |---|---|
 | `release` | Marks PRs intended to be merged into main (production) |
 
-### Contribution
-| Label | Description |
-|---|---|
-| `enhancement` | New feature or request |
-| `help wanted` | Extra attention is needed |
 
 ### Triage
 | Label | Description |
