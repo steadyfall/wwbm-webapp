@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "ce3e44e4c820",
+  "session_id": "d7ff20e4-67cb-418c-a4c6-9a32b0e93a1e",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-12T17:44:38.028965Z",
+  "branch": "RE-updated-fe",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".claude/skills/excalidraw/SKILL.md",
+    ".claude/skills/excalidraw/references/examples.md",
+    ".claude/skills/excalidraw/references/json-format.md"
+  ],
+  "agent": "Claude Code",
+  "token_usage": {
+    "input_tokens": 10,
+    "cache_creation_tokens": 45222,
+    "cache_read_tokens": 330296,
+    "output_tokens": 3015,
+    "api_call_count": 8
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-12T17:44:38.013481Z",
+    "agent_lines": 0,
+    "human_added": 479,
+    "human_modified": 939,
+    "human_removed": 0,
+    "total_committed": 561,
+    "agent_percentage": 0
+  }
+}
