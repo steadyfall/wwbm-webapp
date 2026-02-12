@@ -1,0 +1,3134 @@
+Give me a high level architecture, code quality, test and performance review of the project. Spawn subagents to do this work in equal parts.
+
+---
+
+<task-notification>
+<task-id>a1c4dc4</task-id>
+<status>completed</status>
+<summary>Agent "Code quality review" completed</summary>
+<result>Now let me generate the comprehensive code quality review report:
+
+## CODE QUALITY REVIEW - TRIVIVO DJANGO TRIVIA GAME PROJECT
+
+Based on my thorough analysis of the Django trivia game project, here is a comprehensive code quality review:
+
+---
+
+## CRITICAL ISSUES
+
+### 1. **Hardcoded Database Indexing - Test Code in Production (game/views.py:38-50)**
+- The `question()` function uses hardcoded index `[345]` to access questions: `Question.objects.all()[345]`
+- This is a test/development function that should not be in production code
+- **Risk**: Application will crash with IndexError if database doesn't have 346+ questions
+- **Impact**: Breaks game flow
+
+### 2. **Undefined Variable Bug (game/views.py:120)**
+```python
+if "agreed" not in tuple(self.request.POST.keys()):
+    sessionObj.delete()  # sessionObj not defined!
+```
+- `sessionObj` is used before it's checked/created in the Rules view POST handler
+- **Risk**: NameError crash when user submits form without agreement checkbox
+- **Impact**: Critical - crashes on common user action
+
+### 3. **Missing Error Handling for Database Queries (game/views.py, auth/views.py)**
+- No try/except blocks around `.get()` calls that can raise `DoesNotExist` exceptions
+- Examples: `Option.objects.get(text=userAnswer)` (line 316)
+- `Session.objects.get(session_id=sessionId)` called multiple times without existence check first
+- **Risk**: 500 errors from unhandled exceptions
+- **Impact**: Poor user experience and information leakage
+
+### 4. **SQL Injection Risk via String Concatenation (adminpanel/views.py:419)**
+```python
+formatted_message = message.format(f"{total*99:,}", f"{total:,}")
+```
+- While format strings are safer than raw concatenation, context injection in templates isn't properly sanitized
+- Line 419: `message.format()` with user-controllable data
+- **Risk**: XSS/Template injection if message source is compromised
+- **Impact**: Security vulnerability
+
+### 5. **Weak Random Generation (game/lifelines.py:31)**
+```python
+random_incorrect = secrets.choice(...)
+```
+- Using `secrets` module is good, but mixed with `random.shuffle()` and `random.randint()` elsewhere
+- The `fifty50()` function has better randomness than `audiencePoll()` (line 48: `random.randint()`)
+- **Risk**: Predictable game outcomes in audience poll lifeline
+- **Impact**: Game balance issue
+
+### 6. **Authentication Bypass Risk (auth/views.py:82-87)**
+```python
+def adminlogin(request):
+    if request.user.is_authenticated:
+        if request.user.is_superuser:
+            redirect("admin_page")  # No return statement!
+        else:
+            return redirect("mainpage")
+```
+- Missing `return` statement before redirect on line 85
+- **Risk**: Non-superuser authenticated users can access admin login page
+- **Impact**: Authorization bypass
+
+### 7. **Unvalidated User Input from POST (game/views.py:280-282, 314)**
+```python
+if self.request.POST["lifeline"] in set(mappedLifelines.keys()):
+    # But no validation of actual value
+userAnswer = self.request.POST["userAnswer"]
+option = Option.objects.get(text=userAnswer)
+```
+- User-supplied answer directly queries database
+- **Risk**: Information disclosure (database table structure via error messages)
+- **Impact**: Security & information leakage
+
+### 8. **Token Extraction from Request Headers (adminpanel/views.py:970)**
+```python
+Token.objects.get(key=request.headers["Authorization"].split().pop()).user
+```
+- Direct dictionary access on headers without validation
+- **Risk**: KeyError crash if Authorization header missing
+- **Impact**: API endpoint crashes on malformed requests
+
+---
+
+## MODERATE ISSUES
+
+### 1. **N+1 Query Problems (game/views.py, adminpanel/views.py)**
+- Multiple occurrences of repeated `.all()` calls:
+  ```python
+  # Line 565-567:
+  ses.correct_qns.all().count()
+  ses.used_lifelines.all().count()
+  ```
+- No `select_related()` or `prefetch_related()` used
+- **Impact**: Database performance degradation with many sessions/users
+
+### 2. **Inefficient Database Access Pattern (game/views.py:243-244)**
+```python
+check = Session.objects.filter(session_id=sessionId).exists()
+if check:
+    sessionObj = Session.objects.get(session_id=sessionId)  # Query again!
+```
+- Repeated pattern throughout codebase
+- Two database queries instead of one
+- **Impact**: Database load, slower response times
+
+### 3. **Magic Numbers and String Literals (game/views.py:71, 126-127, 165-175)**
+```python
+# Line 71:
+new_session.left_lifelines.set([2, 3, 4])  # Hardcoded lifeline IDs
+# Line 165-175: Multiple hardcoded level thresholds
+if level_number >= 13: return 60
+elif level_number >= 10: return 50
+```
+- No configuration or constants defined
+- **Impact**: Hard to maintain, brittle logic
+
+### 4. **Long, Complex View Methods (game/views.py: QuestionInGame)**
+- `context_creator()` method is 88 lines (151-238)
+- Nested functions with complex conditional logic
+- Multiple responsibilities: rendering, lifeline handling, timing
+- **Impact**: Hard to test, maintain, and understand
+
+### 5. **Dead Code (game/views.py:222-223, 355-362)**
+```python
+""" def get_absolute_url(self):
+    return reverse('session', kwargs={'session_id': self.session_id}) """
+
+# Commented-out redirect method:
+""" return redirect(
+    "statusAfterQn",
+    ...
+) """
+```
+- Multiple commented-out code blocks
+- **Impact**: Code maintenance confusion, increases cognitive load
+
+### 6. **Weak Form Validation (auth/validate.py:18-26)**
+- Password validator allows any non-numeric character
+- No check for special characters or complexity
+- Regex `^.*\D.*$` just ensures 1 non-digit character exists
+- **Impact**: Weak passwords possible despite "validation"
+
+### 7. **Missing CSRF Protection Context (game/views.py:48)**
+```python
+<form method="post" id="newform">
+    {% csrf_token %}  # Good, but form doesn't validate CSRF in view
+```
+- View doesn't validate CSRF (handled by middleware, but no verification in code)
+- **Impact**: Relies entirely on middleware, no defense-in-depth
+
+### 8. **Inadequate Error Messages (auth/views.py:19, 38-39)**
+```python
+error: str = "Data is invalid. Try again."
+messages.error(request, error)
+```
+- Generic error messages don't help users
+- Same message for different validation failures
+- **Impact**: Poor user experience, debugging difficulty
+
+### 9. **Session Data Integrity Issues (game/views.py:255)**
+```python
+if level_diff >= 2 or sessionObj.current_question.text == "None":
+```
+- String comparison to detect "no question" state
+- Uses sentinel value approach inconsistently
+- **Impact**: Brittle state management
+
+### 10. **Import Wildcard Anti-pattern (game/views.py:9, game/lifelines.py:1)**
+```python
+from game.models import *
+from .lifelines import *
+```
+- Pollutes namespace, makes dependencies unclear
+- **Impact**: Hard to understand what's imported, possible naming conflicts
+
+---
+
+## MINOR ISSUES
+
+### 1. **Code Style & PEP8 Violations**
+- Inconsistent spacing and naming:
+  - `agreedToRules` (camelCase) vs `gameOver` (camelCase) should be snake_case
+  - `date_created` vs `date_added` naming inconsistency in models
+  - Line 11 in auth/views.py: Type hints in odd positions
+
+### 2. **Missing Docstrings**
+- Most functions lack docstrings (game/views.py: MainPage, About, Rules classes)
+- Only a few utility functions documented (viewsExtra.py)
+- **Impact**: Harder onboarding and maintenance
+
+### 3. **Unused Imports (game/views.py:11)**
+```python
+import random  # Also imported elsewhere, used multiple times but not optimally
+from .lifelines import *  # Wildcard import makes it unclear what's used
+```
+
+### 4. **Template Code Quality Issues (templates/question.html)**
+- Repeated conditional blocks for options:
+  ```html
+  {% if option1 %} ... {% endif %}
+  {% if option2 %} ... {% endif %}
+  {% if option3 %} ... {% endif %}
+  {% if option4 %} ... {% endif %}
+  ```
+- Could be refactored with loop
+- **Impact**: Hard to maintain template logic
+
+### 5. **Magic HTML/CSS Classes (templates/gameover.html:25)**
+```html
+class='{% if mode == "over" or mode == "wrong" %}bg-[#ff7792]{% else %}bg-[#38fa5f]{% endif %}'
+```
+- Complex Tailwind class logic in template
+- **Impact**: Template bloat, hard to modify styling
+
+### 6. **Inconsistent Model Field Definitions**
+- Some fields use `blank=False, null=False` (redundant default)
+- Sentinel model instances use `.get_or_create()` pattern inconsistently
+- Line 158 in models.py: Trailing comma after set operation creates tuple
+
+### 7. **Admin Panel Complexity (adminpanel/views.py:98-220)**
+- `AdminMainPage.context_creater()` is 122 lines
+- Multiple nested loops and complex calculations inline
+- **Impact**: Hard to test, understand, modify
+
+### 8. **Inconsistent Logging**
+- `print(request.POST)` in game/views.py (line 20)
+- Should use Django logging instead
+- **Impact**: Not suitable for production, gets lost
+
+### 9. **Settings Not Environment-Based**
+- `ALLOWED_HOSTS` hardcoded (settings.py:129-131)
+- No separate config for different environments
+- **Impact**: Configuration management issues
+
+### 10. **Missing Request Validation (adminpanel/views.py:757-764)**
+```python
+count = self.request.GET.get("count")
+count = int(count) if count.isdigit() else 1
+```
+- Accepts empty string as valid input
+- No limit on count parameter before database query
+
+---
+
+## POSITIVES
+
+### 1. **Good Django Patterns**
+- Uses `LoginRequiredMixin` and `UserPassesTestMixin` for authorization
+- Proper use of Django ORM models
+- Settings using django-configurations for environment management
+- CSRF protection middleware enabled
+
+### 2. **Security Awareness**
+- Uses Django's built-in password hashing via `create_user()`
+- Token-based API authentication with DRF
+- SECRET_KEY from environment variables (not hardcoded)
+- CSRF tokens in forms
+
+### 3. **Good Project Structure**
+- Modular app architecture (game, auth, adminpanel)
+- Separate validation module (auth/validate.py)
+- Template organization by app
+- Admin panel as separate app
+
+### 4. **Testing Setup**
+- pytest configured (pyproject.toml)
+- conftest.py exists for test fixtures
+- Pre-commit hooks configured for code quality
+
+### 5. **Code Quality Tools**
+- Pre-commit hooks with ruff for linting
+- Coverage reporting configured
+- Both formatters and linters in pipeline
+
+### 6. **Good Model Design**
+- Proper use of ForeignKey relationships
+- ManyToMany fields with through models where needed
+- Model Meta classes with verbose names
+- Sensible defaults for timestamps
+
+### 7. **REST Framework Integration**
+- Proper use of APIView and TokenAuthentication
+- Custom JSON encoder for Question serialization
+- Rate limiting consideration (max 5 items check)
+
+### 8. **Form Handling**
+- Custom ModifiedModelForm for better M2M handling
+- Proper form validation override
+- Form templates separated by app
+
+---
+
+## SUMMARY TABLE
+
+| Category | Count | Severity |
+|----------|-------|----------|
+| Critical Issues | 8 | High |
+| Moderate Issues | 10 | Medium |
+| Minor Issues | 10 | Low |
+| Positive Aspects | 8 | - |
+
+### Recommended Priority Fixes:
+1. **IMMEDIATE**: Fix undefined variable bug (game/views.py:120) - Blocks user registration flow
+2. **IMMEDIATE**: Add try/except for database queries - Prevents 500 errors
+3. **HIGH**: Fix authentication bypass (auth/views.py:85) - Security issue
+4. **HIGH**: Remove hardcoded database indexing - Application stability
+5. **MEDIUM**: Implement N+1 query fixes with select_related/prefetch_related - Performance
+6. **MEDIUM**: Refactor long view methods into smaller functions - Maintainability</result>
+<usage>total_tokens: 83390
+tool_uses: 40
+duration_ms: 82489</usage>
+</task-notification>
+Full transcript available at: /private/tmp/claude-501/-Users-himankdave-Documents-code-personal-gh-trivivo/tasks/a1c4dc4.output
+
+---
+
+<task-notification>
+<task-id>a1b2a5b</task-id>
+<status>completed</status>
+<summary>Agent "Test coverage review" completed</summary>
+<result>Perfect. Now I have gathered enough information. Let me create a comprehensive test coverage and testing quality review report.
+
+## TEST COVERAGE & TESTING QUALITY REVIEW - TRIVIVO DJANGO TRIVIA GAME
+
+### EXECUTIVE SUMMARY
+
+The project has **MINIMAL TO NO TEST COVERAGE**. Despite having a well-structured pytest configuration and Django setup, all test files are completely empty (only contain boilerplate `from django.test import TestCase` comments). The `tests/functional/` and `tests/unit/` directories are also empty. This is a critical gap for a production trivia game with complex authentication, game logic, and API endpoints.
+
+---
+
+### 1. CURRENT TEST COVERAGE STATUS
+
+#### **Tests Files Found:**
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/adminpanel/tests.py` - **EMPTY** (4 lines, only comments)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/auth/tests.py` - **EMPTY** (4 lines, only comments)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/tests.py` - **EMPTY** (4 lines, only comments)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/tests/unit/` - **EMPTY** (only `__init__.py`)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/tests/functional/` - **EMPTY** (only `__init__.py`)
+
+#### **Pytest Configuration Status:**
+- **conftest.py exists**: YES - Well-structured with Django setup and fixtures
+- **pyproject.toml pytest config exists**: YES - Properly configured
+- **API client fixture exists**: YES - `api_client()` fixture provided
+
+#### **What IS Currently Tested:**
+- **NOTHING** - Zero actual test implementations
+
+#### **What SHOULD Be Tested But Isn't:**
+
+---
+
+### 2. CRITICAL GAPS & MISSING TESTS
+
+#### **A. AUTHENTICATION FLOWS (High Priority)**
+
+**Missing Test Areas:**
+1. User Registration
+   - Valid registration with correct credentials
+   - Invalid email formats
+   - Password validation (length, non-numeric requirement, username not in password)
+   - Duplicate username handling
+   - Missing form fields (KeyError handling)
+   - All validation rules from `auth/validate.py`
+
+2. User Login
+   - Successful login with valid credentials
+   - Failed login with wrong password
+   - Login with non-existent username
+   - KeyError handling (missing POST fields)
+   - Redirect behavior after successful login
+
+3. Admin Login
+   - Admin user login with superuser status
+   - Attempt to admin login with non-superuser
+   - Redirect logic for superusers vs regular users
+   - Invalid credentials for admin
+
+4. Logout
+   - Logout from authenticated session
+   - Logout redirect behavior
+   - Admin logout special handling
+
+5. Input Validation
+   - Username validation edge cases (regex: `^[\w.@+-]{1,149}$`)
+   - Email validation edge cases (regex: `(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)`)
+   - Password complexity validation (min 8 chars, non-numeric, username not in password)
+   - Password confirmation matching
+
+#### **B. GAME LOGIC & SESSION MANAGEMENT (Critical)**
+
+**Missing Test Areas:**
+
+1. **Session Management**
+   - Session creation with unique session IDs
+   - Session ID collision avoidance (`get_unused_sessionId()`)
+   - Session initialization with user
+   - Session state transitions (rules agreed → game started → game over)
+
+2. **Question Selection & Difficulty**
+   - `get_next_question()` logic based on level_number
+   - Difficulty mapping: EASY (level < 6), MEDIUM (6-10), HARD (11+)
+   - Question selection avoids duplicates for same user
+   - Handling when not enough questions available
+   - Edge case: Empty question pool for difficulty level
+
+3. **Level Progression**
+   - Level transitions on correct answers
+   - Level 15 → Level 16 transition = game complete
+   - Money accumulation per level
+   - Previous level tracking
+
+4. **Answer Validation**
+   - Correct answer increments score
+   - Incorrect answer triggers game over
+   - Score calculation: correct = add level money, incorrect = divide by 100 (integer division bug?)
+   - Option selection tracking (hits through ChosenOption)
+
+5. **Lifeline Mechanics** (lifelines.py)
+   - Fifty-50 lifeline (should remove 1 incorrect option, keep 1 correct)
+   - Audience Poll lifeline (random percentages, correct answer 50-100%, others 1-correct%)
+   - Expert Answer lifeline (reveals correct answer)
+   - Lifeline state transitions (left_lifelines → used_lifelines)
+   - Preventing lifeline reuse on same question
+
+6. **Game Over Conditions**
+   - User quits mid-game
+   - User answers incorrectly
+   - User reaches level 16 (max level)
+   - Game state prevents further actions
+
+#### **C. ADMIN PANEL & DATA MANAGEMENT (High Priority)**
+
+**Missing Test Areas:**
+
+1. **Access Control**
+   - Superuser-only access to admin views
+   - Non-superuser attempting admin access redirects
+   - Login requirement for admin views
+   - Anonymous user access attempts
+
+2. **CRUD Operations**
+   - Create Question/Category/Option/Lifeline
+   - Update existing records
+   - Delete with cascading relationships
+   - Bulk delete operations
+
+3. **API Endpoints**
+   - `GetQuestion` endpoint (random question retrieval, count parameter)
+   - `AddQuestion` endpoint (bulk question insertion with validation)
+   - Token authentication for API
+   - Rate limiting awareness (status code 2)
+
+4. **Data Validation in API**
+   - Question JSON schema validation
+   - Difficulty field validation (Easy/Medium/Hard)
+   - Category fuzzy matching (`icontains` with length ordering)
+   - Option deduplication
+   - Incorrect answers count (must be exactly 3)
+
+5. **Admin Dashboard**
+   - Statistics calculations (daily/total questions, sessions, users)
+   - Chart data generation
+   - Top scores ranking
+   - Active user calculations
+
+6. **Logging & Auditing**
+   - Change tracking (LogEntry)
+   - Addition logging
+   - Modification logging
+   - Deletion logging
+
+#### **D. MODEL RELATIONSHIPS & DATA INTEGRITY (Medium Priority)**
+
+**Missing Test Areas:**
+
+1. **Model Methods**
+   - `Level.get_default_pk()` - creates default level if not exists
+   - `Category.get_default_pk()` - creates "None" category if not exists
+   - `Option.get_default_pk()` - creates "None" option if not exists
+   - `Question.get_default_pk()` - complex default question creation
+   - `Session.print_money()` - formatting
+
+2. **Foreign Key Relationships**
+   - Sentinel user handling (`get_sentinel_user()`)
+   - User deletion cascading
+   - Question-Option relationships
+   - ManyToMany through models (ChosenOption, QuestionOrder)
+
+3. **Model Validators**
+   - Level: `level_number` (-1 to 16 range)
+   - Level: `money` (0 to 10,000,000 range)
+   - Session: `score` (0 to 100,000,000 range)
+
+#### **E. EDGE CASES & ERROR CONDITIONS (High Priority)**
+
+**Missing Test Areas:**
+
+1. **Database Edge Cases**
+   - Questions with identical text
+   - Categories with similar names
+   - Options with duplicate text
+   - Session with no questions of required difficulty
+
+2. **Concurrency Issues**
+   - Multiple users in same game session (should fail)
+   - Simultaneous question submissions
+   - Race conditions in score updates
+
+3. **Invalid URL Parameters**
+   - Invalid session ID format
+   - Non-existent session ID
+   - Level mismatch with session state
+   - Invalid pk in admin views
+
+4. **User Permission Issues**
+   - User accessing another user's session
+   - Unauthenticated user accessing protected views
+   - Non-superuser accessing admin endpoints
+
+#### **F. API INTEGRATION (Medium Priority)**
+
+**Missing Test Areas:**
+
+1. **AddQuestion API**
+   - Bulk question submission (list of dicts)
+   - Category fuzzy matching logic
+   - Option deduplication and reuse
+   - Question deduplication (trim + iexact comparison)
+   - Error responses for invalid data
+   - Token authentication
+
+2. **GetQuestion API**
+   - Random question selection
+   - Count parameter validation (max 5)
+   - Question serialization (QuestionEncoder)
+
+3. **Status Codes**
+   - Status 0: Error
+   - Status 1: OK
+   - Status 2: Rate limited (not implemented yet)
+   - Status 3: Invalid/missing data
+   - Status 4: Invalid/missing parameters
+   - Status 5: Validation failed
+
+---
+
+### 3. QUALITY OF EXISTING TESTS
+
+#### **Finding:** NO TESTS EXIST TO EVALUATE
+
+The test files are completely empty boilerplate. However, the **foundation is good**:
+
+**Positive Aspects of Setup:**
+- ✓ `conftest.py` properly configured with Django settings
+- ✓ `pytest-django` properly installed and configured
+- ✓ `pytest-cov` available for coverage measurement
+- ✓ In-memory SQLite database for testing
+- ✓ `api_client()` fixture provided
+- ✓ Proper pytest.ini_options in pyproject.toml
+
+**Concerns:**
+- ✗ No actual test implementations
+- ✗ `tests/unit/` and `tests/functional/` directories empty
+- ✗ Zero use of pytest-django markers (@pytest.mark.django_db)
+- ✗ No factories or fixtures defined (beyond api_client)
+- ✗ No integration tests
+- ✗ No coverage tracking
+
+---
+
+### 4. TEST ORGANIZATION & STRUCTURE
+
+#### **Current Structure (Intended but Not Used):**
+```
+/tests/
+  /unit/          (empty)
+  /functional/    (empty)
+  __init__.py
+/adminpanel/
+  tests.py        (empty)
+/auth/
+  tests.py        (empty)
+/game/
+  tests.py        (empty)
+conftest.py       (configured)
+```
+
+#### **Recommended Structure:**
+```
+/tests/
+  /unit/
+    test_auth_validation.py
+    test_models.py
+    test_lifelines.py
+  /functional/
+    test_auth_flows.py
+    test_game_flows.py
+    test_admin_views.py
+    test_api_endpoints.py
+  conftest.py (extend existing)
+  __init__.py
+```
+
+---
+
+### 5. TEST FIXTURES & SETUP PATTERNS
+
+#### **Current Fixtures (in conftest.py):**
+```python
+- django_db_setup()    # In-memory DB config
+- api_client()         # DRF APIClient
+```
+
+#### **Missing Critical Fixtures Needed:**
+
+1. **User Fixtures**
+   ```
+   - user_factory / create_user()
+   - admin_user_factory
+   - authenticated_client()
+   - admin_client()
+   ```
+
+2. **Game Data Fixtures**
+   ```
+   - level_factory (with multiple difficulties)
+   - category_factory
+   - option_factory
+   - question_factory (with difficulty, options, categories)
+   - session_factory (with user, question, lifelines)
+   - lifeline_factory
+   ```
+
+3. **Database Fixtures**
+   ```
+   - seeded_database (questions, levels, lifelines)
+   - empty_session_database
+   ```
+
+---
+
+### 6. CRITICAL MISSING TESTS WITH EXAMPLES
+
+#### **Example 1: Auth Validation Tests**
+
+**Current Code (auth/validate.py):**
+```python
+def passwordValidator(username: str, password: str):
+    notNumericRegex: str = r"^.*\D.*$"
+    if (
+        len(password) >= 8
+        and (re.fullmatch(notNumericRegex, password) is not None)
+        and (username and (password.lower().find(username) == -1))
+    ):
+        return True
+    return False
+```
+
+**Missing Tests:**
+```python
+def test_password_validator_valid():
+    """Password must be 8+ chars, contain non-numeric, not contain username"""
+    assert passwordValidator("john_doe", "ValidPass123") is True
+
+def test_password_validator_too_short():
+    """Password less than 8 chars fails"""
+    assert passwordValidator("john_doe", "Pass123") is False
+
+def test_password_validator_all_numeric():
+    """All numeric passwords fail"""
+    assert passwordValidator("john_doe", "12345678") is False
+
+def test_password_validator_contains_username():
+    """Password containing username fails"""
+    assert passwordValidator("john_doe", "john_password123") is False
+
+def test_password_validator_case_insensitive():
+    """Username check is case-insensitive"""
+    assert passwordValidator("john_doe", "JOHN_PASSWORD123") is False
+```
+
+---
+
+#### **Example 2: Session Management Tests**
+
+**Current Code (game/models.py):**
+```python
+@classmethod
+def get_unused_sessionId(cls):
+    used_sessionId = {ssn.session_id for ssn in cls.objects.all()}
+    newSessionId = get_random_string(8)
+    while newSessionId in used_sessionId:
+        newSessionId = get_random_string(8)
+    return newSessionId
+
+@classmethod
+def get_next_question(cls, session_id):
+    sessionObj = cls.objects.get(session_id=session_id)
+    level_number = sessionObj.current_level.level_number
+    mode = "None"
+    if level_number >= 11:
+        mode = Question.HARD
+    elif level_number >= 6:
+        mode = Question.MEDIUM
+    else:
+        mode = Question.EASY
+    questionsAskedToUser = list(sessionObj.session_user.questions_asked.all())
+    mode_questions = list(Question.objects.filter(difficulty=mode))
+    desirable_questions = list(set(mode_questions) - set(questionsAskedToUser))
+    qn = random.choice(desirable_questions)
+    return qn
+```
+
+**Missing Tests:**
+```python
+@pytest.mark.django_db
+def test_get_unused_session_id_unique(session_factory):
+    """Generated session IDs must be unique"""
+    session1 = session_factory()
+    session2_id = Session.get_unused_sessionId()
+    assert session2_id != session1.session_id
+    assert len(session2_id) == 8
+
+@pytest.mark.django_db
+def test_get_next_question_easy_level(user, question_factory):
+    """Easy level (< 6) returns easy difficulty questions"""
+    user = user_factory()
+    level = Level.objects.get(level_number=1)
+    session = Session.objects.create(
+        session_id=Session.get_unused_sessionId(),
+        session_user=user,
+        current_level=level,
+    )
+    easy_q = question_factory(difficulty=Question.EASY)
+    medium_q = question_factory(difficulty=Question.MEDIUM)
+    
+    next_q = Session.get_next_question(session.session_id)
+    assert next_q.difficulty == Question.EASY
+    assert next_q == easy_q
+
+@pytest.mark.django_db
+def test_get_next_question_avoids_duplicates(user_factory, question_factory):
+    """Already asked questions are not selected again"""
+    user = user_factory()
+    level = Level.objects.get(level_number=1)
+    session = Session.objects.create(
+        session_id=Session.get_unused_sessionId(),
+        session_user=user,
+        current_level=level,
+    )
+    easy_q1 = question_factory(difficulty=Question.EASY)
+    easy_q2 = question_factory(difficulty=Question.EASY)
+    user.questions_asked.add(easy_q1)
+    
+    next_q = Session.get_next_question(session.session_id)
+    assert next_q == easy_q2
+    assert next_q != easy_q1
+```
+
+---
+
+#### **Example 3: Lifeline Tests**
+
+**Current Code (game/lifelines.py):**
+```python
+def fifty50(question_id, session_id):
+    general_procedure(mappedLifelines[FIFTY50], question_id, session_id)
+    question = Question.objects.get(pk=question_id)
+    random_incorrect = secrets.choice(
+        [o.text for o in question.incorrect_options.all()]
+    )
+    correct = question.correct_option.text
+    newOptions = []
+    newOptions.extend([random_incorrect, correct])
+    random.shuffle(newOptions)
+    return newOptions
+```
+
+**Missing Tests:**
+```python
+@pytest.mark.django_db
+def test_fifty50_returns_correct_and_one_incorrect(question_factory, session_factory):
+    """Fifty-50 lifeline returns correct answer + 1 random incorrect"""
+    session = session_factory()
+    incorrect1 = Option.objects.create(text="Wrong 1")
+    incorrect2 = Option.objects.create(text="Wrong 2")
+    incorrect3 = Option.objects.create(text="Wrong 3")
+    correct = Option.objects.create(text="Correct")
+    question = question_factory(
+        correct_option=correct,
+        incorrect_options=[incorrect1, incorrect2, incorrect3]
+    )
+    
+    result = fifty50(question.pk, session.session_id)
+    
+    assert len(result) == 2
+    assert correct.text in result
+    assert result.count(correct.text) == 1
+
+@pytest.mark.django_db
+def test_fifty50_removes_from_lifelines(question_factory, session_factory):
+    """Using fifty-50 moves it from left_lifelines to used_lifelines"""
+    session = session_factory()
+    question = question_factory()
+    lifeline_50 = Lifeline.objects.get(name=FIFTY50)
+    session.left_lifelines.add(lifeline_50)
+    
+    fifty50(question.pk, session.session_id)
+    
+    session.refresh_from_db()
+    assert lifeline_50 not in session.left_lifelines.all()
+    assert lifeline_50 in session.used_lifelines.all()
+
+@pytest.mark.django_db
+def test_audience_poll_correct_answer_majority(question_factory, session_factory):
+    """Audience poll gives correct answer 50-100%, others get less"""
+    session = session_factory()
+    incorrect = Option.objects.create(text="Wrong")
+    correct = Option.objects.create(text="Correct")
+    question = question_factory(
+        correct_option=correct,
+        incorrect_options=[incorrect]
+    )
+    
+    result = audiencePoll(question.pk, session.session_id)
+    
+    # Result is HTML, extract percentages
+    assert "Correct: " in result or correct.text in result
+```
+
+---
+
+#### **Example 4: Admin API Tests**
+
+**Current Code (adminpanel/views.py - AddQuestion):**
+```python
+def post(self, request, *args, **kwargs):
+    final = {}
+    result = {}
+    add_questions = []
+    # ... complex validation logic ...
+    received_json_data = request.data
+    if not isinstance(received_json_data, list):
+        final["success"] = 0
+        result["status_code"] = 3
+        result["status_message"] = self.statuses[result["status_code"]]
+        final["errors"] = result
+        return JsonResponse(final, safe=False, encoder=QuestionEncoder, status=400)
+```
+
+**Missing Tests:**
+```python
+@pytest.mark.django_db
+def test_add_question_valid_request(api_client, admin_user):
+    """Valid question submission succeeds"""
+    api_client.force_authenticate(user=admin_user)
+    token = Token.objects.get(user=admin_user)
+    api_client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+    
+    payload = [
+        {
+            "question": "What is 2+2?",
+            "correct_answer": "4",
+            "incorrect_answers": ["3", "5", "6"],
+            "difficulty": "Easy",
+            "category": "Math"
+        }
+    ]
+    
+    response = api_client.post('/api/add-question/', payload, format='json')
+    
+    assert response.status_code == 201
+    assert response.json()['success'] == 1
+    assert Question.objects.filter(text="What is 2+2?").exists()
+
+@pytest.mark.django_db
+def test_add_question_missing_required_fields(api_client, admin_user):
+    """Missing required fields returns status 4"""
+    api_client.force_authenticate(user=admin_user)
+    token = Token.objects.get(user=admin_user)
+    api_client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+    
+    payload = [
+        {
+            "question": "What is 2+2?",
+            # Missing correct_answer, incorrect_answers, difficulty
+        }
+    ]
+    
+    response = api_client.post('/api/add-question/', payload, format='json')
+    
+    assert response.status_code == 409
+    assert response.json()['success'] == 0
+    assert response.json()['errors'][0]['status_code'] == 4
+
+@pytest.mark.django_db
+def test_add_question_not_list(api_client, admin_user):
+    """Non-list payload returns status 3"""
+    api_client.force_authenticate(user=admin_user)
+    token = Token.objects.get(user=admin_user)
+    api_client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+    
+    payload = {
+        "question": "What is 2+2?",
+        "correct_answer": "4",
+        "incorrect_answers": ["3", "5", "6"],
+        "difficulty": "Easy"
+    }
+    
+    response = api_client.post('/api/add-question/', payload, format='json')
+    
+    assert response.status_code == 400
+    assert response.json()['success'] == 0
+    assert response.json()['errors']['status_code'] == 3
+
+@pytest.mark.django_db
+def test_add_question_wrong_incorrect_count(api_client, admin_user):
+    """Wrong number of incorrect answers returns status 5"""
+    api_client.force_authenticate(user=admin_user)
+    token = Token.objects.get(user=admin_user)
+    api_client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+    
+    payload = [
+        {
+            "question": "What is 2+2?",
+            "correct_answer": "4",
+            "incorrect_answers": ["3", "5"],  # Only 2, need 3
+            "difficulty": "Easy"
+        }
+    ]
+    
+    response = api_client.post('/api/add-question/', payload, format='json')
+    
+    assert response.status_code == 409
+    assert response.json()['errors'][0]['status_code'] == 5
+```
+
+---
+
+#### **Example 5: Authentication Flow Tests**
+
+**Current Code (auth/views.py):**
+```python
+def register(request):
+    error: str = "Data is invalid. Try again."
+    if request.method == "POST":
+        try:
+            username: str = request.POST["username"]
+            email: str = request.POST["email"]
+            password: str = request.POST["password"]
+            password2: str = request.POST["password2"]
+        except KeyError:
+            messages.error(request, error)
+            return redirect("register")
+        # ... validation ...
+        if User.objects.filter(username=username).exists():
+            messages.warning(request, "You already have an account.")
+            return redirect("login")
+```
+
+**Missing Tests:**
+```python
+@pytest.mark.django_db
+def test_register_valid_user(client):
+    """Valid registration creates user and redirects to login"""
+    response = client.post('/auth/register/', {
+        'username': 'newuser',
+        'email': 'newuser@example.com',
+        'password': 'SecurePass123',
+        'password2': 'SecurePass123'
+    })
+    
+    assert response.status_code == 302
+    assert response.url == '/auth/login/'
+    assert User.objects.filter(username='newuser').exists()
+
+@pytest.mark.django_db
+def test_register_duplicate_username(client, user_factory):
+    """Duplicate username redirects to login"""
+    user_factory(username='existing')
+    
+    response = client.post('/auth/register/', {
+        'username': 'existing',
+        'email': 'new@example.com',
+        'password': 'SecurePass123',
+        'password2': 'SecurePass123'
+    })
+    
+    assert response.status_code == 302
+    assert response.url == '/auth/login/'
+
+@pytest.mark.django_db
+def test_register_missing_fields(client):
+    """Missing form fields returns error"""
+    response = client.post('/auth/register/', {
+        'username': 'newuser',
+        # Missing email, password, password2
+    })
+    
+    assert response.status_code == 302
+    assert response.url == '/auth/register/'
+    assert not User.objects.filter(username='newuser').exists()
+
+@pytest.mark.django_db
+def test_register_invalid_email(client):
+    """Invalid email format fails validation"""
+    response = client.post('/auth/register/', {
+        'username': 'newuser',
+        'email': 'not-an-email',
+        'password': 'SecurePass123',
+        'password2': 'SecurePass123'
+    })
+    
+    assert response.status_code == 302
+    assert response.url == '/auth/register/'
+    assert not User.objects.filter(username='newuser').exists()
+
+@pytest.mark.django_db
+def test_login_valid_credentials(client, user_factory):
+    """Valid login authenticates user"""
+    user = user_factory(username='testuser')
+    user.set_password('SecurePass123')
+    user.save()
+    
+    response = client.post('/auth/login/', {
+        'username': 'testuser',
+        'password': 'SecurePass123'
+    })
+    
+    assert response.status_code == 302
+    assert response.url == '/game/'
+    assert response.wsgi_request.user.is_authenticated
+
+@pytest.mark.django_db
+def test_login_wrong_password(client, user_factory):
+    """Wrong password fails login"""
+    user = user_factory(username='testuser')
+    user.set_password('SecurePass123')
+    user.save()
+    
+    response = client.post('/auth/login/', {
+        'username': 'testuser',
+        'password': 'WrongPass123'
+    })
+    
+    assert response.status_code == 302
+    assert response.url == '/auth/login/'
+
+@pytest.mark.django_db
+def test_logout(client, user_factory):
+    """Logout clears authentication"""
+    user = user_factory()
+    client.force_login(user)
+    
+    response = client.get('/auth/logout/')
+    
+    assert response.status_code == 200
+    assert not response.wsgi_request.user.is_authenticated
+
+@pytest.mark.django_db
+def test_adminlogin_superuser(client, user_factory):
+    """Superuser login succeeds"""
+    admin = user_factory(is_superuser=True, is_staff=True)
+    admin.set_password('AdminPass123')
+    admin.save()
+    
+    response = client.post('/auth/admin-login/', {
+        'username': admin.username,
+        'password': 'AdminPass123'
+    })
+    
+    assert response.status_code == 302
+    assert 'admin' in response.url.lower()
+
+@pytest.mark.django_db
+def test_adminlogin_non_superuser(client, user_factory):
+    """Non-superuser redirects from admin login"""
+    user = user_factory(is_superuser=False)
+    user.set_password('Pass123')
+    user.save()
+    
+    response = client.post('/auth/admin-login/', {
+        'username': user.username,
+        'password': 'Pass123'
+    })
+    
+    assert response.status_code == 302
+    assert response.url != '/admin/'  # Redirected away from admin
+```
+
+---
+
+### 7. PYTEST CONFIGURATION ANALYSIS
+
+#### **conftest.py Review:**
+```python
+✓ Django settings configured correctly
+✓ Configurations framework initialized  
+✓ In-memory SQLite database for tests
+✓ Basic api_client fixture
+
+✗ Missing factories (for creating test objects)
+✗ Missing authentication fixtures
+✗ Missing Django transaction fixtures
+✗ No parametrization examples
+```
+
+#### **pyproject.toml pytest.ini_options:**
+```python
+✓ DJANGO_SETTINGS_MODULE set
+✓ DJANGO_CONFIGURATION set
+✓ Test paths configured
+✓ Coverage settings in place
+✓ addopts with verbose and short traceback
+
+✗ Coverage currently excludes tests/ and conftest.py (but omit list should be reviewed)
+```
+
+---
+
+### 8. INTEGRATION TEST COVERAGE
+
+**Status**: NONE
+
+**What Should Be Integrated:**
+
+1. **Complete Game Flow**
+   - User registration → login → start game → answer questions → game over
+   - Level progression across multiple questions
+   - Lifeline usage during game
+
+2. **Admin Workflow**
+   - Admin login → add questions via API → verify in database
+   - Bulk question imports → verify statistics updated
+
+3. **Database Consistency**
+   - Cascade deletes don't break game sessions
+   - M2M relationships (through models) maintain integrity
+
+---
+
+### 9. FUNCTIONAL TEST STRUCTURE
+
+**Status**: EMPTY
+
+The `tests/functional/` directory should contain:
+
+```
+test_game_complete_flow.py
+test_auth_flow.py
+test_admin_workflow.py
+test_api_workflow.py
+```
+
+---
+
+### 10. UNIT TEST STRUCTURE
+
+**Status**: EMPTY
+
+The `tests/unit/` directory should contain:
+
+```
+test_models.py (Level, Category, Option, Question, Session, etc.)
+test_validation.py (auth/validate.py functions)
+test_lifelines.py (game/lifelines.py functions)
+test_serializers.py (adminpanel/serializers.py)
+test_model_methods.py (get_default_pk, class methods, etc.)
+```
+
+---
+
+## CRITICAL BUGS & ISSUES FOUND DURING ANALYSIS
+
+While reviewing the code (not tests, but implementation), I found potential issues:
+
+### **BUG 1: Integer Division in Wrong Answer Score Calculation**
+```python
+# game/views.py, line 366
+sessionObj.score //= 100  # Integer division truncates!
+# If score = 50, this becomes 0 instead of 0.5
+```
+
+**Test Needed:**
+```python
+@pytest.mark.django_db
+def test_wrong_answer_score_calculation():
+    """Score is divided by 100 on wrong answer"""
+    session = session_factory(score=15000)
+    # Wrong answer should make score 150 (15000 / 100)
+    # But integer division truncates, test should verify correct behavior
+```
+
+### **BUG 2: Undefined Variable in Rules View**
+```python
+# game/views.py, line 120
+if "agreed" not in tuple(self.request.POST.keys()):
+    sessionObj.delete()  # NameError! sessionObj not defined yet
+```
+
+**Test Needed:**
+```python
+@pytest.mark.django_db
+def test_rules_missing_agreed_parameter():
+    """Missing 'agreed' parameter handles gracefully"""
+    session = session_factory()
+    response = client.post(f'/rules/{session.session_id}/', {})
+    # Should not raise NameError
+```
+
+### **BUG 3: Random Choice Without Handling Empty List**
+```python
+# game/models.py, line 247
+qn = random.choice(desirable_questions)  # Raises IndexError if empty!
+```
+
+**Test Needed:**
+```python
+@pytest.mark.django_db
+def test_get_next_question_no_questions_available():
+    """Handles case when no questions of difficulty available"""
+    session = session_factory(current_level=level_easy)
+    # No easy questions created
+    with pytest.raises(IndexError):
+        Session.get_next_question(session.session_id)
+    # Should either handle gracefully or be tested for proper error
+```
+
+---
+
+## SPECIFIC TEST RECOMMENDATIONS SUMMARY
+
+### **Priority 1 (CRITICAL - Do First):**
+1. **Auth Validation Tests** - All functions in `auth/validate.py`
+2. **User Registration & Login Flow** - Core functionality
+3. **Session Management** - Game won't work without this
+4. **Answer Validation & Score** - Core game logic
+5. **Lifeline Mechanics** - Core game feature
+6. **Admin API Tests** - Data entry mechanism
+7. **Model Default PKs** - Prevents silent failures
+
+### **Priority 2 (HIGH - Do Second):**
+1. **Admin Access Control** - Security-critical
+2. **Question Selection by Difficulty** - Game balance
+3. **Level Progression** - Core game flow
+4. **Admin CRUD Operations** - Content management
+5. **API Token Authentication** - API security
+6. **Cascade Delete Integrity** - Data consistency
+
+### **Priority 3 (MEDIUM - Do Third):**
+1. **Dashboard Statistics** - Analytics accuracy
+2. **Pagination** - Admin list views
+3. **Form Validation** - Admin forms
+4. **Edge Cases** - Empty pools, duplicates
+5. **Error Handling** - KeyErrors, ValueError, IndexError
+6. **Model String Representations** - Debug visibility
+
+### **Priority 4 (LOW - Polish):**
+1. **Logging & Auditing** - Compliance
+2. **Concurrent Access** - Race conditions
+3. **Performance** - Query optimization
+4. **Cleanup** - Temporary data removal
+5. **Integration Flows** - End-to-end scenarios
+
+---
+
+## RECOMMENDED NEXT STEPS
+
+### **Immediate Actions:**
+1. Create test factories for: User, Level, Category, Option, Question, Session, Lifeline
+2. Extend conftest.py with fixtures for authenticated clients
+3. Create `tests/unit/test_validation.py` with all auth validation tests
+4. Create `tests/unit/test_models.py` with model method tests
+
+### **Phase 2:**
+1. Create `tests/functional/test_game_flow.py` for end-to-end scenarios
+2. Create `tests/functional/test_auth_flow.py` for login/register flows
+3. Create `tests/functional/test_admin_api.py` for API endpoint tests
+
+### **Phase 3:**
+1. Implement admin CRUD tests
+2. Add integration tests for complete workflows
+3. Set up coverage reporting (pytest-cov)
+4. Fix identified bugs (integer division, undefined variables, etc.)
+
+---
+
+## SUMMARY TABLE
+
+| Category | Current | Needed | Priority |
+|----------|---------|--------|----------|
+| Test Files | 0 tests | 50+ tests | CRITICAL |
+| Auth Tests | 0 | 12+ | CRITICAL |
+| Game Logic Tests | 0 | 25+ | CRITICAL |
+| Admin Tests | 0 | 15+ | HIGH |
+| API Tests | 0 | 10+ | HIGH |
+| Model Tests | 0 | 8+ | HIGH |
+| Fixtures | 2 basic | 15+ | CRITICAL |
+| Integration Tests | 0 | 5+ | MEDIUM |
+| Edge Case Coverage | 0% | 60%+ | MEDIUM |
+| **Total Test Coverage** | **0%** | **~80%+** | **CRITICAL** |
+
+---
+
+This comprehensive review reveals that while the test infrastructure is properly configured, the project lacks any actual test implementations. This is a critical gap for a production trivia game. The next development phase should prioritize writing tests for authentication, game logic, and API endpoints before adding new features.</result>
+<usage>total_tokens: 66454
+tool_uses: 21
+duration_ms: 86691</usage>
+</task-notification>
+Full transcript available at: /private/tmp/claude-501/-Users-himankdave-Documents-code-personal-gh-trivivo/tasks/a1b2a5b.output
+
+---
+
+<task-notification>
+<task-id>a80e869</task-id>
+<status>completed</status>
+<summary>Agent "Performance review" completed</summary>
+<result>Perfect! Now I have enough information. Let me create a comprehensive performance review report.
+
+## PERFORMANCE REVIEW: Django Trivia Game Project (Trivivo)
+
+Based on a thorough code analysis of the trivivo project at `/Users/himankdave/Documents/code/personal-gh/trivivo`, I've identified significant performance issues across multiple layers.
+
+---
+
+## CRITICAL PERFORMANCE ISSUES
+
+### 1. **Severe N+1 Query Problem in Admin Dashboard (game/views.py & adminpanel/views.py)**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/adminpanel/views.py:98-206`**
+
+The `AdminMainPage.context_creater()` method executes multiple N+1 queries:
+
+- **Line 119-126**: Iterates over ALL categories, then calls `.all_questions.all().count()` for EACH category
+  ```python
+  total_category = Category.objects.all()  # Query 1
+  category_with_most_qs = sorted(
+      list(map(lambda x: (x, x.all_questions.all().count()), total_category)),
+      # ^^^ N queries here for each category's question count
+      ...
+  )[0][0]
+  ```
+  Impact: If 50 categories exist, this causes 50+ database queries.
+
+- **Line 172-175**: **MASSIVE N+1** - Iterates over ALL users twice
+  ```python
+  active_users_labels = [i.username for i in User.objects.all()]  # Query 1: ALL users
+  active_users_activity = [
+      i.initiated_sessions.all().count() for i in User.objects.all()  # Query 1 + N queries for each user
+  ]
+  ```
+  Impact: With 1,000 users, this creates 1,001+ queries just for this section!
+
+- **Line 143-171**: Daily chart generation loops 16 times, each iteration creates 6+ queries
+  ```python
+  for date in daterange(start_date, end_date):  # 16 iterations
+      session_query = Session.objects.filter(date_created__gte=date)...  # Query
+      session_user_query = session_query.values("session_user")...  # Query
+      questionorder_dateQuery = QuestionOrder.objects.filter(...)  # Query
+      session_easy_query = questionorder_dateQuery.filter(...)  # Query
+      # ... 3 more difficulty filters (9+ queries per loop iteration)
+  ```
+  Impact: 144+ queries just for chart data generation.
+
+**Expected Queries**: ~10-15 optimized queries
+**Actual Queries**: 200-300+ queries for single dashboard load
+
+---
+
+### 2. **Session Question Selection Algorithm - Inefficient O(n²) Complexity**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/game/models.py:234-248`**
+
+```python
+@classmethod
+def get_next_question(cls, session_id):
+    sessionObj = cls.objects.get(session_id=session_id)  # Query 1
+    questionsAskedToUser = list(sessionObj.session_user.questions_asked.all())  # Query 2: Full list to Python
+    mode_questions = list(Question.objects.filter(difficulty=mode))  # Query 3: Full list to Python
+    desirable_questions = list(set(mode_questions) - set(questionsAskedToUser))  # O(n²) set difference in Python
+    qn = random.choice(desirable_questions)  # Could fail if empty
+    return qn
+```
+
+**Issues**:
+- Loads entire question lists into memory instead of using database filtering
+- O(n²) performance for set operations
+- No error handling for empty result sets
+- **Line 247**: `random.choice()` can raise IndexError if no questions available
+
+**Impact**: With thousands of questions, this becomes exponentially slower.
+
+---
+
+### 3. **Serializer with N+1 for Question Encoding**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/adminpanel/serializers.py:5-17`**
+
+```python
+class QuestionEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Question):
+            data["categories"] = list(map(lambda cat: cat.name, obj.falls_under.all()))  # Query per question
+            data["correct_answer"] = obj.correct_option.text  # Query per question
+            data["incorrect_answers"] = list(
+                map(lambda option: option.text, obj.incorrect_options.all())  # Query per question
+            )
+```
+
+Used in `/Users/himankdave/Documents/code/personal-gh/trivivo/adminpanel/views.py:763`:
+```python
+data = random.sample(list(Question.objects.all()), count)  # Loads ALL questions into memory
+return JsonResponse(response, safe=False, encoder=QuestionEncoder)  # Triggers N+1 during serialization
+```
+
+**Impact**: Fetching 5 random questions causes 1 + (5 × 3) = 16 queries (3 for categories, correct_option, incorrect_options)
+
+---
+
+### 4. **Full Object Materialization for Pagination**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/game/views.py:523-556` (Leaderboard)**
+
+```python
+allSessions = [
+    (f"$ {ses['score']:,}", ses["current_level__level_number"], ...)
+    for ses in Session.objects.order_by("-score", "-date_created").values(...)
+]
+paginator = Paginator(allSessions, PAGINATE_NO)
+```
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/game/views.py:558-590` (ScoreBoard)**
+
+```python
+allSessions = [
+    (f"$ {ses.score:,}", ses.current_level.level_number, ...,
+     ses.correct_qns.all().count(),  # N+1 Query per session
+     ...,
+     ses.used_lifelines.all().count())  # N+1 Query per session
+    for ses in Session.objects.filter(session_user=self.request.user).order_by("-score", "-date_created")
+]
+```
+
+**Impact**: For 100 sessions displayed, this causes 200+ queries (1 for each .all().count() call)
+
+---
+
+### 5. **Missing Database Indexes**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/game/models.py`**
+
+No database indexes found on frequently queried fields:
+
+```python
+class Session(models.Model):
+    session_user = models.ForeignKey(...)  # No index - queried in ScoreBoard view
+    current_level = models.ForeignKey(...)  # No index - queried in chart generation
+    date_created = models.DateTimeField(...)  # No index - queried in every view
+    session_id = models.CharField(primary_key=True, max_length=8)  # Only PK indexed
+
+class Question(models.Model):
+    difficulty = models.CharField(...)  # No index - heavily filtered in get_next_question()
+    date_added = models.DateTimeField(...)  # No index - ordered in Meta.ordering
+
+class QuestionOrder(models.Model):
+    question = models.ForeignKey(...)  # No index
+    session = models.ForeignKey(...)  # No index
+    date_chosen = models.DateTimeField(...)  # No index - filtered in chart queries
+```
+
+**Impact**: O(n) full table scans for common queries.
+
+---
+
+## MODERATE PERFORMANCE ISSUES
+
+### 6. **Inefficient Lifeline Processing**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/game/lifelines.py:12-39`**
+
+```python
+def fifty50(question_id, session_id):
+    general_procedure(mappedLifelines[FIFTY50], question_id, session_id)
+    question = Question.objects.get(pk=question_id)  # Separate query
+    random_incorrect = secrets.choice(
+        [o.text for o in question.incorrect_options.all()]  # Loads all options to Python
+    )
+```
+
+**Multiple calls to `.all()` without prefetching** - Line 32 and 44 in lifelines.py
+
+---
+
+### 7. **Template Filter Database Queries**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/game/templatetags/utility.py:32-34`**
+
+```python
+@register.filter
+def obj_exists(value):
+    return value.content_type.model_class().objects.filter(pk=value.object_id).exists()
+```
+
+This filter is called per LogEntry in templates, causing database queries during rendering!
+
+---
+
+### 8. **JavaScript Libraries Loaded Multiple Times**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/templates/base.html:17, 90-91`**
+
+```html
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<!-- ... later ... -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" ...></script>
+```
+
+jQuery loaded TWICE from different CDNs (versions 3.6.4 and 3.7.1)!
+
+---
+
+### 9. **No Caching Framework Configuration**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/kbc/settings.py`**
+
+No `CACHES` configuration found. Django defaults to `LocMemCache` (in-process memory), which:
+- Doesn't work in multi-process environments
+- No cache busting strategy implemented
+- High-traffic data (leaderboards, levels) not cached
+
+---
+
+### 10. **No Database Connection Pooling**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/kbc/settings.py:66-71`**
+
+```python
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
+```
+
+Missing `CONN_MAX_AGE` setting. Default is 600 seconds - creates new connections frequently.
+
+---
+
+### 11. **Static File Issues**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/kbc/settings.py:108-112`**
+
+```python
+STATIC_URL = "static/"
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+```
+
+- No cache busting headers configured
+- Multiple CSS files loaded without minification check
+- Tailwind CSS configuration scans ALL `.js` files including node_modules
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/tailwind_theme/static_src/tailwind.config.js:36`**
+
+```javascript
+'../../**/*.js',  // Scans all JS files recursively - includes node_modules!
+```
+
+---
+
+## DATABASE/QUERY ISSUES
+
+### 12. **Unused select_related/prefetch_related Throughout**
+
+**Instances requiring optimization**:
+
+1. **adminpanel/views.py:99** - Multiple standalone count queries
+2. **adminpanel/views.py:234-237** - List view without select_related for ForeignKey
+3. **game/views.py:34, 83, 110** - Lifeline/Level queries repeated without caching
+4. **game/views.py:244** - Session object loaded separately
+5. **game/views.py:532-537** - values() without select_related still hits database
+
+---
+
+### 13. **Random Question Selection with Full Materialization**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/adminpanel/views.py:763`**
+
+```python
+data = random.sample(list(Question.objects.all()), count)
+# Loads ENTIRE questions table into memory!
+```
+
+With 10,000 questions, this wastes significant memory.
+
+---
+
+## FRONTEND PERFORMANCE ISSUES
+
+### 14. **JavaScript Async Loading**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/templates/base.html:77, 164`**
+
+Only `.js/timer.js` has `defer` attribute. Other scripts may block rendering.
+
+### 15. **Chart Library Not Specified in Makefile**
+
+**File: `/Users/himankdave/Documents/code/personal-gh/trivivo/static/js/charting.js`**
+
+Cannot analyze performance without seeing chart library. If it's Chart.js loaded from CDN, ensure it's minified and cached.
+
+### 16. **CSS Loading Strategy**
+
+Tailwind CSS correctly generated. No critical CSS inlining observed, but acceptable for most use cases.
+
+---
+
+## RECOMMENDATIONS
+
+### Priority 1 (CRITICAL - Implement immediately)
+
+1. **Fix N+1 in AdminMainPage** (adminpanel/views.py:98-206)
+   - Use `annotate(Count(...))` instead of `.count()` loops
+   - Use `prefetch_related()` for related objects
+   - **Expected improvement**: 200+ queries → 5-10 queries
+
+2. **Optimize get_next_question()** (game/models.py:234-248)
+   ```python
+   @classmethod
+   def get_next_question(cls, session_id):
+       sessionObj = cls.objects.select_related('session_user').get(session_id=session_id)
+       asked_pks = sessionObj.session_user.questions_asked.values_list('pk', flat=True)
+       qn = Question.objects.filter(difficulty=mode).exclude(pk__in=asked_pks).order_by('?').first()
+       if not qn:
+           raise NoQuestionAvailable("No questions available")
+       return qn
+   ```
+
+3. **Add Database Indexes** (game/models.py)
+   ```python
+   class Session(models.Model):
+       date_created = models.DateTimeField(default=timezone.now, db_index=True)
+       session_user = models.ForeignKey(..., db_index=True)
+       current_level = models.ForeignKey(..., db_index=True)
+
+   class Question(models.Model):
+       difficulty = models.CharField(..., db_index=True)
+       date_added = models.DateTimeField(..., db_index=True)
+
+   class QuestionOrder(models.Model):
+       class Meta:
+           indexes = [
+               models.Index(fields=['date_chosen', 'question']),
+               models.Index(fields=['session', '-date_chosen']),
+           ]
+   ```
+
+4. **Remove Duplicate jQuery** (templates/base.html:17, 90-91)
+   - Keep only one jQuery version
+   - Load from single CDN with `integrity` attribute
+
+5. **Implement Query Caching** (kbc/settings.py)
+   ```python
+   CACHES = {
+       'default': {
+           'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+           'LOCATION': 'trivivo-cache',
+           'TIMEOUT': 300,
+       }
+   }
+   SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+   ```
+
+### Priority 2 (HIGH - Implement within 1 sprint)
+
+6. **Fix Serializer N+1** (adminpanel/serializers.py)
+   ```python
+   data = Question.objects.prefetch_related(
+       'falls_under', 'correct_option', 'incorrect_options'
+   ).order_by('?')[:count]
+   ```
+
+7. **Optimize Leaderboard/Scoreboard** (game/views.py:523-590)
+   - Use `annotate(correct_count=Count(...))` instead of `.count()` in loop
+   - Use `only()` to fetch specific fields
+
+8. **Tailwind Config** (tailwind_theme/static_src/tailwind.config.js:36)
+   ```javascript
+   '../../**/*.js',
+   '!../../**/node_modules/**',  // Explicitly exclude node_modules
+   ```
+
+### Priority 3 (MEDIUM - Implement next)
+
+9. **Remove Template Database Filter** (game/templatetags/utility.py:32-34)
+   - Move `obj_exists()` logic to view/context processing
+   - Cache result in template context
+
+10. **Enable Database Connection Pooling** (kbc/settings.py for production)
+    ```python
+    DATABASES['default']['CONN_MAX_AGE'] = 600  # Keep connection alive
+    ```
+
+11. **Static Files Cache Busting** (kbc/settings.py)
+    ```python
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+    ```
+
+12. **Lazy Load Chart Library** (static/js/charting.js)
+    - Load only when admin dashboard is accessed
+    - Consider removing from base template if only used on one page
+
+---
+
+## SUMMARY
+
+| Category | Issue Count | Severity |
+|----------|------------|----------|
+| Database Queries | 5 critical | CRITICAL |
+| Missing Indexes | 7 fields | CRITICAL |
+| N+1 Queries | 4 locations | CRITICAL |
+| Caching | Not configured | HIGH |
+| Frontend | 3 issues | MEDIUM |
+| Configuration | 2 issues | HIGH |
+
+**Estimated Query Reduction**: 200-300 queries per dashboard load → 10-20 queries (90%+ improvement)
+
+**Estimated Load Time Improvement**: Admin dashboard likely 50-70% faster after Priority 1 fixes</result>
+<usage>total_tokens: 90390
+tool_uses: 39
+duration_ms: 102331</usage>
+</task-notification>
+Full transcript available at: REDACTED.output
+
+---
+
+<task-notification>
+<task-id>a906fe5</task-id>
+<status>completed</status>
+<summary>Agent "Architecture review" completed</summary>
+<result>Excellent! Now I have enough information. Let me compile a comprehensive architecture review:
+
+---
+
+# HIGH-LEVEL ARCHITECTURE REVIEW: TRIVIVO Django Trivia Game Project
+
+## Executive Summary
+
+The **Trivivo** project is a Django-based multiplayer trivia game inspired by "Who Wants to Be a Millionaire" (WWBM). The architecture demonstrates solid fundamentals with good separation of concerns across four main Django apps (game, auth, adminpanel, kbc), but has several scalability and maintainability concerns that should be addressed as the project grows.
+
+---
+
+## 1. OVERALL APP/MODULE STRUCTURE & SEPARATION OF CONCERNS
+
+### Current Structure
+```
+trivivo/
+├── kbc/                          # Project configuration (settings, URLs, WSGI/ASGI)
+├── game/                         # Core game logic (models, views, lifelines)
+├── auth/                         # User authentication (registration, login)
+├── adminpanel/                   # Admin dashboard & API for question management
+├── tailwind_theme/               # Tailwind CSS theme
+├── templates/                    # Frontend templates (HTML)
+├── static/                       # CSS, JS, images
+├── tests/                        # Test suite (unit, functional)
+└── pyproject.toml               # Project dependencies & configuration
+```
+
+### Strengths
+
+1. **Clear App Separation**: Three distinct apps (game, auth, adminpanel) with well-defined responsibilities
+2. **Modular Design**: Each app has its own models, views, URLs, and forms
+3. **Dedicated Authentication**: Separate `auth` app for all user auth operations
+4. **Admin Dashboard**: Dedicated `adminpanel` for question/lifeline/category management
+5. **Test Structure**: Tests organized by type (unit, functional)
+6. **Configuration Management**: Uses `django-configurations` for environment-based settings
+
+### Weaknesses
+
+1. **Auth App Under-utilized**: `auth` app has no models; relies entirely on Django's built-in User model
+   - No custom user profile/extension (e.g., user statistics, preferences)
+   - Limits future auth customization (social auth, two-factor auth)
+
+2. **Adminpanel Not Registered in INSTALLED_APPS**: 
+   - `adminpanel` is not in settings.py INSTALLED_APPS (line 22 only shows `game`)
+   - This could cause migration issues and break app autodiscovery
+
+3. **Missing Service/Utility Layer**: No dedicated services or utility modules
+   - Business logic scattered across views (game logic in game/views.py:240-590)
+   - Lifeline logic isolated in `game/lifelines.py` but not abstracted as a service
+
+4. **No Clear DTOs or Serializers**: Limited use of serializers for API responses
+   - Only basic QuestionEncoder exists; other models lack serializers
+
+5. **Monolithic Views**: Some views are very large (game/views.py: 589 lines total)
+   - QuestionInGame class is 249 lines; BetweenQuestion is 159 lines
+   - Should be broken down into smaller, focused classes or functions
+
+### Recommendations
+
+1. **Register Missing Apps** in settings.py:
+   ```python
+   INSTALLED_APPS = [
+       ...
+       "auth.apps.AuthConfig",
+       "adminpanel.apps.AdminpanelConfig",
+       ...
+   ]
+   ```
+
+2. **Create a Custom User Model** (even if simple initially):
+   ```python
+   # auth/models.py
+   from django.contrib.auth.models import AbstractUser
+   
+   class CustomUser(AbstractUser):
+       bio = models.TextField(blank=True)
+       avatar = models.ImageField(upload_to='avatars/', null=True)
+   ```
+
+3. **Extract Business Logic into Services**:
+   ```python
+   # game/services/game_logic.py
+   class GameService:
+       @staticmethod
+       def get_next_question(session_id):
+           # Extract from Session.get_next_question()
+       
+       @staticmethod
+       def process_answer(session_id, answer):
+           # Extract from QuestionInGame.post()
+   ```
+
+4. **Create Comprehensive Serializers** for all models in each app.
+
+---
+
+## 2. DJANGO PROJECT CONFIGURATION
+
+### Current Setup
+
+**File**: `/kbc/settings.py` (137 lines)
+
+### Configuration Strategy
+
+1. **Configuration Management**: Uses `django-configurations` with Base/Dev/Prod classes
+   - Base: Common settings
+   - Dev: Debug enabled, localhost allowed
+   - Prod: Minimal setup (no debug, etc.)
+
+2. **Key Settings**:
+   - SECRET_KEY: Loaded from environment variable (good practice)
+   - Database: SQLite (appropriate for dev)
+   - Authentication: Token-based via DRF
+   - Static files: Tailwind CSS integration
+   - Templates: APP_DIRS enabled for app-level templates
+
+### Strengths
+
+1. **Environment-Based Configuration**: Good separation of Dev/Prod settings
+2. **Secret Management**: SECRET_KEY from environment (line 11)
+3. **Security Middleware**: CSRF, XFrame, SecurityMiddleware in place
+4. **Static Files**: Properly configured with STATIC_ROOT and STATIC_DIRS
+5. **REST Framework**: TokenAuthentication configured (line 116)
+6. **Login Redirect**: Sensible defaults (LOGIN_REDIRECT_URL, LOGIN_URL)
+
+### Weaknesses
+
+1. **Incomplete Production Settings**: 
+   - Prod class (line 135-136) only has `DEBUG = False`
+   - Missing ALLOWED_HOSTS for Prod
+   - No CSRF_TRUSTED_ORIGINS, SECURE_* settings
+   - No logging configuration
+
+2. **SQLite Only**: 
+   - Line 68-70: Hardcoded SQLite (dj-database-url imported but not used)
+   - Won't scale for production or concurrent users
+
+3. **Missing Configuration**:
+   - No EMAIL settings (will fail on password reset)
+   - No LOGGING configuration
+   - No CACHE configuration
+   - No SESSION configuration
+   - Missing CSRF_COOKIE_SECURE, SESSION_COOKIE_SECURE for HTTPS
+
+4. **Limited Error Handling**: No custom error pages or detailed error logging
+
+5. **No Multiple Database Support**: Cannot easily add read replicas or sharding
+
+### Recommendations
+
+1. **Enhance Prod Settings**:
+   ```python
+   class Prod(Base):
+       DEBUG = False
+       ALLOWED_HOSTS = values.Value(environ_name="ALLOWED_HOSTS", default="").split(",")
+       
+       # Security
+       SECURE_SSL_REDIRECT = True
+       SESSION_COOKIE_SECURE = True
+       CSRF_COOKIE_SECURE = True
+       CSRF_TRUSTED_ORIGINS = values.Value(environ_name="CSRF_TRUSTED_ORIGINS").split(",")
+       
+       # Database
+       DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3")}
+       
+       # Email
+       EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+       EMAIL_HOST = values.Value(environ_name="EMAIL_HOST")
+       EMAIL_PORT = values.Value(environ_name="EMAIL_PORT", default=587)
+       EMAIL_USE_TLS = True
+       EMAIL_HOST_USER = values.SecretValue(environ_name="EMAIL_HOST_USER")
+       EMAIL_HOST_PASSWORD = values.SecretValue(environ_name="EMAIL_HOST_PASSWORD")
+   ```
+
+2. **Add Logging**:
+   ```python
+   LOGGING = {
+       "version": 1,
+       "disable_existing_loggers": False,
+       "handlers": {
+           "console": {"class": "logging.StreamHandler"},
+           "file": {"class": "logging.FileHandler", "filename": "debug.log"},
+       },
+       "root": {"handlers": ["console", "file"], "level": "INFO"},
+   }
+   ```
+
+3. **Use dj-database-url Actively**:
+   ```python
+   DATABASES = {
+       "default": dj_database_url.config(
+           default="sqlite:///db.sqlite3",
+           conn_max_age=600
+       )
+   }
+   ```
+
+---
+
+## 3. DATA MODEL DESIGN - MODELS, RELATIONSHIPS, MIGRATIONS
+
+### Core Models
+
+**File**: `/game/models.py` (280 lines)
+
+#### Model Overview
+
+| Model | Purpose | Key Fields | Relationships |
+|-------|---------|-----------|---------------|
+| **Lifeline** | Game help mechanism (50-50, Expert, Audience) | name, description | M2M with Session |
+| **Level** | Difficulty tier (1-15) with prize money | level_number, money | FK to Session |
+| **Category** | Question topic (e.g., "Science", "History") | name | M2M with Question |
+| **Option** | Multiple-choice answer | text | M2M with Question (via ChosenOption) |
+| **ChosenOption** | User interaction tracking | user, option, date_chosen | M2M through table |
+| **Question** | Trivia question | text, difficulty, type | Many FKs & M2Ms |
+| **Session** | Active game instance | session_id, score, level | FK to User & Question |
+| **QuestionOrder** | Session question ordering | question, session, date_chosen | M2M through table |
+
+### Strengths
+
+1. **Clear Core Entities**: Models represent actual game concepts
+2. **Sentinel Pattern**: `get_sentinel_user()` (line 104) handles deleted user references gracefully
+3. **Choice Fields**: Proper use of Django choices (EASY, MEDIUM, HARD; MULTIPLE, TRUE_FALSE)
+4. **Related Names**: Good related_name usage for reverse relationships
+5. **Meta Options**: Proper ordering, verbose names set
+6. **Custom Methods**: `get_default_pk()`, `get_next_question()` for domain logic
+7. **Validators**: MinValueValidator, MaxValueValidator on numeric fields
+
+### Weaknesses
+
+1. **Overly Complex Session Model**:
+   - 19 fields, 6 Foreign Keys, 6 Many-to-Many relationships
+   - Stores too much state (current_question, score, level, prev_level, gameOver, etc.)
+   - Should separate into GameState, GameScore, GameProgress models
+
+2. **String-Based Session ID**:
+   - Line 172: `session_id = models.CharField(primary_key=True, max_length=8)`
+   - Using UUID would be more standard: `models.UUIDField(primary_key=True, default=uuid.uuid4)`
+   - Current 8-char string is collision-prone (Get.get_unused_sessionId() manually checks duplicates)
+
+3. **Circular Dependency Risk**: 
+   - Session has FK to Question; Question has M2M to User; ChosenOption has FK to both
+   - Could have cascade delete issues
+
+4. **No Audit Trail**:
+   - No created_at/updated_at on critical models
+   - Session only has date_created; others have date_added/date_chosen
+   - No tracking of who modified what
+
+5. **Inefficient Question Selection** (line 234-248):
+   ```python
+   questionsAskedToUser = list(sessionObj.session_user.questions_asked.all())
+   mode_questions = list(Question.objects.filter(difficulty=mode))
+   desirable_questions = list(set(mode_questions) - set(questionsAskedToUser))
+   ```
+   - Loads ALL questions into memory before filtering
+   - Inefficient for large question pools
+
+6. **Missing Constraints**:
+   - No unique_together for preventing duplicate options
+   - No db_index on frequently queried fields (session_id, difficulty)
+   - No null=False on critical FKs
+
+7. **Hard-coded Sentinel Values**:
+   - Line 155-158: `Question.get_default_pk()` creates/returns default "None" question
+   - Not ideal for production data integrity
+
+8. **Cascading Deletes**: Session uses `SET(get_sentinel_user)` but Question uses `SET_DEFAULT`
+   - Inconsistent deletion behavior
+
+### Recommendations
+
+1. **Break Up Session Model**:
+   ```python
+   class GameSession(models.Model):
+       id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+       user = models.ForeignKey(User, on_delete=models.CASCADE)
+       started_at = models.DateTimeField(auto_now_add=True)
+       ended_at = models.DateTimeField(null=True, blank=True)
+       status = models.CharField(
+           max_length=10,
+           choices=[('ACTIVE', 'Active'), ('COMPLETED', 'Completed'), ('QUIT', 'Quit')],
+       )
+
+   class GameState(models.Model):
+       session = models.OneToOneField(GameSession, on_delete=models.CASCADE)
+       current_level = models.ForeignKey(Level, on_delete=models.PROTECT)
+       current_question = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True)
+       agreed_to_rules = models.BooleanField(default=False)
+       is_game_over = models.BooleanField(default=False)
+
+   class GameScore(models.Model):
+       session = models.OneToOneField(GameSession, on_delete=models.CASCADE)
+       total_score = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+       correct_answers = models.ManyToManyField(Question, related_name='sessions_correct_in')
+       wrong_answer = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True)
+       used_lifelines = models.ManyToManyField(Lifeline)
+   ```
+
+2. **Use UUIDs**:
+   ```python
+   class GameSession(models.Model):
+       id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+   ```
+
+3. **Add Database Indexes**:
+   ```python
+   class Meta:
+       indexes = [
+           models.Index(fields=['user', '-started_at']),
+           models.Index(fields=['difficulty']),
+       ]
+   ```
+
+4. **Add Audit Fields**:
+   ```python
+   class BaseModel(models.Model):
+       created_at = models.DateTimeField(auto_now_add=True)
+       updated_at = models.DateTimeField(auto_now=True)
+       
+       class Meta:
+           abstract = True
+   ```
+
+5. **Optimize Question Selection**:
+   ```python
+   @classmethod
+   def get_next_question(cls, session_id):
+       session = cls.objects.get(id=session_id)
+       already_asked = session.questions_asked.values_list('pk', flat=True)
+       question = Question.objects.filter(
+           difficulty=mode,
+           pk__notin=already_asked
+       ).order_by('?').first()
+       return question
+   ```
+
+---
+
+## 4. URL ROUTING STRUCTURE & REST API DESIGN
+
+### Routing Overview
+
+**Files**:
+- `/kbc/urls.py` (27 lines) - Root router
+- `/game/urls.py` (27 lines) - Game routes
+- `/auth/urls.py` (11 lines) - Auth routes  
+- `/adminpanel/urls.py` (51 lines) - Admin routes
+
+### URL Structure
+
+```
+/                                 → MainPage
+/about/                          → About
+/leaderboard/                    → Leaderboard (public)
+/scores/                         → ScoreBoard (user's scores, authenticated)
+/game/<session>/rules/           → Rules (protected)
+/game/<session>/question/<level>/  → QuestionInGame (protected)
+/game/<session>/question/<level>/<status>/ → BetweenQuestion (protected)
+/auth/login/                     → Login
+/auth/logout/                    → Logout
+/auth/register/                  → Register
+/auth/admin-login/               → Admin login
+/auth/admin-logout/              → Admin logout
+/admin/                          → AdminMainPage (protected, superuser only)
+/admin/apps/<db>/                → AdminListDB
+/admin/apps/<db>/create/         → AdminDBObjectCreate
+/admin/apps/<db>/object/<pk>/    → AdminDBObjectChange
+/admin/apps/<db>/object/<pk>/delete/ → AdminDBObjectDelete
+/admin/apps/<db>/object/<pk>/history/ → AdminDBObjectHistory
+/admin/logs/                     → ShowLogDB
+/admin/api-access/               → APIAccess (protected)
+/admin/add-questions/            → AddQuestion (API, POST)
+/admin/random-question/          → GetQuestion (API, GET)
+/djadmin/                        → Django admin
+```
+
+### Strengths
+
+1. **Hierarchical Structure**: Clear URL namespacing by app
+2. **Session-Based Game Flow**: Game state embedded in URL path (/game/<session>/question/<level>/)
+3. **Protected Routes**: Uses LoginRequiredMixin and UserPassesTestMixin
+4. **API Endpoints**: Dedicated API views for programmatic access
+5. **Logical Grouping**: Auth, game, and admin routes clearly separated
+6. **RESTful Patterns**: Some endpoints follow RESTful conventions (CRUD)
+
+### Weaknesses
+
+1. **Not RESTful**: 
+   - URLs encode game state (level, status) in path for the same resource
+   - Should use `/game/<session>/question/` with query params or HTTP methods
+   - No proper HTTP method usage (POST to submit answer vs. GET for view)
+
+2. **Inconsistent Naming**:
+   - `/admin/apps/<db>/` vs `/admin/logs/` (inconsistent plural)
+   - `/auth/admin-login/` vs `/auth/login/` (hyphen inconsistency)
+   - `QuestionInGame` view but URL is `/question/`
+
+3. **Session ID in URL**:
+   - Game session ID visible in URL (security through obscurity)
+   - Should use Django sessions or authentication tokens instead
+   - Session hijacking possible if ID is guessed or leaked
+
+4. **No API Versioning**:
+   - `/admin/add-questions/` has no version (v1, v2, etc.)
+   - Makes future backward-incompatible changes difficult
+
+5. **Missing API Documentation**:
+   - `/admin/api-docs/` exists but implementation unclear
+   - No OpenAPI/Swagger schema generation
+
+6. **CSRF Exemption for API** (line 47 in adminpanel/urls.py):
+   ```python
+   path("add-questions/", csrf_exempt(adminV.AddQuestion.as_view()), name="addQuestionAPI")
+   ```
+   - Using CSRF exemption instead of proper token-based auth
+   - Security risk if not careful
+
+7. **No Rate Limiting**: 
+   - No throttling on API endpoints
+   - Vulnerable to abuse/DOS
+
+### Recommendations
+
+1. **Restructure Game URLs for REST**:
+   ```python
+   # game/urls.py
+   urlpatterns = [
+       path("api/v1/sessions/", GameSessionListCreateView.as_view(), name="session-list-create"),
+       path("api/v1/sessions/<uuid:session_id>/", GameSessionDetailView.as_view(), name="session-detail"),
+       path("api/v1/sessions/<uuid:session_id>/question/", CurrentQuestionView.as_view(), name="current-question"),
+       path("api/v1/sessions/<uuid:session_id>/answer/", SubmitAnswerView.as_view(), name="submit-answer"),
+       path("api/v1/leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+   ]
+   ```
+
+2. **Remove CSRF Exemption, Use Token Auth**:
+   ```python
+   # Keep csrf_exempt removed; rely on TokenAuthentication
+   path("add-questions/", adminV.AddQuestion.as_view(), name="addQuestionAPI")
+   ```
+
+3. **Add API Versioning**:
+   ```python
+   # kbc/urls.py
+   urlpatterns = [
+       path("api/v1/", include("game.api.urls")),
+       path("api/v1/admin/", include("adminpanel.api.urls")),
+   ]
+   ```
+
+4. **Use DRF Routers** for CRUD endpoints:
+   ```python
+   from rest_framework.routers import DefaultRouter
+   router = DefaultRouter()
+   router.register(r'questions', QuestionViewSet)
+   router.register(r'categories', CategoryViewSet)
+   
+   urlpatterns = [path("api/v1/", include(router.urls))]
+   ```
+
+5. **Add Rate Limiting**:
+   ```python
+   # settings.py
+   REST_FRAMEWORK = {
+       "DEFAULT_THROTTLE_CLASSES": [
+           "rest_framework.throttling.AnonRateThrottle",
+           "rest_framework.throttling.UserRateThrottle",
+       ],
+       "DEFAULT_THROTTLE_RATES": {
+           "anon": "100/hour",
+           "user": "1000/hour",
+       },
+   }
+   ```
+
+---
+
+## 5. TEMPLATE ORGANIZATION & FRONTEND ARCHITECTURE
+
+### Template Structure
+
+```
+templates/
+├── base.html                  # Master template
+├── mainPage.html              # Home
+├── about.html                 # About page
+├── leaderboard.html           # Leaderboard
+├── scoreboard.html            # User scores
+├── question.html              # Game question (MAIN)
+├── rules.html                 # Game rules
+├── gameover.html              # Game end state
+├── footer.html                # Footer
+├── navbar.html                # Navigation
+├── icons/                     # Icon SVGs
+├── lifelineSVG/               # Lifeline UI SVGs
+├── optionSVG/                 # Answer option SVGs
+├── authentication/            # Auth templates
+│   ├── register.html
+│   ├── signin.html
+│   ├── signout.html
+│   └── adminlogin.html
+└── adminpanel/               # Admin dashboard templates
+    ├── index.html
+    ├── listdb.html
+    ├── objectCreate.html
+    ├── objectView.html
+    ├── objectDelete.html
+    ├── objectHistory.html
+    ├── listlog.html
+    ├── apiaccess.html
+    ├── apidocs.html
+    └── formTemplates/
+        ├── question.html
+        ├── option.html
+        ├── lifeline.html
+        └── category.html
+```
+
+### Frontend Stack
+
+- **Tailwind CSS**: Dynamic CSS framework (django-tailwind integration)
+- **Vanilla JavaScript**: Question timer, lifeline logic (question.html)
+- **SVGs**: Custom icons/lifelines/options
+
+### Strengths
+
+1. **Tailwind CSS Integration**: Modern CSS framework with django-tailwind plugin
+2. **Template Inheritance**: Uses base.html for layout reuse
+3. **Modular Components**: Separate templates for navbar, footer, authentication
+4. **Responsive Design**: Tailwind provides mobile-first responsive classes
+5. **Asset Organization**: Icons/SVGs separated by component
+
+### Weaknesses
+
+1. **Monolithic Base Template**: base.html likely huge; no component-based design
+2. **Limited Template Tags**: Only uses basic Django template tags
+   - No custom template tags for reusable UI components
+   - Hard to maintain consistent styling
+
+3. **Frontend Logic in Templates**:
+   - JavaScript game logic embedded in question.html (complexity)
+   - Should extract to separate JS files
+
+4. **No Frontend Build Process**:
+   - Tailwind configured but unclear if JIT or build mode
+   - No minification/bundling for production
+
+5. **No Static Asset Versioning**:
+   - No cache-busting for CSS/JS
+   - Users may see stale assets after updates
+
+6. **Limited Accessibility**:
+   - No ARIA labels mentioned
+   - Form labels unclear from code snippets
+
+7. **No Form Validation Display**:
+   - Forms submitted but error display unclear
+   - No client-side validation feedback
+
+### Recommendations
+
+1. **Create Custom Template Tags** for reusability:
+   ```django
+   {# game/templatetags/game_tags.py #}
+   from django import template
+   register = template.Library()
+   
+   @register.inclusion_tag('components/question_card.html')
+   def question_card(question, options):
+       return {'question': question, 'options': options}
+   ```
+
+2. **Extract Frontend Logic** to separate files:
+   ```javascript
+   // static/js/game.js
+   class GameController {
+       constructor(sessionId) {
+           this.sessionId = sessionId;
+           this.timer = null;
+       }
+       
+       startTimer(duration) { /* ... */ }
+       submitAnswer(answer) { /* ... */ }
+       useLifeline(lifelineType) { /* ... */ }
+   }
+   ```
+
+3. **Add Static Asset Versioning**:
+   ```python
+   # settings.py
+   STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+   ```
+
+4. **Implement Form Validation** in templates:
+   ```django
+   {% if form.email.errors %}
+       <div class="text-red-600">{{ form.email.errors }}</div>
+   {% endif %}
+   <input type="email" name="email" class="{% if form.email.errors %}border-red-600{% endif %}" />
+   ```
+
+5. **Add ARIA Labels** for accessibility:
+   ```django
+   <button aria-label="Submit answer" type="submit">Submit</button>
+   ```
+
+---
+
+## 6. AUTHENTICATION & AUTHORIZATION DESIGN
+
+### Current Implementation
+
+**Files**:
+- `/auth/models.py` (Empty; uses Django's User model)
+- `/auth/views.py` (126 lines) - Login, register, logout
+- `/auth/validate.py` (33 lines) - Custom validators
+- `/auth/urls.py` (11 lines)
+
+### Authentication Flow
+
+1. **Registration** (`register` view):
+   - Validates username, email, password with custom validators
+   - Creates User via `User.objects.create_user()`
+   - Redirects to login
+
+2. **Login** (`login` view):
+   - Validates credentials with `auth.authenticate()`
+   - Session-based authentication via `auth.login()`
+   - Redirects to mainpage
+
+3. **Admin Login** (`adminlogin` view):
+   - Same as regular login but checks `user.is_superuser`
+   - Redirects to admin main page if superuser
+
+4. **Authorization**:
+   - LoginRequiredMixin for authenticated routes
+   - UserPassesTestMixin + SuperuserRequiredMixin for admin routes
+   - Session-based permissions
+
+### Strengths
+
+1. **Custom Validators**: Email, username, password validation rules (validate.py)
+2. **Password Strength**: Requires >= 8 chars, non-numeric, not username (lines 18-26)
+3. **Admin Separation**: Separate admin login route
+4. **Mixin-Based Protection**: LoginRequiredMixin and custom SuperuserRequiredMixin
+5. **Django Built-ins**: Uses Django's auth system (best practice)
+
+### Weaknesses
+
+1. **No Custom User Model**:
+   - Can't extend user with game-specific fields
+   - Hard to add social auth, profiles, preferences later
+
+2. **Session-Only Auth**:
+   - No token-based auth for API clients
+   - AdminPanel uses TokenAuthentication (line 116 in settings) but not exposed
+
+3. **Weak Password Validation**:
+   - Line 18: `not len(password) >= 8` means >= 8 chars OK (good)
+   - But no complexity requirements (uppercase, special chars)
+   - No common password check integration
+
+4. **No Email Verification**:
+   - Register creates user immediately without email confirmation
+   - Vulnerable to fake/typo emails
+
+5. **No Rate Limiting on Auth**:
+   - Brute-force attacks possible on login/register
+   - No failed attempt tracking
+
+6. **Admin Detection Fragile**:
+   - Line 84-87: `if request.user.is_superuser` check can be bypassed
+   - Should use explicit permission model
+
+7. **No Logout Confirmation**:
+   - Logout just renders template; doesn't show confirmation
+
+8. **Hardcoded Admin Check in Views**:
+   - Each admin view repeats `SuperuserRequiredMixin` pattern
+   - No centralized permission system
+
+9. **No Password Reset**:
+   - No forgotten password recovery
+   - Users stuck if they forget password
+
+10. **API Token Endpoint Missing**:
+    - TokenAuthentication configured but no view to generate tokens
+    - Users can't programmatically access API
+
+### Recommendations
+
+1. **Create Custom User Model**:
+   ```python
+   # auth/models.py
+   from django.contrib.auth.models import AbstractUser
+   
+   class User(AbstractUser):
+       email_verified = models.BooleanField(default=False)
+       bio = models.TextField(blank=True)
+       avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+       preferred_difficulty = models.CharField(
+           max_length=10,
+           choices=[('EASY', 'Easy'), ('MEDIUM', 'Medium'), ('HARD', 'Hard')],
+           default='MEDIUM'
+       )
+       total_games_played = models.IntegerField(default=0)
+       best_score = models.IntegerField(default=0)
+   
+   # settings.py
+   AUTH_USER_MODEL = 'auth.User'
+   ```
+
+2. **Add Email Verification**:
+   ```python
+   from django.contrib.auth.tokens import default_token_generator
+   
+   # In register view:
+   token = default_token_generator.make_token(user)
+   verification_url = request.build_absolute_uri(
+       reverse('verify-email', kwargs={'uid': user.pk, 'token': token})
+   )
+   send_email(user.email, verification_url)
+   ```
+
+3. **Implement Rate Limiting**:
+   ```python
+   from django.views.decorators.cache import cache_page
+   from django.core.cache import cache
+   
+   def rate_limit_login(request):
+       key = f"login_attempts_{request.POST.get('username')}"
+       attempts = cache.get(key, 0)
+       if attempts >= 5:
+           return HttpResponse("Too many login attempts", status=429)
+       cache.set(key, attempts + 1, 300)  # 5 min timeout
+   ```
+
+4. **Add Password Reset**:
+   ```python
+   # auth/views.py
+   from django.contrib.auth.views import PasswordResetView
+   
+   class CustomPasswordResetView(PasswordResetView):
+       template_name = 'auth/password_reset.html'
+       email_template_name = 'auth/password_reset_email.html'
+   ```
+
+5. **Create Token Generation Endpoint**:
+   ```python
+   # auth/views.py
+   from rest_framework.authtoken.models import Token
+   
+   class GetTokenView(APIView):
+       def post(self, request):
+           user = authenticate(username=request.data['username'], password=request.data['password'])
+           if user:
+               token, _ = Token.objects.get_or_create(user=user)
+               return Response({'token': token.key})
+           return Response({'error': 'Invalid credentials'}, status=401)
+   ```
+
+6. **Use Permission Classes**:
+   ```python
+   # auth/permissions.py
+   from rest_framework.permissions import BasePermission
+   
+   class IsAdmin(BasePermission):
+       def has_permission(self, request, view):
+           return request.user and request.user.is_superuser
+   
+   class IsGamePlayer(BasePermission):
+       def has_permission(self, request, view):
+           return request.user and request.user.is_authenticated
+   ```
+
+---
+
+## 7. DEPENDENCY MANAGEMENT
+
+### Current Dependencies
+
+**File**: `/pyproject.toml` (91 lines)
+
+```python
+dependencies = [
+    "Django>=5.1.2",                    # Web framework
+    "djangorestframework>=3.14.0",      # REST API
+    "django-configurations>=2.5.1",     # Config management
+    "django-crispy-forms>=2.0",         # Form rendering
+    "crispy-bootstrap5>=0.7",           # Bootstrap 5 support
+    "django-tailwind>=3.8.0",           # Tailwind CSS
+    "django-browser-reload>=1.12.0",    # Dev reload
+    "dj-database-url>=2.2.0",           # DB URL parsing
+    "dj-email-url>=1.0.6",              # Email config from URL
+    "dj-search-url>=0.1",               # Search config from URL
+    "django-cache-url>=3.4.5",          # Cache config from URL
+    "aiohttp>=3.11.11",                 # Async HTTP (for API?)
+    "requests>=2.31.0",                 # HTTP client
+]
+
+[dev-dependencies]
+pre-commit>=3.7.1
+pytest>=7.4.0
+pytest-django>=4.5.0
+pytest-cov>=4.1.0
+ruff>=0.1.0
+```
+
+### Strengths
+
+1. **Modern Versions**: Django 5.1.2 (latest LTS), DRF 3.14
+2. **Tailwind CSS Integration**: Official django-tailwind package
+3. **Environment Config**: Uses 12-factor pattern with dj-* packages
+4. **Testing Framework**: pytest + pytest-django + coverage
+5. **Code Quality**: Pre-commit + ruff (modern linter/formatter)
+6. **Dev Tooling**: Browser reload for development
+
+### Weaknesses
+
+1. **Unused Dependencies**:
+   - `aiohttp>=3.11.11` - Imported but no async code found
+   - `dj-search-url` - Not used anywhere
+   - `crispy-bootstrap5` - Tailwind chosen instead; bootstrap5 unnecessary
+   - `django-crispy-forms` - Used but only in admin forms
+
+2. **Missing Critical Dependencies**:
+   - No `celery` for background tasks (email, notifications)
+   - No `django-redis` for caching
+   - No `gunicorn` or `uWSGI` for production
+   - No `whitenoise` for static file serving in production
+   - No `psycopg2` for PostgreSQL (only SQLite)
+
+3. **Vague Version Pinning**:
+   - All use `>=` (lower bound only)
+   - No upper bounds; could break on major versions
+   - Should use compatible release: `Django~=5.1.0`
+
+4. **No Security Packages**:
+   - No `django-cors-headers` for CORS
+   - No `django-ratelimit` for rate limiting
+   - No `django-defender` for brute-force protection
+
+5. **Incomplete Tool Configuration**:
+   - Ruff configured but missing pytest plugins
+   - No `black` formatter specified (ruff is formatter + linter)
+   - Coverage configured but no minimum percentage enforced in CI
+
+6. **No Production Server**:
+   - No ASGI server (only WSGI via django.wsgi)
+   - Running `runserver` in production is anti-pattern
+
+### Recommendations
+
+1. **Pin Versions Properly**:
+   ```toml
+   dependencies = [
+       "Django~=5.1.0",              # 5.1.x but not 5.2+
+       "djangorestframework~=3.14.0",
+       "pytest-django~=4.5.0",
+       # ... etc
+   ]
+   ```
+
+2. **Remove Unused Dependencies**:
+   ```toml
+   # Remove:
+   # - aiohttp (no async code)
+   # - dj-search-url (not used)
+   # - crispy-bootstrap5 (Tailwind chosen instead)
+   ```
+
+3. **Add Production Dependencies**:
+   ```toml
+   [project.optional-dependencies]
+   prod = [
+       "psycopg2-binary>=2.9.0",        # PostgreSQL driver
+       "gunicorn>=21.0.0",              # WSGI app server
+       "whitenoise>=6.6.0",             # Static file serving
+       "django-redis>=5.4.0",           # Redis caching
+       "celery>=5.3.0",                 # Task queue
+   ]
+   
+   dev = [
+       # ... existing dev deps
+       "django-extensions>=3.2.0",      # shell_plus, runserver_plus
+       "django-debug-toolbar>=4.2.0",   # Dev debugging
+   ]
+   ```
+
+4. **Add Security Packages**:
+   ```toml
+   dependencies = [
+       # ... existing
+       "django-cors-headers>=4.3.0",    # CORS support
+       "django-ratelimit>=4.1.0",       # Rate limiting
+   ]
+   ```
+
+5. **Enforce Coverage in CI**:
+   ```toml
+   [tool.pytest.ini_options]
+   # ... existing
+   addopts = "--cov --cov-fail-under=80"  # Enforce 80% coverage
+   ```
+
+6. **Add Makefile for Production**:
+   ```makefile
+   run-prod:
+       gunicorn kbc.wsgi:application --workers 4 --bind 0.0.0.0:8000
+   ```
+
+---
+
+## 8. HOW WELL DOES IT FOLLOW DJANGO BEST PRACTICES
+
+### Best Practices Adherence
+
+| Practice | Status | Notes |
+|----------|--------|-------|
+| **Separation of Concerns** | Good | Apps separate; logic scattered in views |
+| **DRY (Don't Repeat Yourself)** | Fair | Middleware/mixins reused; view logic duplicated |
+| **Security** | Poor | CSRF exemption, no HTTPS config, weak password rules |
+| **Testing** | Good | pytest structure; conftest.py configured |
+| **Documentation** | Poor | Minimal docstrings; no API docs |
+| **Code Style** | Good | ruff configured; consistent formatting |
+| **Database Design** | Fair | Models reasonable; some overly complex; no indexes |
+| **API Design** | Poor | Not RESTful; no versioning; inconsistent naming |
+| **Environment Config** | Good | django-configurations used; 12-factor principles |
+| **Static Files** | Good | Tailwind integrated; static dirs configured |
+| **Logging** | Poor | No logging configuration |
+| **Error Handling** | Poor | No custom error pages or exception handlers |
+| **Caching** | Fair | REST_FRAMEWORK configured; no app-level caching |
+| **Admin Interface** | Good | Admin app configured; custom admin views |
+
+### Summary
+
+**Best practices adherence: 60-65%**
+
+The project follows foundational Django principles but has significant gaps in security, API design, testing coverage, and production-readiness.
+
+---
+
+## 9. NOTABLE ARCHITECTURAL DECISIONS & TRADE-OFFS
+
+### Key Decisions
+
+1. **django-configurations over environment variables**
+   - Trade-off: More Pythonic vs. 12-factor app compliance
+   - Decision: Good for structured config but requires manual management
+
+2. **Session ID as URL parameter**
+   - Trade-off: Simple game state sharing vs. security risk
+   - Decision: Expedient but vulnerable to session hijacking/guessing
+
+3. **String PKs for Session (not UUID)**
+   - Trade-off: Shorter URLs vs. collision-prone
+   - Decision: Manual collision detection is error-prone
+
+4. **All models in game/ app**
+   - Trade-off: Simple organization vs. violates Single Responsibility
+   - Decision: Works for now; will be harder to refactor later
+
+5. **No custom User model**
+   - Trade-off: Fast initial development vs. future extensibility
+   - Decision: Technical debt accumulates quickly
+
+6. **Token auth in settings but not in game views**
+   - Trade-off: Built but not used; API inconsistent
+   - Decision: Partial implementation is confusing
+
+7. **Tailwind CSS only (no Bootstrap)**
+   - Trade-off: Modern and lightweight vs. less component library
+   - Decision: Good choice for new projects
+
+8. **SQLite for all environments**
+   - Trade-off: Zero setup for dev vs. production scaling issues
+   - Decision: Works for now but will be painful to migrate
+
+### Design Tensions
+
+1. **Admin Dashboard vs. DRF API**
+   - Admin panel has custom views (AdminListDB, AdminDBObjectChange, etc.)
+   - Could use DRF ViewSets for CRUD, reducing code duplication
+
+2. **Game State in URL vs. Session State**
+   - URL has session ID and level: `/game/<session>/question/<level>/`
+   - Could be cleaner: `/game/<session>/question/` with state in database
+
+3. **Monolithic Views vs. Service Layer**
+   - QuestionInGame (249 lines) contains game logic, validation, DB ops
+   - Should separate into separate services/views
+
+---
+
+## 10. SCALABILITY & MAINTAINABILITY CONCERNS
+
+### Scalability Issues
+
+1. **Database Bottlenecks**:
+   - SQLite cannot handle concurrent writes
+   - `get_next_question()` loads all questions into memory
+   - No pagination for leaderboard until rendered
+   - Missing indexes on frequently queried fields
+
+2. **No Caching**:
+   - Questions fetched fresh every time
+   - Leaderboard computed on every request
+   - Lifelines could be cached
+
+3. **No Background Job Queue**:
+   - Email notifications would block request
+   - No async task processing
+   - Celery not included
+
+4. **Monolithic Architecture**:
+   - Single Django app for all services
+   - Cannot scale game engine separately from admin panel
+   - Session state hardcoded to database
+
+5. **Large View Classes**:
+   - QuestionInGame: 249 lines
+   - BetweenQuestion: 159 lines
+   - AdminMainPage: 220+ lines
+   - Hard to test; hard to understand
+
+6. **N+1 Query Problems**:
+   - Line 525-537 in game/views.py: Session.objects...values() then iterates
+   - Could use select_related/prefetch_related
+
+### Maintainability Issues
+
+1. **Limited Test Coverage**:
+   - conftest.py only defines 2 fixtures
+   - No mention of test utilities/factories
+   - Hard to test complex game logic
+
+2. **No Clear API Contract**:
+   - AddQuestion API (lines 771-985) has complex logic
+   - Status codes poorly documented
+   - No OpenAPI/Swagger spec
+
+3. **Magic Numbers**:
+   - Line 72: `new_session.left_lifelines.set([2, 3, 4])` - Hard-coded IDs
+   - Line 166-175: Hard-coded time limits for levels
+   - Line 325: `sessionObj.score //= 100` - Penalty calculation unclear
+
+4. **Game Logic Scattered**:
+   - lifelines.py has lifeline logic
+   - game/views.py has game flow
+   - game/models.py has business logic (get_next_question)
+   - Hard to understand full flow
+
+5. **No Documentation**:
+   - Minimal docstrings
+   - No architecture diagram
+   - No API documentation
+   - Game rules encoded in views, not documented
+
+6. **Form Validation Loose**:
+   - Line 22-26 in auth/views.py: Home-grown validators
+   - Should use Django's built-in form validation
+   - Error messages generic ("Data is invalid")
+
+7. **Inconsistent Naming**:
+   - `sessionObj` vs `session` (inconsistent variables)
+   - `agreedToRules` vs `gameOver` (camelCase inconsistent)
+   - `session_id` vs `session` vs `sessionId` (parameter names)
+
+8. **No Type Hints**:
+   - No function signatures with types
+   - Hard to understand expected inputs/outputs
+   - Hard for IDE auto-completion
+
+### Recommendations for Scalability
+
+1. **Migrate to PostgreSQL**:
+   ```python
+   # settings.py
+   DATABASES = {
+       'default': dj_database_url.config(
+           default='postgres://user:password@localhost/trivivo',
+           conn_max_age=600,
+       )
+   }
+   ```
+
+2. **Add Caching**:
+   ```python
+   CACHES = {
+       'default': {
+           'BACKEND': 'django_redis.cache.RedisCache',
+           'LOCATION': 'redis://127.0.0.1:6379/1',
+           'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'}
+       }
+   }
+   
+   # In views.py
+   from django.views.decorators.cache import cache_page
+   
+   @cache_page(60 * 5)
+   def get_next_question(session_id):
+       # ...
+   ```
+
+3. **Use Celery for Background Tasks**:
+   ```python
+   # tasks.py
+   from celery import shared_task
+   
+   @shared_task
+   def send_game_result_email(user_id, score):
+       # Send email asynchronously
+   ```
+
+4. **Add Query Optimization**:
+   ```python
+   # game/views.py
+   Session.objects.filter(user=request.user).select_related(
+       'current_level', 'current_question'
+   ).prefetch_related(
+       'correct_qns', 'used_lifelines'
+   )
+   ```
+
+5. **Add Database Indexes**:
+   ```python
+   # game/models.py
+   class Session(models.Model):
+       class Meta:
+           indexes = [
+               models.Index(fields=['session_user', '-date_created']),
+               models.Index(fields=['current_level']),
+           ]
+   ```
+
+### Recommendations for Maintainability
+
+1. **Extract Services**:
+   ```python
+   # game/services/game_service.py
+   class GameService:
+       @staticmethod
+       def start_game(user):
+           """Create and return a new game session."""
+           
+       @staticmethod
+       def get_current_question(session_id):
+           """Return the current question for a session."""
+           
+       @staticmethod
+       def submit_answer(session_id, answer):
+           """Process an answer and return game state."""
+   ```
+
+2. **Add Type Hints**:
+   ```python
+   # game/views.py
+   def get_next_question(session_id: str) -> Question:
+       """Fetch the next question for the given session."""
+       # ...
+   ```
+
+3. **Add Docstrings**:
+   ```python
+   class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
+       """
+       Display the current question in an active game session.
+       
+       GET: Return the question form.
+       POST: Process user's answer submission.
+       """
+   ```
+
+4. **Consolidate Magic Numbers**:
+   ```python
+   # game/constants.py
+   GAME_DIFFICULTY_TIME_LIMITS = {
+       'EASY': 20,
+       'MEDIUM': 40,
+       'HARD': 60,
+   }
+   PENALTY_DIVISOR = 100
+   MAX_LEVELS = 15
+   SESSION_ID_LENGTH = 8
+   DEFAULT_LIFELINE_IDS = [2, 3, 4]
+   ```
+
+5. **Add API Documentation**:
+   ```python
+   # settings.py
+   INSTALLED_APPS = [..., 'drf_spectacular']
+   
+   REST_FRAMEWORK = {
+       'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+   }
+   ```
+
+6. **Improve Form Validation**:
+   ```python
+   # auth/forms.py
+   class RegisterForm(forms.ModelForm):
+       password = forms.CharField(
+           validators=[
+               MinimumLengthValidator(8),
+               CustomPasswordValidator(),
+           ]
+       )
+       
+       class Meta:
+           model = User
+           fields = ['username', 'email', 'password']
+   ```
+
+---
+
+## SUMMARY: STRENGTHS & WEAKNESSES
+
+### Top 5 Strengths
+
+1. **Clear App Separation**: Games, auth, admin cleanly separated
+2. **Modern Tech Stack**: Django 5.1, DRF, Tailwind, pytest
+3. **Responsive Frontend**: Tailwind CSS with proper template hierarchy
+4. **Custom Game Logic**: Lifelines, levels, session management well-modeled
+5. **Development Tooling**: Makefile, pre-commit hooks, automated setup
+
+### Top 5 Weaknesses
+
+1. **Security Gaps**: No HTTPS config, CSRF exemption, weak password rules, session hijacking risk
+2. **Production Unready**: SQLite only, no async workers, no error logging, no rate limiting
+3. **API Not RESTful**: Inconsistent URL design, no versioning, endpoints encode state
+4. **Scalability Limited**: In-memory question filtering, no caching, N+1 queries
+5. **Code Maintainability**: Large monolithic views, magic numbers, scattered business logic
+
+---
+
+## RECOMMENDED ROADMAP (Priority Order)
+
+### Phase 1: Security & Production (Weeks 1-2)
+- [ ] Add PostgreSQL support
+- [ ] Implement rate limiting
+- [ ] Add HTTPS/security settings for production
+- [ ] Remove CSRF exemption; use proper token auth
+- [ ] Add password reset functionality
+- [ ] Implement email verification
+
+### Phase 2: Code Quality (Weeks 3-4)
+- [ ] Extract business logic into services
+- [ ] Add type hints throughout codebase
+- [ ] Add comprehensive docstrings
+- [ ] Refactor large views into smaller classes
+- [ ] Add custom test fixtures/factories
+
+### Phase 3: Scalability (Weeks 5-6)
+- [ ] Set up Celery for background tasks
+- [ ] Implement Redis caching
+- [ ] Add database query optimization (select_related, prefetch_related, indexes)
+- [ ] Optimize question selection algorithm
+
+### Phase 4: API & Frontend (Weeks 7-8)
+- [ ] Redesign URLs to be RESTful
+- [ ] Add OpenAPI/Swagger documentation
+- [ ] Implement API versioning
+- [ ] Extract frontend JS to separate files
+- [ ] Add client-side form validation
+
+### Phase 5: Deployment & Monitoring (Weeks 9-10)
+- [ ] Set up Gunicorn/uWSGI
+- [ ] Configure static file serving (WhiteNoise)
+- [ ] Implement structured logging
+- [ ] Add application monitoring (Sentry)
+- [ ] Create deployment documentation
+
+---
+
+## CONCLUSION
+
+The **Trivivo** project is a solid foundation for a trivia game with good architectural basics and modern tooling. However, it requires significant work in security hardening, production readiness, API design, and code maintainability before it's suitable for production use. The recommended roadmap above prioritizes the most critical issues while maintaining development velocity.
+
+**Overall Assessment: 6.5/10 - Good foundation, significant work needed for production.**</result>
+<usage>total_tokens: 84702
+tool_uses: 33
+duration_ms: 128177</usage>
+</task-notification>
+Full transcript available at: REDACTED.output
+
+---
+
+Save all of this onto a Markdown file.
+
+---
+
+Give me a high level frontend code review of the project and use typescript-lsp and frontend-plugin to analyze further.
+
+---
+
+[Request interrupted by user]
+
+---
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me analyze the conversation chronologically:
+
+1. User opened `.claude/settings.json` in the IDE (noted via system reminder)
+2. User asked for a high-level architecture, code quality, test, and performance review — specifically requesting parallel subagents
+3. I did a quick project structure scan to understand the layout, then spawned 4 parallel background subagents
+4. Agents completed one by one with detailed reports
+5. User asked to save all findings to a Markdown file → I wrote `misc/PROJECT_REVIEW.md`
+6. User asked for a frontend code review, mentioning `typescript-lsp` and `frontend-plugin`
+7. I started exploring frontend files and checking MCP resources — found neither plugin was available
+8. User interrupted and ran `/plugin` twice — second time successfully installed `frontend-design`
+9. User triggered a conversation summary (this request)
+
+Key files examined:
+- Project structure (find commands)
+- All four subagent reports (architecture, code quality, tests, performance)
+- `misc/PROJECT_REVIEW.md` (created)
+- Frontend file listing (JS, CSS, HTML files)
+
+The frontend review was interrupted mid-execution. The `frontend-design` plugin was just installed and needs a Claude Code restart to load.
+
+Summary:
+1. Primary Request and Intent:
+   - **Request 1**: Perform a high-level architecture, code quality, test, and performance review of the project at `/Users/himankdave/Documents/code/personal-gh/trivivo`, using parallel subagents to do the work in equal parts.
+   - **Request 2**: Save all review findings to a Markdown file.
+   - **Request 3**: Give a high-level frontend code review of the project, using `typescript-lsp` and `frontend-plugin` to analyze further.
+
+2. Key Technical Concepts:
+   - Django 5.1 multi-app project (`game`, `auth`, `adminpanel`, `kbc`)
+   - Django REST Framework with TokenAuthentication
+   - `django-configurations` for Base/Dev/Prod environment separation
+   - Tailwind CSS via `django-tailwind`
+   - SQLite database (dev-only, not production-ready)
+   - pytest + pytest-django + pytest-cov (configured but unused)
+   - pre-commit hooks with ruff
+   - Vanilla JavaScript (timer, validator, charting, confetti, signin, flickeringGrid)
+   - Django template system with SVG component fragments
+   - N+1 query patterns, missing database indexes
+   - MCP plugin system (`frontend-design` plugin just installed)
+
+3. Files and Code Sections:
+   - **Project structure** (explored via `find` commands, maxdepth 3–4)
+      - Django apps: `game/`, `auth/`, `adminpanel/`, `kbc/`, `tailwind_theme/`
+      - Test dirs: `tests/unit/`, `tests/functional/`, per-app `tests.py` files (all empty)
+      - Templates: `templates/` (base, game, auth, adminpanel, SVG fragments)
+      - Static JS: `static/js/` (timer.js, validator.js, charting.js, confetti.js, signin.js, adminpanelForms/questionform.js)
+      - Static CSS: `static/css/` (auth.css, base.css, confetti.css, banner CSsS files)
+      - Tailwind: `tailwind_theme/static_src/tailwind.config.js`, `styles.css`
+   - **`misc/PROJECT_REVIEW.md`** (created)
+      - Full synthesized report from all 4 subagents saved here
+      - Sections: Architecture, Code Quality, Tests, Performance, Prioritized Action List
+
+4. Errors and fixes:
+   - **`typescript-lsp` and `frontend-plugin` not available**: When user requested a frontend review using those tools, `/plugin` returned "(no content)" on first two runs. On the third run, `frontend-design` was successfully installed but requires a Claude Code restart to load. No fix applied yet — task was interrupted.
+
+5. Problem Solving:
+   - **4-way parallel subagent review**: Spawned architecture, code quality, test coverage, and performance agents simultaneously using background Task calls. All 4 completed and results were synthesized into a coherent report.
+   - **Review consolidation**: The four separate agent reports were merged into a single prioritized Markdown document with cross-cutting findings (e.g., the `NameError` bug appeared in both code quality and test reviews).
+
+6. All user messages:
+   - "Give me a high level architecture, code quality, test and performance review of the project. Spawn subagents to do this work in equal parts."
+   - "Save all of this onto a Markdown file."
+   - "Give me a high level frontend code review of the project and use typescript-lsp and frontend-plugin to analyze further."
+
+7. Pending Tasks:
+   - **Frontend code review**: Perform a high-level frontend review of all JS, CSS, and HTML template files. The user specifically requested use of `typescript-lsp` and `frontend-plugin` (now installed as `frontend-design`, but requires Claude Code restart).
+
+8. Current Work:
+   Was beginning a frontend code review. Had just:
+   - Listed all frontend files (JS, CSS, HTML) via `find` command
+   - Listed `static/js/` contents: `charting.js`, `confetti.js`, `signin.js`, `timer.js`, `validator.js`, `adminpanelForms/questionform.js`
+   - Run `ListMcpResourcesTool` — returned no resources
+   - Determined `typescript-lsp` and `frontend-plugin` were not installed, informed the user
+   - User then interrupted and ran `/plugin` which installed `frontend-design` (requires restart)
+
+9. Optional Next Step:
+   The user's most recent explicit request was: *"Give me a high level frontend code review of the project and use typescript-lsp and frontend-plugin to analyze further."*
+   
+   The `frontend-design` plugin was just installed and requires a Claude Code restart to load. Once restarted, the next step is to proceed with the frontend review — reading all JS files (`timer.js`, `validator.js`, `charting.js`, `confetti.js`, `signin.js`, `flickeringGrid.js`, `adminpanelForms/questionform.js`), CSS files, key HTML templates (`base.html`, `question.html`, `mainPage.html`), and the Tailwind config — then using the `frontend-design` plugin tools for deeper analysis.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/himankdave/.REDACTED.jsonl
