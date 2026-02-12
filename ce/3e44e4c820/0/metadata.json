@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "ce3e44e4c820",
+  "session_id": "625efbf2-4637-4c17-bfe9-30d5987ffe0f",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-12T17:44:37.889015Z",
+  "branch": "RE-updated-fe",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".playwright-mcp/console-2026-02-12T05-48-52-015Z.log"
+  ],
+  "agent": "Claude Code",
+  "transcript_identifier_at_start": "2514e086-0639-4b13-a2f6-dc5dfbf178ab",
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 29527,
+    "cache_read_tokens": 801607,
+    "output_tokens": 692,
+    "api_call_count": 18
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-12T17:44:37.870123Z",
+    "agent_lines": 0,
+    "human_added": 0,
+    "human_modified": 2,
+    "human_removed": 82,
+    "total_committed": 2,
+    "agent_percentage": 0
+  }
+}
