@@ -7,7 +7,7 @@
 "Trivivo" is a website developed by me that aims to test you with 15 questions of varying difficulty and topics, with staggering timeouts. The aim is to score the highest among the quiz-takers!
 
 ## Trello
-The Trello board is [here](https://trello.com/b/r301JdtS/trivivo).
+The Trello board is [here](https://linear.app/trivivo/team/TRI/all).
 
 
 ## Project Structure
