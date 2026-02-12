@@ -1,0 +1,215 @@
+Give me a high level frontend code and design review of the project and use typescript-lsp plugin, frontend-design plugin, Playwright MCP and subagents to analyze further.
+
+---
+
+Non-admin credentials - Username: johnDoe | Password: jdvance1 ; Admin credentials - Username: hdave | Password: manuosos1 -- this is for login.
+
+---
+
+<task-notification>
+<task-id>a19f640</task-id>
+<status>completed</status>
+<summary>Agent "Explore project structure" completed</summary>
+<result>Perfect! Now I have enough information to provide a comprehensive overview. Let me compile all my findings:
+
+## Comprehensive Project Overview - Trivivo
+
+### 1. PROJECT STRUCTURE
+
+**Directory Layout:**
+```
+trivivo/
+├── adminpanel/          # Admin management app
+├── auth/                # Authentication app
+├── game/                # Core game logic app
+├── kbc/                 # Django project configuration
+├── templates/           # Global Django templates
+├── static/              # CSS, JS, images, audio assets
+├── tailwind_theme/      # Tailwind CSS theme (Node.js based)
+├── tests/               # Test suite (unit, functional)
+├── Makefile             # Development automation
+├── pyproject.toml       # Python dependencies & config
+├── conftest.py          # Pytest configuration
+└── db.sqlite3           # SQLite database
+```
+
+**Key File Sizes:**
+- game/views.py: 589 lines (main game logic)
+- adminpanel/views.py: 985 lines (admin features)
+- auth/views.py: 125 lines (authentication)
+
+### 2. TECH STACK
+
+**Backend:**
+- **Framework**: Django 5.1.2+ with django-configurations
+- **Database**: SQLite3 (with ORM migrations)
+- **API**: Django REST Framework (DRF) with token authentication
+- **Forms**: django-crispy-forms + crispy-bootstrap5
+
+**Frontend:**
+- **Templating**: Django Templates (Jinja-like)
+- **Styling**: Tailwind CSS 3.8+ with PostCSS
+- **JavaScript**: Vanilla JS (no React/Vue)
+- **UI Libraries**: 
+  - Tailwind CSS plugins (forms, typography, aspect-ratio)
+  - Chart.js for data visualization
+  - Custom confetti animations
+
+**Development Tools:**
+- **Package Management**: uv (Python)
+- **Linting**: Ruff (Python formatting & linting)
+- **Testing**: Pytest + pytest-django + pytest-cov
+- **Pre-commit Hooks**: YAML checks, trailing whitespace, ruff formatting
+- **Build Automation**: Makefile (development commands)
+
+### 3. FRONTEND ARCHITECTURE
+
+**Routing Strategy:**
+- Django URL routing at project level (kbc/urls.py)
+- Server-side rendered (SSR) templates, no SPA framework
+- Game flow: Main → Rules → Questions → Scoring
+
+**URL Patterns:**
+```
+/                          - Main page (MainPage view)
+/about/                    - About page
+/leaderboard/              - Leaderboard view
+/scores/                   - Scoreboard view
+/game/<session>/rules/     - Game rules
+/game/<session>/question/<level>/  - Question display
+/game/<session>/question/<level>/<status>/ - Status between questions
+/auth/login/, /register/, /logout/ - Auth endpoints
+/admin/                    - Admin panel (custom admin interface)
+/djadmin/                  - Django admin
+```
+
+**Component Structure:**
+- **Base Template** (base.html): Shared layout with Tailwind styling
+- **Game Templates**: question.html, gameover.html, leaderboard.html, scoreboard.html
+- **Auth Templates**: signin.html, register.html, adminlogin.html
+- **Admin Templates**: Comprehensive CRUD interface with listdb.html, objectView.html, etc.
+
+**Frontend State Management:**
+- **Session Management**: Django sessions (server-side)
+- **Client State**: localStorage for timer state (timer.js)
+- **Form Handling**: Django CSRF tokens, traditional form submissions
+
+**JavaScript Modules:**
+- `timer.js`: Countdown timer with pause/resume functionality
+- `charting.js`: Data visualization for leaderboards
+- `validator.js`: Form validation
+- `confetti.js`: Celebration animations
+- `signin.js`: Authentication form handling
+
+### 4. KEY CONFIGURATION FILES
+
+**pyproject.toml** - Dependencies & Tool Config:
+```
+Core: Django 5.1.2, DRF 3.14, django-tailwind, django-configurations
+Dev: pytest, ruff, pre-commit
+Ruff Config: 88-char line length, Python 3.11 target
+```
+
+**settings.py** - Django Configuration:
+- Multi-environment setup (Base, Dev, Prod classes)
+- Installed apps: DRF, Tailwind, Django Browser Reload
+- Template loaders configured for all apps
+- Token authentication for API
+- SQLite default database
+- Static files configuration with Tailwind theme
+
+**Tailwind Config** (static_src/tailwind.config.js):
+- Scans all HTML templates for class detection
+- Plugins: forms, typography, aspect-ratio
+- Content paths: templates, static files, all apps
+
+**Makefile** - Development Commands:
+- `make setup` - Initial project setup
+- `make run` - Start dev server
+- Database migration utilities
+- Tailwind CSS compilation
+- Testing commands
+
+**.pre-commit-config.yaml**:
+- YAML validation
+- Trailing whitespace cleanup
+- Large file detection
+- Ruff formatting & linting
+
+### 5. DATABASE MODELS & ARCHITECTURE
+
+**Core Game Models** (game/models.py):
+- **Question**: Text, difficulty (EASY/MEDIUM/HARD), options, type (MULTIPLE/TRUEFALSE)
+- **Session**: Manages active game sessions with session_id, level progression, score tracking
+- **Level**: Prize money per level (15 levels max)
+- **Category**: Question categorization
+- **Option**: Question options with user hit tracking
+- **Lifeline**: Three lifeline types (Fifty-50, Audience Poll, Expert Answer)
+- **ChosenOption**: M2M through model for tracking user answers
+
+**Lifelines System** (game/lifelines.py):
+- expertAnswer(): Reveals correct option
+- fifty50(): Removes two incorrect options
+- audiencePoll(): Shows simulated audience voting percentages
+
+### 6. NOTABLE PATTERNS & CONCERNS
+
+**Positive Patterns:**
+- Clean separation of concerns (apps: auth, game, adminpanel)
+- Comprehensive test infrastructure (pytest with fixtures)
+- Modern tooling (Ruff, Tailwind, Makefile automation)
+- Database integrity with migrations
+- DRF integration for API endpoints
+- Form validation and CSRF protection
+
+**Potential Concerns:**
+1. **No JavaScript Framework**: Heavy reliance on vanilla JS could be hard to scale complex UI
+2. **localStorage for Timer State**: Timer state persists in localStorage - could be manipulated by users
+3. **Server-Side Rendering Only**: No caching layer or async loading for better UX
+4. **Random Question Selection**: Uses Python's random.choice() - could repeat questions if not carefully managed
+5. **Admin Panel Complexity**: Custom admin implementation (37KB base.html) instead of leveraging Django admin
+6. **Static Configuration**: Some database defaults hardcoded (Option.get_default_pk(), Question.get_default_pk())
+7. **No API Rate Limiting**: REST endpoints have no apparent rate limiting
+8. **Sentinel User Pattern**: Uses "deleted" user for cascade behavior - could cause data integrity issues
+
+**Code Quality:**
+- Well-structured models with proper validators
+- Good use of Django patterns (ForeignKey, M2M, through models)
+- Consistent naming conventions
+- Comprehensive configuration management
+
+This is a traditional Django application with server-side rendering and vanilla JavaScript frontend enhancements. It's well-suited for a trivia game with realtime gameplay and scoring tracking.</result>
+<usage>total_tokens: 55712
+tool_uses: 45
+duration_ms: 47574</usage>
+</task-notification>
+Full transcript available at: REDACTED.output
+
+---
+
+Encapsulate all of this findings into a Markdown file without losing any detail and doing it in minimum tokens possible + make sure it is very structured for both humans & agents to understand.
+
+---
+
+Clear up files created by Playwright MCP.
+
+---
+
+· `game/views.py:72` — FOREIGN KEY crash on game start · **FIXED**
+```python
+# Before (hardcoded IDs that didn't match DB records 1,2,3):
+new_session.left_lifelines.set([2, 3, 4])
+# After:
+new_session.left_lifelines.set(Lifeline.objects.values_list("id", flat=True))
+```
+- **Symptom**: `IntegrityError: FOREIGN KEY constraint failed` on every game start
+- **Root cause**: Same hardcoded-ID pattern as BUG-07/BUG-08; a `TODO` comment acknowledged it
+- **Status**: Fixed in this review session
+
+---
+
+[Request interrupted by user]
+
+---
+
+Commit this change.
