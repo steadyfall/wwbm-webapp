@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "ee40fe0745d1",
+  "strategy": "manual-commit",
+  "branch": "RE-updated-fe",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".claude/.gitignore"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ee/40fe0745d1/0/metadata.json",
+      "transcript": "/ee/40fe0745d1/0/full.jsonl",
+      "context": "/ee/40fe0745d1/0/context.md",
+      "content_hash": "/ee/40fe0745d1/0/content_hash.txt",
+      "prompt": "/ee/40fe0745d1/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 4194,
+    "cache_read_tokens": 264488,
+    "output_tokens": 525,
+    "api_call_count": 8
+  }
+}
