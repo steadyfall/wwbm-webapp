@@ -1,0 +1,57 @@
+Look at @misc/, read the files and from given context, suggest ~10-15 issue labels with appropriate description (<10 words).
+
+---
+
+category 1:
+accessibility - Breaks keyboard or screen reader access
+design - Design debt - CSS inconsistency or unfinished migration or ..
+documentation - Improvements or additions to documentation
+
+category 2:
+auth - Authentication or authorization related
+backend - Django / Python / view logic issue
+database - Model, query, migration, or index issue
+frontend - HTML / CSS / JavaScript issue
+performance - Causes excess queries, memory, or latency
+
+category 3:
+bug - Something is broken or behaving incorrectly
+critical - Crash, data loss, or auth bypass risk
+security - Vulnerability or exploitable behaviour
+refactor - restructure code without changing behaviour
+
+category 4:
+infra - CI/CD, GitHub Actions, or deployment configs
+tests - Missing, empty, or broken test coverage
+
+category 5:
+release - Marks PRs intended to be merged into main (production)
+
+category 6:
+enhancement - New feature or request
+help wanted - Extra attention is needed
+
+category 7:
+duplicate - This issue or pull request already exists
+good first issue - Good for newcomers
+invalid - This doesn't seem right
+
+---
+
+name each category and add this to the README of the project.
+
+---
+
+give one word category names.
+
+---
+
+[Request interrupted by user]
+
+---
+
+because these will be used as prefixes to the labels.
+
+---
+
+Commit this change.
