@@ -1,0 +1,3983 @@
+Generate documentation for the project using parallel doc-updater subagents.
+
+---
+
+<task-notification>
+<task-id>a0e08cf</task-id>
+<status>completed</status>
+<summary>Agent "Generate game.md codemap" completed</summary>
+<result>I apologize, but I'm encountering permission restrictions that prevent me from creating the directory or writing the file directly. This appears to be a sandbox restriction on file system operations.
+
+However, I've already prepared the complete `game.md` codemap content above. Here's what you need to do to create the file:
+
+**Manual Steps:**
+
+1. Create the directory:
+```bash
+mkdir -p REDACTED
+```
+
+2. Create the file and paste the content into:
+```bash
+REDACTED.md
+```
+
+**The Complete Codemap Content** (ready to paste):
+
+The codemap I've generated includes:
+
+1. **Architecture Diagram** - Shows the full flow from browser through URLs → Views → Models → Database
+
+2. **Models Table** - All 8 models with key fields and relationships:
+   - Lifeline, Level, Category, Option, ChosenOption, Question, Session, QuestionOrder
+
+3. **Views Table** - All 7 production views + 3 debug views with their HTTP methods and purposes
+
+4. **URL Patterns Table** - Complete routing configuration
+
+5. **Management Commands Table** - All 6 commands:
+   - createlevels, createlifelines, createcategories, fetchqns, extractoptions, addquestions
+
+6. **Lifelines System** - Detailed description of:
+   - Fifty-50, Audience Poll, Expert Answer
+   - How `general_procedure()` works
+   - The `mappedLifelines` dictionary
+
+7. **Custom Template Tags** - All 8 filters registered in `utility.py`
+
+8. **Comprehensive Data Flows**:
+   - Initialization/seed data flow
+   - Complete gameplay request flow (8 steps)
+   - Session state machine with lifecycle states
+   - Question difficulty selection algorithm
+
+9. **Timer Escalation** - Time per level (20-60 seconds)
+
+10. **Prize Money Ladder** - All 17 levels with prize amounts
+
+11. **Security & Validation** - Login checks, session verification, answer validation
+
+12. **Related Components** - Links to adminpanel, auth, templates, styling
+
+The codemap was generated from reading and analyzing:
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/models.py` (8 models, 280 lines)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/views.py` (7 views, 589 lines)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/urls.py` (7 URLs)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/admin.py` (8 registered models)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/lifelines.py` (3 lifeline functions)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/management/commands/` (6 commands)
+- `/Users/himankdave/Documents/code/personal-gh/trivivo/game/templatetags/utility.py` (8 custom filters)
+
+**Last Updated:** 2026-02-12 (as requested)
+
+Once you create the file, you can commit it to git and use it as the authoritative architecture reference for the Trivivo game system.</result>
+<usage>total_tokens: 45369
+tool_uses: 19
+duration_ms: 67746</usage>
+</task-notification>
+Full transcript available at: /private/tmp/claude-501/-Users-himankdave-Documents-code-personal-gh-trivivo/tasks/a0e08cf.output
+
+---
+
+<task-notification>
+<task-id>a876efa</task-id>
+<status>completed</status>
+<summary>Agent "Generate auth.md and adminpanel.md codemaps" completed</summary>
+<result>I'm encountering permission restrictions in this sandboxed environment that prevent me from creating or writing files directly. However, I have all the information needed to generate the codemaps. Let me provide you with the complete codemap content that you can manually create:
+
+## Auth App Codemap (`docs/CODEMAPS/auth.md`)
+
+```markdown
+# Auth App Codemap
+
+**Last Updated:** 2026-02-12
+
+**Framework:** Django
+
+**Entry Points:** `auth/views.py`
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Authentication Flow                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  User                URL Router              Views               │
+│  ────                ──────────              ─────               │
+│                                                                   │
+│  Register ─────────→ register/     ────→  register()            │
+│                                          + validate() checks     │
+│                                                                   │
+│  Login ────────────→ login/        ────→  login()               │
+│                                          + authenticate user     │
+│                                                                   │
+│  Logout ────────────→ logout/      ────→  logout()              │
+│                                                                   │
+│  Admin Login ──────→ admin-login/  ────→  adminlogin()          │
+│                                          + superuser check       │
+│                                                                   │
+│  Admin Logout ─────→ admin-logout/ ────→  adminlogout()         │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+
+Validation Module (validate.py):
+  ├─ usernameValidator()     - Regex: [\w.@+-]{1,149}
+  ├─ emailValidator()        - Standard email regex
+  ├─ passwordValidator()     - Min 8 chars, non-numeric, not username
+  └─ confirmPassword()       - Match + validate second password
+```
+
+## Views
+
+| View Name | Type | URL Name | Purpose | Auth Required |
+|-----------|------|----------|---------|---------------|
+| `register()` | Function | `register` | User registration with validation | No |
+| `login()` | Function | `login` | Standard user login | No |
+| `logout()` | Function | `logout` | User logout with redirect | Yes |
+| `adminlogin()` | Function | `adminLogin` | Admin-only login with superuser check | No |
+| `adminlogout()` | Function | `adminLogout` | Admin logout with superuser check | Yes |
+
+## URL Patterns
+
+| Pattern | Name | View | Method |
+|---------|------|------|--------|
+| `login/` | `login` | `login()` | GET/POST |
+| `logout/` | `logout` | `logout()` | GET |
+| `register/` | `register` | `register()` | GET/POST |
+| `admin-login/` | `adminLogin` | `adminlogin()` | GET/POST |
+| `admin-logout/` | `adminLogout` | `adminlogout()` | GET |
+
+## Validation Rules
+
+### Username
+- Pattern: `^[\w.@+-]{1,149}$`
+- Alphanumeric, underscore, dot, @, +, - allowed
+- 1-149 characters
+
+### Email
+- Pattern: `^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`
+- Standard email format
+
+### Password
+- Minimum 8 characters
+- Must contain at least one non-numeric character
+- Cannot contain username as substring
+
+### Password Confirmation
+- Must match password field
+- Must pass passwordValidator checks
+
+## User Flow
+
+### Registration Flow
+```
+User Submit Form
+    ↓
+Validate All Fields (username, email, password, password2)
+    ↓
+Check if User Exists?
+    ├─ YES → Warning: "You already have an account" → Redirect to login
+    └─ NO → Create User → Success message → Redirect to login
+```
+
+### Login Flow
+```
+User Submit Credentials
+    ↓
+Validate Username & Password
+    ↓
+Check User Exists?
+    ├─ NO → Warning: "Create account first" → Redirect to register
+    └─ YES → Authenticate
+        ├─ Failed → Error: "Wrong password" → Redirect to login
+        └─ Success → Login user → Redirect to mainpage
+```
+
+### Admin Login Flow
+```
+Already Authenticated?
+    ├─ YES & is_superuser → Redirect to admin dashboard
+    ├─ YES & not superuser → Redirect to mainpage
+    └─ NO → Continue
+
+User Submit Credentials
+    ↓
+Validate Username
+    ↓
+Check User Exists?
+    ├─ NO → Warning: "Contact administrator" → Redirect to adminLogin
+    └─ YES → Authenticate
+        ├─ Failed → Error: "Wrong password" → Redirect to adminLogin
+        └─ Success → Login user
+            ├─ is_superuser → Redirect to adminMainPage
+            └─ not superuser → Redirect to mainpage
+```
+
+## Data Models Used
+
+### Django Built-in User Model
+- **username** - CharField, 1-150 chars
+- **email** - EmailField
+- **password** - Hashed password
+- **is_superuser** - Boolean flag for admin status
+
+**Note:** Auth app does not define custom models. Uses Django's `django.contrib.auth.models.User`
+
+## External Dependencies
+
+| Package | Purpose | Version |
+|---------|---------|---------|
+| Django | Framework | Built-in |
+| django.contrib.auth | User authentication | Built-in |
+| django.contrib.messages | User messaging | Built-in |
+
+## Related Areas
+
+- **Admin Panel** - Uses admin login views for authentication
+- **Game App** - Authenticated users can access game content
+- **Database** - User records stored in Django auth tables
+
+## Security Notes
+
+1. Passwords validated for minimum 8 characters and non-numeric requirement
+2. Usernames cannot be substrings of passwords
+3. Admin login requires superuser status verification
+4. All views use Django's built-in auth system
+5. CSRF protection via Django middleware (default)
+```
+
+---
+
+## Admin Panel Codemap (`docs/CODEMAPS/adminpanel.md`)
+
+```markdown
+# Admin Panel Codemap
+
+**Last Updated:** 2026-02-12
+
+**Framework:** Django + Django REST Framework
+
+**Entry Points:** `adminpanel/views.py`, `adminpanel/viewsExtra.py`
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                      Admin Panel Architecture                     │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  Authentication Layer (SuperuserRequiredMixin + LoginRequired)    │
+│           ↓                                                        │
+│  ┌──────────────────────────────────────────────────┐             │
+│  │         Admin Main Dashboard Views               │             │
+│  │  ┌────────────────────────────────────────────┐  │             │
+│  │  │ AdminMainPage - Statistics & Charts        │  │             │
+│  │  │ AdminListDB   - List CRUD objects          │  │             │
+│  │  │ AdminDBObject - View/Edit object           │  │             │
+│  │  │ AdminDBObjectCreate - Create new object    │  │             │
+│  │  │ AdminDBObjectDelete - Confirm deletion     │  │             │
+│  │  │ AdminDBObjectHistory - View change logs    │  │             │
+│  │  │ ShowLogDB     - View all audit logs        │  │             │
+│  │  └────────────────────────────────────────────┘  │             │
+│  └──────────────────────────────────────────────────┘             │
+│           ↓                                                        │
+│  ┌──────────────────────────────────────────────┐                 │
+│  │      Data Access Layer                       │                 │
+│  │  modelDict: Session, Lifeline, Category     │                 │
+│  │            Question, Option                 │                 │
+│  │  modelFormDict: Custom forms for CRUD       │                 │
+│  │  ModifiedModelForm: Enhanced form handling  │                 │
+│  └──────────────────────────────────────────────┘                 │
+│           ↓                                                        │
+│  ┌──────────────────────────────────────────────┐                 │
+│  │      Database Models (game.models)           │                 │
+│  │  Session, Lifeline, Category, Question      │                 │
+│  └──────────────────────────────────────────────┘                 │
+│           ↓                                                        │
+│  ┌──────────────────────────────────────────────┐                 │
+│  │      REST API Layer                          │                 │
+│  │  GetQuestion - Random questions              │                 │
+│  │  AddQuestion - Bulk add questions via API    │                 │
+│  └──────────────────────────────────────────────┘                 │
+│           ↓                                                        │
+│     Django LogEntry (Audit Trail)                                 │
+│                                                                    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## Views
+
+| View Name | Type | URL Name | Purpose | Auth | Methods |
+|-----------|------|----------|---------|------|---------|
+| `testSite()` | Function | `test` | Test/debug page | No | GET |
+| `AdminMainPage` | CBV | `adminMainPage` | Dashboard with stats & charts | Superuser | GET |
+| `AdminListDB` | CBV | `adminListDB` | List database records with pagination | Superuser | GET/POST |
+| `AdminDBObjectCreate` | CBV | `adminDBObjectCreate` | Create new object form | Superuser | GET/POST |
+| `AdminDBObjectChange` | CBV | `adminDBObject` | View/edit object with change tracking | Superuser | GET/POST |
+| `AdminDBObjectDelete` | CBV | `adminDBObjectDelete` | Confirmation page for deletion | Superuser | GET/POST |
+| `AdminDBObjectHistory` | CBV | `adminDBObjectHistory` | View audit log for object | Superuser | GET |
+| `ShowLogDB` | CBV | `adminListLogs` | View all system audit logs | Superuser | GET |
+| `APIAccess` | CBV | `APIAccess` | Manage API tokens | Superuser | GET |
+| `APIDocs` | CBV | `APIDocs` | API documentation | Superuser | GET |
+| `GetQuestion` | CBV | `getQuestionAPI` | Get random questions (max 5) | Superuser | GET |
+| `AddQuestion` | APIView | `addQuestionAPI` | Bulk add questions via REST API | Token Auth | POST |
+
+## URL Patterns
+
+| Pattern | Name | View | Methods |
+|---------|------|------|---------|
+| `` | `adminMainPage` | AdminMainPage | GET |
+| `test/` | `test` | testSite | GET |
+| `apps/<str:db>/` | `adminListDB` | AdminListDB | GET/POST |
+| `logs/` | `adminListLogs` | ShowLogDB | GET |
+| `apps/<str:db>/object/<pk>/` | `adminDBObject` | AdminDBObjectChange | GET/POST |
+| `apps/<str:db>/create/` | `adminDBObjectCreate` | AdminDBObjectCreate | GET/POST |
+| `apps/<str:db>/object/<pk>/delete/` | `adminDBObjectDelete` | AdminDBObjectDelete | GET/POST |
+| `apps/<str:db>/object/<pk>/history/` | `adminDBObjectHistory` | AdminDBObjectHistory | GET |
+| `api-access/` | `APIAccess` | APIAccess | GET |
+| `api-docs/` | `APIDocs` | APIDocs | GET |
+| `random-question/` | `getQuestionAPI` | GetQuestion | GET |
+| `add-questions/` | `addQuestionAPI` | AddQuestion | POST |
+
+## Database Models Supported
+
+| Model | Supports Create | Supports Edit | Supports Delete | Supports View |
+|-------|-----------------|---------------|-----------------|---------------|
+| Session | No | No | Yes | Yes |
+| Lifeline | No | Yes | Yes | Yes |
+| Category | Yes | Yes | Yes | Yes |
+| Question | Yes | Yes | Yes | Yes |
+| Option | Yes | Yes | Yes | Yes |
+
+## Forms
+
+| Form Name | Model | Fields | Purpose |
+|-----------|-------|--------|---------|
+| `QuestionForm` | Question | who_added, falls_under, question_type, difficulty, text, correct_option, incorrect_options, date_added | Create/edit questions |
+| `OptionForm` | Option | text, date_added | Create/edit multiple choice options |
+| `LifelineForm` | Lifeline | name, date_created, description | Create/edit lifelines |
+| `CategoryForm` | Category | date_created, name | Create/edit question categories |
+| `ModifiedModelForm` | Base | Extends ModelForm | Custom M2M and change tracking |
+
+## Serializers
+
+| Serializer | Model | Purpose | Output Fields |
+|-----------|-------|---------|----------------|
+| `QuestionEncoder` | Question | JSON serialization for API | categories, difficulty, question, correct_answer, incorrect_answers |
+
+**QuestionEncoder Details:**
+- Converts Question objects to JSON
+- Maps difficulty to display value
+- Flattens category list to names
+- Flattens options to text values
+
+## Data Flow
+
+### Dashboard Flow (AdminMainPage)
+```
+User requests admin dashboard
+    ↓
+SuperuserRequiredMixin checks permission
+    ↓
+context_creator() builds statistics:
+  ├─ Recent activity logs (12 latest)
+  ├─ Question counts (total + daily)
+  ├─ Session counts (total + daily + high scores)
+  ├─ User counts (total + daily + active)
+  ├─ Category information
+  ├─ 15-day trend data for charts
+  └─ User activity rankings
+    ↓
+Render adminpanel/index.html with context
+```
+
+### List/CRUD Flow (AdminListDB)
+```
+GET /apps/<db>/
+    ↓
+Validate db in allowedModelNames
+    ↓
+Load model objects with pagination (12 per page)
+    ↓
+Render listdb.html
+
+POST /apps/<db>/ (bulk delete)
+    ↓
+Validate pk_checker for security
+    ↓
+Call safe_object_delete_log() for each object
+    ↓
+Log deletion with LogEntry
+    ↓
+Show success message
+```
+
+### Create Object Flow (AdminDBObjectCreate)
+```
+GET /apps/<db>/create/
+    ├─ Load form class from modelFormDict
+    └─ Render objectCreate.html
+
+POST /apps/<db>/create/
+    ├─ Validate form
+    ├─ Save object via form.save()
+    ├─ Log addition with construct_change_message()
+    ├─ Display success message
+    └─ Redirect to object detail page
+```
+
+### Edit Object Flow (AdminDBObjectChange)
+```
+GET /apps/<db>/object/<pk>/
+    ├─ Verify pk_checker
+    ├─ Load instance
+    └─ Render objectView.html
+
+POST /apps/<db>/object/<pk>/
+    ├─ Validate form
+    ├─ Check form.changed_data (custom logic in ModifiedModelForm)
+    ├─ If changed: save + log_change() + message
+    ├─ If delete button: redirect to delete confirmation
+    └─ Redirect to list view
+```
+
+### API Question Add Flow (AddQuestion)
+```
+POST /api/add-questions/
+Request body: JSON array of question objects
+    ↓
+TokenAuthentication + IsAuthenticated check
+    ↓
+For each question object:
+  ├─ checkQuestion(): validate structure
+  ├─ checkCategory(): find or create category
+  ├─ checkQuestionText(): verify uniqueness
+  ├─ checkDifficulty(): map difficulty string
+  ├─ checkOption(): find/create options
+  └─ Validate all fields (status codes)
+    ↓
+Bulk create Question objects
+    ↓
+updateM2Mfields(): set categories & incorrect_options
+    ↓
+Return JSON response with status
+```
+
+## Helper Functions (viewsExtra.py)
+
+| Function | Purpose | Returns |
+|----------|---------|---------|
+| `pk_checker()` | Validate primary key format | bool |
+| `safe_pk_list_converter()` | Convert pk list with validation | list[int/str] |
+| `safe_object_delete()` | Delete object safely | tuple (count, dict) |
+| `safe_object_delete_log()` | Delete + audit log | tuple |
+| `get_content_type_for_model()` | Get ContentType for model | ContentType |
+| `log_addition()` | Log object creation | LogEntry |
+| `log_change()` | Log object modification | LogEntry |
+| `log_deletion()` | Log object deletion | LogEntry |
+| `pretty_change_message()` | Format change message | str |
+| `daterange()` | Generate date range | generator |
+| `widget_list_generator()` | Create form widgets | dict |
+
+## Mixins
+
+| Mixin | Purpose | Behavior |
+|-------|---------|----------|
+| `SuperuserRequiredMixin` | Require admin access | Redirect if not superuser |
+| `LoginRequiredMixin` | Require authentication | Redirect to login if not authenticated |
+
+## Constants
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `PAGINATE_NO` | 12 | Items per page |
+| `SITE_NAME` | "AdminPanel" | Page title prefix |
+| `modelDict` | {session, lifeline, category, question, option} | Model registry |
+| `modelFormDict` | {session, lifeline, category, question, option} | Form registry |
+| `allowedModelNames` | tuple(modelDict.keys()) | Whitelist for URL params |
+
+## External Dependencies
+
+| Package | Purpose | Type |
+|---------|---------|------|
+| Django | Framework | Core |
+| Django REST Framework | API framework | API |
+| django.contrib.admin | Admin models | Core |
+| game.models | Question, Option, Category, etc. | Internal |
+| rest_framework.authtoken | Token authentication | API Auth |
+
+## Related Areas
+
+- **Auth App** - Authentication and login for admin users
+- **Game App** - Source of all managed models (Session, Question, Option, Category, Lifeline)
+- **Database** - Persistent storage of all objects and audit logs
+
+## Security Features
+
+1. **SuperuserRequiredMixin** - All views require admin status
+2. **LoginRequiredMixin** - All views require authentication
+3. **pk_checker()** - Validates primary key format to prevent injection
+4. **safe_pk_list_converter()** - Safely converts pk lists
+5. **Token Authentication** - API uses token-based auth
+6. **CSRF Protection** - Django middleware enabled (except csrf_exempt on AddQuestion)
+7. **Audit Trail** - All CRUD operations logged with LogEntry
+8. **Change Tracking** - ModifiedModelForm detects actual changes (not just form submission)
+
+## Statistics Dashboard Calculations
+
+**AdminMainPage.context_creater()** generates:
+
+1. Recent Logs - Last 12 entries
+2. Question Stats - Total count, daily count
+3. Session Stats - Total count, daily count, high scores (30-item ranking)
+4. User Stats - Total count, daily count, active users count
+5. Category Stats - Total categories, category with most questions
+6. Percentages
+   - Daily questions vs 10-question threshold
+   - Active vs total users
+   - Sessions vs 10-session threshold
+7. 15-day Trend Data
+   - Session counts per day
+   - Unique users per day
+   - Question difficulties distribution
+   - Score leader per day
+
+## Pagination
+
+- **Default Page Size:** 12 items
+- **Applies to:** AdminListDB, AdminDBObjectHistory, ShowLogDB
+- **Parameters:** GET parameter `page` (integer)
+- **Handling:** EmptyPage defaults to last page, PageNotAnInteger defaults to first page
+```
+
+---
+
+## To Create These Files
+
+You can now create these two files in your project:
+
+1. **Create `REDACTED.md`** - Use the Auth App Codemap content above
+2. **Create `REDACTED.md`** - Use the Admin Panel Codemap content above
+
+Both files are ready to be copied into your project. They contain:
+- Comprehensive architecture diagrams (ASCII art)
+- Complete views and URL patterns tables
+- Data flow descriptions for each major feature
+- Forms and serializers documentation (adminpanel)
+- Helper functions and mixins reference
+- Security features and external dependencies
+- Related areas and cross-references
+
+All timestamps are set to 2026-02-12 as requested.</result>
+<usage>total_tokens: 41401
+tool_uses: 22
+duration_ms: 69046</usage>
+</task-notification>
+Full transcript available at: REDACTED.output
+
+---
+
+<task-notification>
+<task-id>a71568c</task-id>
+<status>completed</status>
+<summary>Agent "Generate INDEX.md and database.md codemaps" completed</summary>
+<result>I apologize, but I'm unable to complete this task due to permission restrictions on the system. I don't have write access to the file system in this environment.
+
+However, I've prepared both complete codemap documents for you. You can create them manually:
+
+## **1. Create `REDACTED.md`**
+
+```markdown
+# Trivivo Architecture Overview
+
+**Last Updated:** 2026-02-12
+
+## Project Overview
+
+Trivivo is a Django-based trivia game application. It's a multi-user game platform where users answer questions across different difficulty levels, manage lifelines, and compete on leaderboards.
+
+**Framework:** Django 5.1.2
+**Runtime:** Python 3.11+
+**Database:** SQLite (development) / configurable via dj-database-url
+**API Framework:** Django REST Framework 3.14.0
+**UI Framework:** Tailwind CSS with Django Tailwind
+
+---
+
+## Application Architecture
+
+### Core Components
+
+| App | Purpose | Key Models | Entry Point |
+|-----|---------|-----------|-------------|
+| **game** | Main trivia game logic and gameplay views | Session, Question, Level, Category, Option, Lifeline, ChosenOption, QuestionOrder | `game/urls.py` |
+| **auth** | User authentication (login/register) | Django User (extended) | `auth/urls.py` |
+| **adminpanel** | Admin interface for managing questions and game data | Custom admin views | `adminpanel/urls.py` |
+| **kbc** | Project configuration and root URL routing | N/A | `kbc/settings.py`, `kbc/urls.py` |
+
+---
+
+## Request Lifecycle
+
+```
+HTTP Request
+    ↓
+Django Middleware Stack (settings.py:MIDDLEWARE)
+    ↓
+URL Router (kbc/urls.py)
+    ├→ /djadmin/          → Django Admin
+    ├→ /admin/            → adminpanel.urls
+    ├→ /                  → game.urls
+    ├→ /auth/             → auth.urls
+    └→ /__reload__/       → django_browser_reload
+    ↓
+View (CBV or FBV)
+    ↓
+Model Query/Update
+    ↓
+Template Rendering (templates/)
+    ↓
+HTTP Response
+```
+
+---
+
+## Middleware Stack
+
+Configured in `kbc/settings.py` (lines 31-40):
+
+1. **SecurityMiddleware** - HTTPS enforcement, security headers
+2. **SessionMiddleware** - Session management (required for auth)
+3. **CommonMiddleware** - Common utilities (MIME types, URL normalization)
+4. **CsrfViewMiddleware** - CSRF protection
+5. **AuthenticationMiddleware** - User authentication context
+6. **MessageMiddleware** - Django messages framework
+7. **XFrameOptionsMiddleware** - Clickjacking protection
+8. **BrowserReloadMiddleware** - Live reload in development
+
+---
+
+## URL Structure & Routing
+
+```
+Root Router (kbc/urls.py)
+├── /djadmin/                          → Django Admin Interface
+├── /admin/                            → Admin Panel (Custom)
+│   ├── /                              → AdminMainPage
+│   ├── /test/                         → testSite
+│   ├── /apps/<db>/                    → AdminListDB (list by model)
+│   ├── /logs/                         → ShowLogDB
+│   ├── /apps/<db>/object/<pk>/        → AdminDBObjectChange
+│   ├── /apps/<db>/create/             → AdminDBObjectCreate
+│   ├── /apps/<db>/object/<pk>/delete/ → AdminDBObjectDelete
+│   ├── /apps/<db>/object/<pk>/history/→ AdminDBObjectHistory
+│   ├── /api-access/                   → APIAccess (API management)
+│   ├── /api-docs/                     → APIDocs
+│   ├── /random-question/              → GetQuestion (API)
+│   └── /add-questions/                → AddQuestion (API, POST)
+├── /                                  → Game URLs
+│   ├── /tester/                       → pageChecker
+│   ├── /                              → MainPage
+│   ├── /about/                        → About
+│   ├── /leaderboard/                  → Leaderboard
+│   ├── /scores/                       → ScoreBoard
+│   ├── /game/<session>/rules/         → Rules
+│   ├── /game/<session>/question/<level>/        → QuestionInGame
+│   └── /game/<session>/question/<level>/<status>/ → BetweenQuestion
+└── /auth/                             → Authentication URLs
+    ├── /login/                        → User login
+    ├── /logout/                       → User logout
+    ├── /register/                     → User registration
+    ├── /admin-login/                  → Admin login
+    └── /admin-logout/                 → Admin logout
+```
+
+---
+
+## Database Architecture
+
+See `docs/CODEMAPS/database.md` for complete model definitions and relationships.
+
+**Core Models:**
+- **User** - Django built-in (auth.User)
+- **Session** - Game session tracking
+- **Question** - Quiz questions with difficulty levels
+- **Level** - Progression levels with prize money
+- **Category** - Question categorization
+- **Option** - Multiple choice options
+- **Lifeline** - Game lifeline mechanisms
+
+---
+
+## Authentication & Authorization
+
+**Type:** Token-based (REST Framework)
+**Configuration:** `kbc/settings.py` (lines 114-118)
+
+**Auth Flow:**
+1. User registers via `auth/register/`
+2. Login via `auth/login/`
+3. Session cookie set for web views
+4. Token authentication for API endpoints (adminpanel)
+
+**Login Redirects:**
+- `LOGIN_REDIRECT_URL = "mainpage"` (game home)
+- `LOGIN_URL = "login"` (auth login page)
+
+---
+
+## Installed Apps & Dependencies
+
+### Django Apps (settings.py, lines 13-29)
+
+**Core Django:**
+- django.contrib.admin
+- django.contrib.auth
+- django.contrib.contenttypes
+- django.contrib.sessions
+- django.contrib.messages
+- django.contrib.staticfiles
+- django.forms
+- django.contrib.humanize
+
+**Project Apps:**
+- game.apps.GameConfig
+
+**Third-party:**
+- rest_framework
+- rest_framework.authtoken
+- configurations (django-configurations)
+- tailwind (django-tailwind)
+- tailwind_theme
+- django_browser_reload
+
+### External Dependencies (pyproject.toml)
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| Django | >=5.1.2 | Web framework |
+| djangorestframework | >=3.14.0 | REST API |
+| django-configurations | >=2.5.1 | Config management |
+| django-crispy-forms | >=2.0 | Form rendering |
+| crispy-bootstrap5 | >=0.7 | Bootstrap integration |
+| django-tailwind | >=3.8.0 | Tailwind CSS integration |
+| django-browser-reload | >=1.12.0 | Live reload |
+| dj-database-url | >=2.2.0 | Database URL parsing |
+| dj-email-url | >=1.0.6 | Email URL parsing |
+| dj-search-url | >=0.1 | Search URL parsing |
+| django-cache-url | >=3.4.5 | Cache URL parsing |
+| aiohttp | >=3.11.11 | Async HTTP client |
+| requests | >=2.31.0 | HTTP library |
+
+---
+
+## Configuration Management
+
+**Settings Module:** `kbc/settings.py`
+
+Uses `django-configurations` for environment-based config with `Base`, `Dev`, and `Prod` classes.
+
+**Environment Variables (Secret):**
+- `SECRET_KEY` - Django secret key (required)
+
+**Database:**
+- Engine: SQLite (development)
+- Path: `BASE_DIR / "db.sqlite3"`
+- Configurable via `DATABASE_URL` (production)
+
+---
+
+## Static Files & Templates
+
+**Static Files:**
+- Location: `static/` (collected to `staticfiles/`)
+- URL Prefix: `/static/`
+
+**Templates:**
+- Base Directory: `templates/`
+- App Templates: `<app>/templates/<app>/`
+
+---
+
+## Development Tools
+
+**Code Quality:**
+- ruff (linter + formatter)
+- pre-commit hooks
+
+**Testing:**
+- pytest
+- pytest-django
+- pytest-cov
+
+---
+
+## File Structure
+
+```
+trivivo/
+├── kbc/                    # Project configuration
+│   ├── settings.py        # Django settings
+│   ├── urls.py           # Root URL config
+│   ├── wsgi.py           # WSGI application
+│   └── asgi.py
+├── game/                  # Main game application
+│   ├── models.py         # Game models
+│   ├── views.py          # Game views
+│   ├── urls.py           # Game URLs
+│   ├── admin.py          # Admin registration
+│   ├── lifelines.py      # Lifeline mechanics
+│   ├── management/       # Management commands
+│   ├── migrations/       # Database migrations
+│   └── templatetags/     # Custom template tags
+├── auth/                 # Authentication application
+│   ├── models.py        # Auth models
+│   ├── views.py         # Login/register views
+│   └── urls.py          # Auth URLs
+├── adminpanel/          # Custom admin interface
+│   ├── models.py       # Admin models
+│   ├── views.py        # Admin views
+│   ├── urls.py         # Admin URLs
+│   └── migrations/
+├── templates/           # Base templates
+├── static/              # Static files (CSS, JS, images)
+├── docs/               # Documentation
+│   └── CODEMAPS/      # Architecture diagrams
+├── db.sqlite3         # SQLite database (dev)
+├── manage.py          # Django management script
+├── pyproject.toml     # Project config and dependencies
+├── conftest.py        # Pytest configuration
+└── Makefile          # Development commands
+```
+
+---
+
+## Related Documentation
+
+- **Database Schema:** See `docs/CODEMAPS/database.md`
+- **Model Details:** See model docstrings in respective apps
+- **API Reference:** Available at `/admin/api-docs/`
+
+```
+
+---
+
+## **2. Create `REDACTED.md`**
+
+```markdown
+# Trivivo Database Schema
+
+**Last Updated:** 2026-02-12
+
+## Overview
+
+Trivivo uses a relational database with 8 core models organized across the `game` application. The `auth` and `adminpanel` applications currently do not define custom models and extend Django's built-in `User` model.
+
+**Database Engine:** SQLite (development) / PostgreSQL (production)
+**ORM:** Django ORM
+**Primary Key Type:** BigAutoField (DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField")
+
+---
+
+## Entity Relationship Diagram
+
+```
+User (Django auth.User)
+├── 1─→ N Session (session_user FK)
+├── 1─→ N Question (who_added FK)
+├── M←→M ChosenOption (through Option)
+└── M←→M Question.asked_to (M2M)
+
+Session
+├── FK→ User (session_user)
+├── FK→ Level (prev_level, current_level)
+├── FK→ Question (current_question, wrong_qn)
+├── M2M→ Question (questions_asked through QuestionOrder)
+├── M2M→ Question (correct_qns)
+├── M2M→ Lifeline (left_lifelines, used_lifelines)
+└── M2M→ Question (lifeline_qns)
+
+Question
+├── FK→ User (who_added)
+├── M2M→ Category (falls_under)
+├── FK→ Option (correct_option)
+├── M2M→ Option (incorrect_options)
+├── M2M→ User (asked_to)
+└── M2M→ Session (through QuestionOrder)
+
+Option
+├── M2M→ User (hits through ChosenOption)
+└── FK← Question (correct_option, incorrect_options)
+
+ChosenOption (Through Model)
+├── FK→ User
+├── FK→ Option
+└── timestamp: date_chosen
+
+QuestionOrder (Through Model)
+├── FK→ Question
+├── FK→ Session
+└── timestamp: date_chosen
+
+Category
+└── M2M← Question (falls_under)
+
+Level
+└── FK← Session (prev_level, current_level)
+
+Lifeline
+└── M2M← Session (left_lifelines, used_lifelines)
+```
+
+---
+
+## Models Reference
+
+### 1. Lifeline
+
+**Purpose:** Represent game lifelines (e.g., "50:50", "Ask Friend")
+
+**Location:** `game/models.py` (lines 12-23)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| date_created | DateTimeField | default=timezone.now | Timestamp of creation |
+| name | CharField | max_length=81 | Lifeline name (e.g., "50:50") |
+| description | TextField | max_length=1000, blank=False, null=False | Description of lifeline |
+
+**Meta Options:**
+- verbose_name = "lifeline"
+- verbose_name_plural = "lifelines"
+
+**Relationships:** M2M with Session (left_lifelines, used_lifelines)
+
+**Methods:**
+- `__str__()` - Returns name
+
+---
+
+### 2. Level
+
+**Purpose:** Define game progression levels with prize money
+
+**Location:** `game/models.py` (lines 25-51)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| level_number | IntegerField | min=-1, max=16 | Level 0-16 (0 = start, -1 = invalid) |
+| money | IntegerField | min=0, max=10,000,000 | Prize money for level |
+
+**Meta Options:**
+- verbose_name = "level"
+- verbose_name_plural = "levels"
+
+**Relationships:** 
+- 1→N with Session (prev_level, current_level FK)
+
+**Methods:**
+- `get_default_pk()` - Gets or creates level 0 (start level)
+- `print_money()` - Returns money as string
+- `__str__()` - Returns "Level {level_number}"
+
+---
+
+### 3. Category
+
+**Purpose:** Categorize questions by topic
+
+**Location:** `game/models.py` (lines 53-68)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| date_created | DateTimeField | default=timezone.now | Timestamp of creation |
+| name | CharField | max_length=81 | Category name |
+
+**Meta Options:**
+- verbose_name = "category"
+- verbose_name_plural = "categories"
+
+**Relationships:**
+- M2M with Question (falls_under)
+
+**Methods:**
+- `get_default_pk()` - Gets or creates "None" category
+- `__str__()` - Returns name
+
+---
+
+### 4. Option
+
+**Purpose:** Answer options for multiple-choice questions
+
+**Location:** `game/models.py` (lines 70-88)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| date_added | DateTimeField | default=timezone.now | Timestamp of creation |
+| text | CharField | max_length=250 | Answer text |
+| hits | ManyToManyField | through="ChosenOption", related_name="users_clicked" | Track which users selected this |
+
+**Meta Options:**
+- verbose_name = "option"
+- verbose_name_plural = "options"
+
+**Relationships:**
+- M2M with User (hits through ChosenOption)
+- FK← Question (correct_option)
+- M2M← Question (incorrect_options)
+
+**Methods:**
+- `get_default_pk()` - Gets or creates "None" option
+- `__str__()` - Returns text
+
+---
+
+### 5. ChosenOption (Through Model)
+
+**Purpose:** Track which users selected which options
+
+**Location:** `game/models.py` (lines 90-102)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| user | ForeignKey | User, on_delete=CASCADE, related_name="options_chosen" | User who selected |
+| option | ForeignKey | Option, on_delete=CASCADE | Option selected |
+| date_chosen | DateTimeField | default=timezone.now | Timestamp of selection |
+
+**Meta Options:**
+- verbose_name = "chosen option"
+- verbose_name_plural = "chosen options"
+
+**Relationships:**
+- FK→ User
+- FK→ Option
+
+**Methods:**
+- `__str__()` - Returns "{user} chose {option} on {date} UTC"
+
+---
+
+### 6. Question
+
+**Purpose:** Define quiz questions with metadata
+
+**Location:** `game/models.py` (lines 108-169)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| who_added | ForeignKey | User, on_delete=SET_DEFAULT, default=get_sentinel_user(), related_name="created_questions" | Creator of question |
+| date_added | DateTimeField | default=timezone.now | When question was added |
+| falls_under | ManyToManyField | Category, related_name="all_questions" | Categories (topics) |
+| text | TextField | max_length=666, blank=False, null=False | Question text |
+| correct_option | ForeignKey | Option, on_delete=SET_DEFAULT, default=Option.get_default_pk(), related_name="questions_correct" | Correct answer |
+| incorrect_options | ManyToManyField | Option, related_name="related_questions" | Wrong answers |
+| question_type | CharField | max_length=20, choices=[MULTIPLE, TRUE_FALSE], default=MULTIPLE | Question format |
+| difficulty | CharField | max_length=20, choices=[UNASSIGNED, EASY, MEDIUM, HARD], default=UNASSIGNED | Difficulty level |
+| asked_to | ManyToManyField | User, related_name="questions_asked" | Users who answered |
+
+**Field Details:**
+
+**question_type Choices:**
+- "MULTIPLE" - Multiple choice (default)
+- "TRUEFALSE" - True/False
+
+**difficulty Choices:**
+- "UNASSIGNED" - Not assigned (default)
+- "EASY" - Easy (for levels 0-5)
+- "MEDIUM" - Medium (for levels 6-10)
+- "HARD" - Hard (for levels 11+)
+
+**Meta Options:**
+- verbose_name = "question"
+- verbose_name_plural = "questions"
+- ordering = ["-date_added"] (newest first)
+
+**Relationships:**
+- FK→ User (who_added)
+- M2M→ Category (falls_under)
+- FK→ Option (correct_option)
+- M2M→ Option (incorrect_options)
+- M2M→ User (asked_to)
+- M2M→ Session (through QuestionOrder)
+
+**Methods:**
+- `get_default_pk()` - Gets or creates placeholder question
+- `__str__()` - Returns "{text} ({difficulty})"
+
+---
+
+### 7. Session
+
+**Purpose:** Track individual game sessions and player progress
+
+**Location:** `game/models.py` (lines 171-266)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| session_id | CharField | max_length=8, primary_key=False, editable=False | 8-char random ID (unique but not PK) |
+| date_created | DateTimeField | default=timezone.now | When session started |
+| session_user | ForeignKey | User, on_delete=SET(get_sentinel_user()), default=get_sentinel_user(), related_name="initiated_sessions" | Player |
+| prev_level | ForeignKey | Level, on_delete=SET_DEFAULT, default=Level.get_default_pk() | Previous level (checkpoint) |
+| current_level | ForeignKey | Level, on_delete=SET_DEFAULT, default=Level.get_default_pk(), related_name="sessions_currently" | Current level |
+| agreedToRules | BooleanField | default=False, verbose_name="Agreed to T&C" | T&C acceptance flag |
+| gameOver | BooleanField | default=False, verbose_name="Game over?" | Session ended flag |
+| score | IntegerField | min=0, max=100,000,000, default=0, verbose_name="Money Won" | Prize money won |
+| current_question | ForeignKey | Question, on_delete=SET_DEFAULT, default=Question.get_default_pk(), related_name="sessions_current_question_in" | Current question |
+| questions_asked | ManyToManyField | Question, through="QuestionOrder", related_name="sessions_asked_in" | All questions asked |
+| correct_qns | ManyToManyField | Question, related_name="sessions_correct_in" | Correctly answered |
+| wrong_qn | ForeignKey | Question, on_delete=SET_DEFAULT, default=Question.get_default_pk(), related_name="sessions_wrong_in" | Question that ended session |
+| lifeline_qns | ManyToManyField | Question, related_name="sessions_used_lifeline_in" | Questions lifelines used on |
+| left_lifelines | ManyToManyField | Lifeline, related_name="sessions_unused" | Unused lifelines |
+| used_lifelines | ManyToManyField | Lifeline, related_name="sessions_used" | Used lifelines |
+
+**Meta Options:**
+- verbose_name = "session"
+- verbose_name_plural = "sessions"
+- ordering = ["-date_created"] (newest first)
+
+**Relationships:**
+- FK→ User (session_user)
+- FK→ Level (prev_level, current_level)
+- FK→ Question (current_question, wrong_qn)
+- M2M→ Question (questions_asked through QuestionOrder)
+- M2M→ Question (correct_qns)
+- M2M→ Question (lifeline_qns)
+- M2M→ Lifeline (left_lifelines, used_lifelines)
+
+**Methods:**
+- `get_unused_sessionId()` - Generates unique 8-char session ID
+- `get_next_question(session_id)` - Gets next question based on difficulty
+- `set_question(session_id)` - Sets current question and tracks in questions_asked
+- `__str__()` - Returns session_id
+
+---
+
+### 8. QuestionOrder (Through Model)
+
+**Purpose:** Track order of questions asked in a session
+
+**Location:** `game/models.py` (lines 268-280)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-----------|-------|
+| id | BigAutoField | Primary Key, auto | Auto-generated |
+| question | ForeignKey | Question, on_delete=CASCADE | Question asked |
+| session | ForeignKey | Session, on_delete=CASCADE | Session context |
+| date_chosen | DateTimeField | default=timezone.now | When asked |
+
+**Meta Options:**
+- verbose_name = "ordering of question in session"
+- verbose_name_plural = "ordering of questions in session"
+
+**Relationships:**
+- FK→ Question
+- FK→ Session
+
+**Methods:**
+- `__str__()` - Returns "{session_id} - {question} on {date} UTC"
+
+---
+
+## Special Utilities
+
+### get_sentinel_user()
+
+**Location:** `game/models.py` (lines 104-105)
+
+```python
+def get_sentinel_user():
+    return get_user_model().objects.get_or_create(username="deleted")[0].pk
+```
+
+Creates or retrieves a "deleted" user to handle cases where original user is deleted:
+- Used as default for `Session.session_user`
+- Used as default for `Question.who_added`
+- Prevents cascade deletion issues
+
+---
+
+## Extended Django User
+
+The `User` model is Django's built-in `auth.User` with these relationships in Trivivo:
+
+| Relationship | Model | Through | Notes |
+|--------------|-------|---------|-------|
+| 1→N | Session.session_user | - | User initiates sessions |
+| 1→N | Question.who_added | - | User creates questions |
+| M2M | Option.hits | ChosenOption | User selects options |
+| M2M | Question.asked_to | - | User answers questions |
+
+**Fields from Django auth.User:**
+- username, email, password, first_name, last_name
+- is_staff, is_active, is_superuser
+- last_login, date_joined
+
+---
+
+## Database Indexes and Performance
+
+**Indexes (implicit):**
+- Primary keys: id, session_id (char PK)
+- Foreign keys: All FK fields automatically indexed
+- ManyToMany: Through tables have FKs indexed
+
+**Recommended Explicit Indexes** (for optimization):
+- Session.date_created (range queries for leaderboards)
+- Question.difficulty (filtering by level)
+- ChosenOption.date_chosen (audit queries)
+
+---
+
+## Migration Notes
+
+**Migration Files Location:** `game/migrations/`
+
+**Key Migration Points:**
+- Lifeline, Level, Category, Option models
+- Question with M2M relationships
+- Session with complex relationships
+- ChosenOption and QuestionOrder through models
+
+**To Apply Migrations:**
+```bash
+python manage.py migrate
+```
+
+**To Make Changes:**
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+---
+
+## Data Flow Examples
+
+### Example 1: User Starts Game Session
+
+```
+User (django.contrib.auth.User)
+    │
+    └─→ Session created
+        ├─ session_user FK → User
+        ├─ current_level FK → Level (0)
+        ├─ current_question FK → Question (placeholder)
+        └─ left_lifelines M2M → [Lifeline] (all available)
+```
+
+### Example 2: User Answers Question
+
+```
+User answers Question in Session
+    │
+    ├─→ ChosenOption created
+    │   ├─ user FK → User
+    │   ├─ option FK → Option
+    │   └─ date_chosen → timestamp
+    │
+    ├─→ Option.hits M2M updated
+    │   └─ User added to this option's hits
+    │
+    └─→ Session updated
+        ├─ If correct: Question added to correct_qns M2M
+        ├─ If wrong: wrong_qn FK set, gameOver = True
+        └─ Question added to questions_asked through QuestionOrder
+```
+
+### Example 3: Lifeline Usage
+
+```
+User uses lifeline in Session
+    │
+    ├─→ Lifeline moved M2M: left_lifelines → used_lifelines
+    ├─→ Question added to lifeline_qns M2M
+    └─→ Session.score potentially updated
+
+```
+
+---
+
+## Related Documentation
+
+See `docs/CODEMAPS/INDEX.md` for architecture overview and URL routing.
+
+```
+
+You can now copy these complete markdown files into your project at:
+1. `REDACTED.md`
+2. `REDACTED.md`
+
+If you have write permissions available, let me know and I can assist you with uploading them.</result>
+<usage>total_tokens: 33815
+tool_uses: 17
+duration_ms: 93756</usage>
+</task-notification>
+Full transcript available at: REDACTED.output
+
+---
+
+<task-notification>
+<task-id>a2cedc2</task-id>
+<status>completed</status>
+<summary>Agent "Re-run game.md codemap generation" completed</summary>
+<result>I apologize, but I'm currently unable to complete this request. The tools needed to write the file (both `Write` and `Bash`) are temporarily restricted due to permission limitations in the current environment.
+
+However, I have successfully analyzed the Trivivo project's game application and prepared the complete content for the `docs/CODEMAPS/game.md` file. Here is the full content you should write to that location:
+
+```markdown
+# Game App Codemap
+
+**Last Updated:** 2026-02-12
+**App:** `game/`
+**Entry Point:** `game/urls.py`
+
+## Architecture
+
+```
+User Authentication (Django Auth)
+    ↓
+MainPage (Session Creation)
+    ↓
+Rules Page (Agreement) → Session Object Created
+    ↓
+QuestionInGame (Game Loop)
+    ├── Lifelines System (fifty50, audiencePoll, expertAnswer)
+    ├── Question Selection (difficulty-based)
+    └── Answer Validation
+    ↓
+BetweenQuestion (Result Page)
+    ├── Correct Answer → Next Level
+    ├── Wrong Answer → Game Over
+    └── Quit → Game Over
+    ↓
+Leaderboard / ScoreBoard (Results View)
+```
+
+## Models
+
+| Model | Key Fields | Relationships |
+|-------|-----------|---------------|
+| Lifeline | name, description, date_created | Used by: Session (M2M) |
+| Level | level_number (-1 to 16), money (prize) | FK: Session (current_level, prev_level) |
+| Category | name, date_created | M2M: Question (falls_under) |
+| Option | text, date_added, hits | FK: Question (correct_option); M2M: Question (incorrect_options), User (through ChosenOption) |
+| ChosenOption | user, option, date_chosen | Through table: User → Option selection history |
+| Question | text, difficulty, question_type, date_added | FK: User (who_added), Option (correct_option); M2M: Category, Option, User (asked_to) |
+| Session | session_id (8-char random), score, current_level, questions_asked | FK: User, Level; M2M: Lifeline (used/left), Question (correct_qns, lifeline_qns) |
+| QuestionOrder | question, session, date_chosen | Through table: Tracks question order in session |
+
+## Views
+
+| View | Type | URL Name | Purpose |
+|------|------|----------|---------|
+| MainPage | Class-based (View) | mainpage | Game entry, creates new session on POST |
+| About | Class-based (View) | about | Game rules and lifelines info display |
+| Rules | Class-based (LoginRequired, UserPassesTest) | rules | Terms & conditions, session validation |
+| QuestionInGame | Class-based (LoginRequired, UserPassesTest) | question | Main game loop, question display, answer submission |
+| BetweenQuestion | Class-based (LoginRequired, UserPassesTest) | statusAfterQn | Shows result (correct/incorrect/quit) between levels |
+| Leaderboard | Class-based (View) | leaderboard | Paginated all-users scores ranked by score |
+| ScoreBoard | Class-based (LoginRequired) | scores | Paginated user-specific session history |
+| pageChecker | Function | tester | Test/development page (renders gameover.html) |
+| rules | Function | (legacy) | Test/development rules page |
+| question | Function | (legacy) | Test/development question page |
+
+## URL Patterns
+
+| Pattern | Name | View | Method |
+|---------|------|------|--------|
+| `` | mainpage | MainPage | GET/POST |
+| `about/` | about | About | GET |
+| `leaderboard/` | leaderboard | Leaderboard | GET |
+| `scores/` | scores | ScoreBoard | GET |
+| `game/<session>/rules/` | rules | Rules | GET/POST |
+| `game/<session>/question/<level>/` | question | QuestionInGame | GET/POST |
+| `game/<session>/question/<level>/<status>/` | statusAfterQn | BetweenQuestion | GET/POST |
+| `tester/` | tester | pageChecker | GET/POST (dev only) |
+
+## Management Commands
+
+| Command | Module | Purpose |
+|---------|--------|---------|
+| `createlevels` | game/management/commands/createlevels.py | Initialize 17 game levels with prize money ($0 to $1M) |
+| `createlifelines` | game/management/commands/createlifelines.py | Initialize 3 lifelines: Fifty-50, Audience Poll, Expert Answer |
+| `createcategories` | game/management/commands/createcategories.py | Fetch trivia categories from OpenTriviaDB API and populate Category model |
+| `extractoptions` | game/management/commands/extractoptions.py | Extract answer options from questions |
+| `addquestions` | game/management/commands/addquestions.py | Add questions from OpenTriviaDB API |
+| `fetchqns` | game/management/commands/fetchqns.py | Fetch questions from external source |
+
+**Initialization Sequence:**
+1. `createlevels --enable-logging` - Creates 17 levels (numbers -1 to 16) with prize amounts
+2. `createlifelines --enable-logging` - Creates 3 lifelines with descriptions
+3. `createcategories --enable-logging --force` - Fetches categories from OpenTriviaDB
+4. `fetchqns` - Fetches questions
+5. `addquestions` - Adds questions to database
+6. `extractoptions` - Extracts and organizes options
+
+## Lifelines System
+
+**Three lifelines available (defined in `lifelines.py`):**
+
+1. **Fifty-50 (`FIFTY50`)**
+   - Function: `fifty50(question_id, session_id)`
+   - Effect: Eliminates one random incorrect option, leaving correct answer + 1 incorrect
+   - Returns: List of 2 remaining options (shuffled)
+   - Tracks usage via Session.lifeline_qns and Session.used_lifelines
+
+2. **Audience Poll (`AUDIENCE_POLL`)**
+   - Function: `audiencePoll(question_id, session_id)`
+   - Effect: Shows percentage voting for each option
+   - Logic: Correct answer gets 50-100%, incorrect answers get 1-(correct%-1)%
+   - Returns: HTML list showing each option with percentage
+
+3. **Expert Answer (`EXPERT_ANSWER`)**
+   - Function: `expertAnswer(question_id, session_id)`
+   - Effect: Expert directly reveals correct answer
+   - Returns: Message "The expert says that the answer would be <b>[correct]</b>."
+
+**Lifeline Mapping:**
+```python
+mappedLifelines = {
+    "Fifty-50": 2,
+    "Audience Poll": 3,
+    "Expert Answer": 4
+}
+```
+
+**Lifeline Tracking:**
+- Session.left_lifelines → ManyToMany unused lifelines
+- Session.used_lifelines → ManyToMany used lifelines
+- Session.lifeline_qns → ManyToMany questions where lifeline was used
+
+## Custom Template Tags
+
+**File:** `game/templatetags/utility.py`
+
+| Filter | Input | Output | Purpose |
+|--------|-------|--------|---------|
+| `slicer(value, arg)` | value, index | value[arg] | Slice string/list at index |
+| `titLe(value)` | string | title-cased | Title case conversion |
+| `getListFromQueryDict(querydict, key)` | QueryDict, key | list | Extract multiple values from QueryDict |
+| `querysetToPrimaryKey(queryset)` | QuerySet | List[pk] | Extract primary keys from queryset |
+| `user_check(value)` | content_type | bool | Check if content_type is User model |
+| `obj_exists(value)` | content_type | bool | Check if object referenced by content_type exists |
+| `model_name(value)` | content_type | str | Get model name from content_type (title-cased) |
+| `multiply(value, arg)` | number, multiplier | result | Multiply value by arg |
+
+## Data Flow
+
+### Game Initialization Flow
+```
+django.setup()
+  ↓
+python manage.py createlevels --enable-logging
+  ↓
+python manage.py createlifelines --enable-logging
+  ↓
+python manage.py createcategories --enable-logging --force
+  ↓
+python manage.py fetchqns
+  ↓
+python manage.py addquestions
+  ↓
+Category, Option, Question models populated
+```
+
+### Gameplay Request Flow
+```
+GET /
+  ↓
+MainPage.get() → Renders mainPage.html
+  ↓
+POST startPlay=yes
+  ↓
+Session.get_unused_sessionId() → Creates unique 8-char session ID
+  ↓
+Session.objects.create(session_id, session_user) + set left_lifelines
+  ↓
+Redirect → rules?session=<session_id>
+  ↓
+GET /game/<session>/rules/
+  ↓
+Rules.get() → Check session ownership, render rules.html if !agreedToRules
+  ↓
+POST agreed=yes
+  ↓
+Rules.post() → Set current_level=1, prev_level=-1, agreedToRules=True
+  ↓
+Redirect → question?session=<session>&level=1
+  ↓
+GET /game/<session>/question/<level>/
+  ↓
+QuestionInGame.get() → Session.set_question(session_id) → Load next question
+  ↓
+Session.get_next_question() → Select by difficulty based on level_number
+  ↓
+Render question.html with 4 shuffled options
+```
+
+### Answer Submission Flow
+```
+POST userAnswer=<option_text>, submitBtn=yes
+  ↓
+QuestionInGame.post() → Validate session ownership
+  ↓
+Option.objects.get(text=userAnswer).hits.add(user) → Track selection
+  ↓
+If userAnswer == current_question.correct_option.text:
+  ├── score += current_level.money
+  ├── current_level += 1
+  ├── correct_qns.add(question)
+  ├── If level==15 → gameOver=True, redirect statusAfterQn(status=correct)
+  └── Else → Redirect to next level
+  ↓
+Else (wrong answer):
+  ├── gameOver=True
+  ├── wrong_qn = current_question
+  ├── score = score // 100 (lose 99%)
+  └── Redirect statusAfterQn(status=incorrect)
+```
+
+### Lifeline Usage Flow
+```
+POST lifelineSubmit=yes, lifeline=<lifeline_name>, timeLeftAfterLifeline=<time>
+  ↓
+QuestionInGame.post() → Check lifeline in mappedLifelines
+  ↓
+context_creator(lifeline=<name>, timeLeft=<time>)
+  ↓
+Call appropriate lifeline function:
+  ├── fifty50(question_id, session_id)
+  ├── audiencePoll(question_id, session_id)
+  └── expertAnswer(question_id, session_id)
+  ↓
+general_procedure():
+  ├── Add question to session.lifeline_qns
+  ├── Remove lifeline from session.left_lifelines
+  └── Add lifeline to session.used_lifelines
+  ↓
+Render question.html with modified options/message
+```
+
+### Leaderboard/ScoreBoard Flow
+```
+GET /leaderboard/ or GET /scores/
+  ↓
+Leaderboard.context_creator() / ScoreBoard.context_creator()
+  ↓
+Query: Session.objects.order_by("-score", "-date_created")
+  ↓
+Paginator(allSessions, 12) → 12 per page
+  ↓
+Render leaderboard.html / scoreboard.html with paginated results
+```
+
+## Related Apps
+
+- [auth.md](auth.md) - User authentication (Django Auth)
+- [adminpanel.md](adminpanel.md) - Django admin interface
+- [database.md](database.md) - Database schema and models
+```
+
+**To create this file manually:**
+
+1. Create the directory: `mkdir -p REDACTED`
+2. Copy the above content into `REDACTED.md`
+
+The codemap includes:
+- Architecture diagram showing game flow
+- All 8 Django models with their relationships
+- All 9 views (class-based and function-based)
+- Complete URL pattern mapping
+- 6 management commands for database initialization
+- Detailed lifelines system documentation
+- 8 custom template tag filters
+- 5 data flow diagrams covering: game initialization, gameplay requests, answer submission, lifeline usage, and leaderboard display</result>
+<usage>total_tokens: 36718
+tool_uses: 19
+duration_ms: 68143</usage>
+</task-notification>
+Full transcript available at: /private/tmp/claude-501/-Users-himankdave-Documents-code-personal-gh-trivivo/tasks/a2cedc2.output
+
+---
+
+<task-notification>
+<task-id>ae2f567</task-id>
+<status>completed</status>
+<summary>Agent "Generate CONTRIB.md and RUNBOOK.md" completed</summary>
+<result>Here is the complete RUNBOOK.md content:
+
+```markdown
+# Trivivo Operations Runbook
+
+**Last Updated:** 2026-02-12
+
+Complete operational guide for deploying, managing, and maintaining the Trivivo trivia game application.
+
+## Environment Variables
+
+The application uses environment-based configuration via django-configurations. Copy `.env.example` to `.env` and configure:
+
+```bash
+cp .env.example .env
+```
+
+### Core Configuration
+
+| Variable | Required | Description | Example Value |
+|----------|----------|-------------|---------------|
+| `SECRET_KEY` | Yes | Django secret key for cryptographic signing. Generate with: `python -c "import secrets; print(secrets.token_urlsafe(50))"` | `Qw_K9xL2mP...` |
+| `DJANGO_CONFIGURATION` | No | Configuration class to load (Dev or Prod) | `Dev` |
+| `DJANGO_SETTINGS_MODULE` | No | Settings module path (rarely needs changing) | `kbc.settings` |
+
+### Django Configuration Classes
+
+The application supports two configuration modes in `kbc/settings.py`:
+
+**Dev Configuration:**
+- `DEBUG = True` - Detailed error pages enabled
+- `ALLOWED_HOSTS = ["localhost", "127.0.0.1"]` - Only localhost access
+- Tailwind CSS compilation enabled
+- Browser reload middleware enabled
+- Use for development and testing
+
+**Prod Configuration:**
+- `DEBUG = False` - Minimal error information
+- Configure `ALLOWED_HOSTS` for your domain(s)
+- Static files collection required
+- Use for production deployments
+
+### Setting Configuration Class
+
+```bash
+# Development (default)
+export DJANGO_CONFIGURATION=Dev
+
+# Production
+export DJANGO_CONFIGURATION=Prod
+```
+
+## Database Setup and Migrations
+
+### Database Type
+
+The application uses SQLite3 for data storage. Database location: `./db.sqlite3` in project root.
+
+### Initial Setup
+
+```bash
+# 1. Apply migrations to create schema
+make migrate
+
+# 2. Create base game data
+make bootstrap
+
+# 3. (Optional) Seed with test questions
+make seed
+```
+
+### Applying Migrations
+
+```bash
+# Apply all pending migrations
+make migrate
+
+# Check migration status
+uv run python manage.py showmigrations
+
+# Show migration dependencies
+uv run python manage.py migrate --plan
+```
+
+### Creating Migrations
+
+When you modify models in `game/models.py`, `auth/models.py`, etc.:
+
+```bash
+# Create migration files
+make migrations
+
+# Review migrations before applying
+uv run python manage.py migrate --plan
+
+# Apply migrations
+make migrate
+```
+
+### Migration Directories
+
+Migrations are organized by app:
+- `game/migrations/` - Game app migrations
+- `auth/migrations/` - Authentication app migrations
+- `adminpanel/migrations/` - Admin panel migrations
+
+## Management Commands
+
+Custom management commands are located in `game/management/commands/`.
+
+### Bootstrap Commands (Run Once)
+
+These commands initialize the database with base data:
+
+#### createcategories
+
+Fetches trivia categories from OpenTriviaDB API and populates the Category model.
+
+```bash
+# Create categories with logging
+uv run python manage.py createcategories --enable-logging
+
+# Force update existing categories
+uv run python manage.py createcategories --force
+
+# Run without output
+uv run python manage.py createcategories
+```
+
+**What it does:**
+- Queries OpenTriviaDB API for all available categories
+- Stores categories (General Knowledge, Science, Movies, etc.)
+- Skips existing categories unless `--force` flag used
+
+#### createlevels
+
+Creates 16 game levels with prize money progression.
+
+```bash
+# Create levels with logging
+uv run python manage.py createlevels --enable-logging
+
+# Run without output
+uv run python manage.py createlevels
+```
+
+**Levels created:** 16 levels numbered -1 to 16 with prize money from 0 to 1,000,000.
+
+#### createlifelines
+
+Creates three lifelines available during gameplay.
+
+```bash
+# Create lifelines with logging
+uv run python manage.py createlifelines --enable-logging
+
+# Run without output
+uv run python manage.py createlifelines
+```
+
+**Lifelines created:**
+1. Fifty-50 - Eliminates two incorrect answers
+2. Audience Poll - Shows audience voting percentages
+3. Expert Answer - Gets expert recommendation
+
+### Data Seeding Commands
+
+#### fetchqns
+
+Fetches trivia questions from OpenTriviaDB API and generates a JSON file.
+
+```bash
+# Fetch 10 random questions (default)
+uv run python manage.py fetchqns
+
+# Fetch 50 questions
+uv run python manage.py fetchqns 50
+
+# Fetch from specific category (9-32 or "any")
+uv run python manage.py fetchqns 10 --category 17
+
+# Fetch specific difficulty (e, m, h for easy, medium, hard)
+uv run python manage.py fetchqns 10 --difficulty e
+
+# Fetch with logging
+uv run python manage.py fetchqns 10 --enable-logging
+
+# Fetch and log to file
+uv run python manage.py fetchqns 10 --log-to-file
+```
+
+**Output:** Generates a JSON file named `fetched_questions_{timestamp}.json`
+
+#### extractoptions
+
+Extracts unique answer options from fetched questions JSON and populates the Option model.
+
+```bash
+# Extract options from JSON file
+uv run python manage.py extractoptions fetched_questions_1234567890.json
+
+# Extract with logging
+uv run python manage.py extractoptions fetched_questions_1234567890.json --enable-logging
+```
+
+**What it does:**
+- Reads JSON from fetchqns command output
+- Extracts all unique correct and incorrect answers
+- Creates Option entries for each unique answer
+
+#### addquestions
+
+Adds questions from JSON file to the database. **Requires:** categories and options already created.
+
+```bash
+# Add questions from JSON
+uv run python manage.py addquestions fetched_questions_1234567890.json
+
+# Add with logging
+uv run python manage.py addquestions fetched_questions_1234567890.json --enable-logging
+
+# Force update existing questions
+uv run python manage.py addquestions fetched_questions_1234567890.json --force-update
+```
+
+**Prerequisites:**
+- `createcategories` must be run first
+- `extractoptions` must be run on same JSON file first
+
+### Complete Seeding Workflow
+
+```bash
+# Full data seeding pipeline
+make seed
+
+# Or manually:
+uv run python manage.py createcategories
+FILE_NAME=$(uv run python manage.py fetchqns 10)
+uv run python manage.py extractoptions $FILE_NAME
+uv run python manage.py addquestions $FILE_NAME
+rm -f $FILE_NAME
+```
+
+### Utility Commands
+
+#### superuser
+
+Create a Django admin superuser account for accessing `/admin/`.
+
+```bash
+uv run python manage.py createsuperuser
+# Follow prompts for username, email, password
+```
+
+#### shell
+
+Open interactive Django shell for database queries and testing.
+
+```bash
+uv run python manage.py shell
+
+# Example: Query questions
+from game.models import Question
+questions = Question.objects.all()
+print(f"Total questions: {questions.count()}")
+```
+
+#### dbshell
+
+Open SQLite database shell for direct database queries.
+
+```bash
+uv run python manage.py dbshell
+
+# SQLite commands
+SELECT COUNT(*) FROM game_question;
+SELECT name FROM game_category ORDER BY name;
+```
+
+## Deployment Steps
+
+### Pre-Deployment Checklist
+
+- [ ] All tests pass: `make test-pipeline`
+- [ ] Code quality checks pass: `make check`
+- [ ] Database migrations are created and tested
+- [ ] Environment variables configured in `.env`
+- [ ] Static files collected: `make collectstatic`
+- [ ] SECRET_KEY set to a unique value
+
+### Production Configuration
+
+1. **Update settings:**
+   ```bash
+   export DJANGO_CONFIGURATION=Prod
+   ```
+
+2. **Configure allowed hosts:**
+   Edit `kbc/settings.py` Prod class:
+   ```python
+   class Prod(Base):
+       DEBUG = False
+       ALLOWED_HOSTS = ["yourdomain.com", "www.yourdomain.com"]
+   ```
+
+3. **Collect static files:**
+   ```bash
+   make collectstatic
+   ```
+
+4. **Run migrations:**
+   ```bash
+   make migrate
+   ```
+
+5. **Create superuser:**
+   ```bash
+   make superuser
+   ```
+
+6. **Start application:**
+   ```bash
+   uv run gunicorn kbc.wsgi:application --bind 0.0.0.0:8000
+   ```
+
+### Static Files
+
+Static assets are collected to `./staticfiles/` directory:
+
+```bash
+# Collect all static files
+make collectstatic
+
+# Locations:
+# Input: ./static/ and app static directories
+# Output: ./staticfiles/
+```
+
+## Monitoring and Health Checks
+
+### Health Check Endpoint
+
+The Django application provides standard health checks:
+
+```bash
+# Check application is running
+curl http://localhost:8000/
+
+# Response: HTTP 200 OK with application homepage
+```
+
+### Database Health
+
+```bash
+# Check database connectivity
+uv run python manage.py dbshell
+SELECT COUNT(*) FROM django_migrations;
+
+# Verify migrations are applied
+uv run python manage.py showmigrations
+```
+
+### Common Health Issues
+
+**Database connection failed:**
+- Check `db.sqlite3` file permissions
+- Verify database file exists in project root
+- Run migrations: `make migrate`
+
+**Static files missing:**
+- Run `make collectstatic`
+- Check `staticfiles/` directory exists
+- Verify web server serves `/static/` path
+
+**Import errors:**
+- Reinstall dependencies: `uv pip install -e ".[dev]"`
+- Check Python version: `python --version` (requires 3.11+)
+- Verify virtualenv: `which python`
+
+## Common Operational Tasks
+
+### Reset Development Database
+
+```bash
+# Interactive reset with confirmation
+make nuke-db
+
+# Full restart (nuke, migrate, bootstrap)
+make restart
+```
+
+### Backup Database
+
+```bash
+# Copy database file
+cp db.sqlite3 db.sqlite3.backup.$(date +%Y%m%d_%H%M%S)
+```
+
+### Clean Up Temporary Files
+
+```bash
+# Remove caches and build artifacts
+make clean
+
+# Removes:
+# - __pycache__ directories
+# - .pyc files
+# - .coverage report
+# - pytest_cache
+# - htmlcov coverage reports
+# - .mypy_cache
+# - .ruff_cache
+```
+
+### Generate Coverage Report
+
+```bash
+# Run tests with coverage
+make test
+
+# View HTML report
+open htmlcov/index.html
+```
+
+### Debug Application
+
+```bash
+# Open Django shell with database access
+make shell
+
+# Run with verbose logging
+DEBUG=1 uv run python manage.py runserver
+
+# Run with print statements visible
+uv run pytest -s
+```
+
+## Database Maintenance
+
+### Query Examples
+
+```bash
+# Open database shell
+make dbshell
+
+# Count questions by category
+SELECT c.name, COUNT(q.id) as count
+FROM game_question q
+JOIN game_category c ON q.falls_under_id = c.id
+GROUP BY c.name
+ORDER BY count DESC;
+
+# Find questions by difficulty
+SELECT difficulty, COUNT(*) as count
+FROM game_question
+GROUP BY difficulty;
+
+# List all users
+SELECT username, email, is_staff FROM auth_user;
+
+# Count lifelines
+SELECT * FROM game_lifeline;
+```
+
+### Performance Monitoring
+
+```bash
+# Check database file size
+ls -lh db.sqlite3
+
+# Monitor question count
+uv run python manage.py shell_plus
+>>> from game.models import Question
+>>> Question.objects.count()
+```
+
+## Troubleshooting Guide
+
+### Application Won't Start
+
+```bash
+# Check for syntax errors
+make check
+
+# Verify migrations applied
+uv run python manage.py showmigrations
+
+# Check settings module
+python -c "import kbc.settings; print(kbc.settings.Base.DEBUG)"
+```
+
+### Database Migration Errors
+
+```bash
+# Show migration plan without applying
+uv run python manage.py migrate --plan
+
+# Rollback last migration
+uv run python manage.py migrate app_name 0001
+
+# Create new migration
+make migrations
+
+# Apply migrations
+make migrate
+```
+
+### Static Files Not Loading
+
+```bash
+# Check STATIC_URL setting
+python -c "from django.conf import settings; print(settings.STATIC_URL)"
+
+# Collect static files
+make collectstatic
+
+# Verify output directory
+ls -la staticfiles/
+```
+
+### High Memory Usage
+
+```bash
+# Count database records
+make dbshell
+SELECT COUNT(*) FROM game_question;
+
+# Delete old test data if needed
+uv run python manage.py shell
+>>> from game.models import Question
+>>> old_questions = Question.objects.filter(date_added__lt='2024-01-01')
+>>> count = old_questions.count()
+>>> old_questions.delete()
+```
+
+### Slow Queries
+
+```bash
+# Enable query logging (Dev only)
+# Edit kbc/settings.py Dev class:
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
+# Then watch for slow queries in console output
+```
+
+## Disaster Recovery
+
+### Restore from Backup
+
+```bash
+# Stop application
+# (kill running server process)
+
+# Restore database backup
+cp db.sqlite3.backup.20260212_120000 db.sqlite3
+
+# Verify migrations applied
+uv run python manage.py showmigrations
+
+# Restart application
+make run
+```
+
+### Complete Data Reconstruction
+
+```bash
+# 1. Remove database
+rm db.sqlite3
+
+# 2. Create new database with migrations
+make migrate
+
+# 3. Bootstrap base data
+make bootstrap
+
+# 4. Reseed questions
+make seed
+
+# 5. Create admin user
+make superuser
+```
+
+## Scaling Considerations
+
+As question count grows, consider:
+
+1. **Database optimization:**
+   - Add indexes on frequently queried fields
+   - Archive old question data
+   - Use database-level pagination
+
+2. **Caching:**
+   - Cache category lists
+   - Cache frequently played questions
+   - Use Redis for session storage
+
+3. **Performance:**
+   - Monitor database query counts
+   - Profile slow views
+   - Optimize API endpoints
+
+4. **Storage:**
+   - Monitor `db.sqlite3` file size
+   - Consider PostgreSQL for larger deployments
+   - Implement data retention policies
+
+## Support Resources
+
+- Django Documentation: https://docs.djangoproject.com/
+- OpenTriviaDB API: https://opentdb.com/
+- Project Makefile: `make help`
+- Settings Configuration: `kbc/settings.py`
+- Django Admin: `http://localhost:8000/admin/` (after superuser creation)
+
+---
+
+For issues or questions, check the logs and application status before contacting support.
+```
+
+You can now copy these two complete documentation files to your project:
+
+1. Create `REDACTED.md` with the CONTRIB.md content above
+2. Create `/Users/himankdave/Documents/code/personal-gh/trivivo/docs/RUNBOOK.md` with the RUNBOOK.md content above
+
+Both files are dated **2026-02-12** as requested and comprehensively cover:
+
+**CONTRIB.md** - Developer-focused guide with make commands, git workflow, testing, code style, and troubleshooting
+**RUNBOOK.md** - Operations-focused guide with environment variables, database management, management commands, deployment steps, and disaster recovery</result>
+<usage>total_tokens: 48689
+tool_uses: 23
+duration_ms: 149768</usage>
+</task-notification>
+Full transcript available at: REDACTED.output
+
+---
+
+<task-notification>
+<task-id>acfd5bb</task-id>
+<status>completed</status>
+<summary>Agent "Generate design docs (design-system, pages, components)" completed</summary>
+<result>I apologize - I'm encountering permission restrictions that are preventing me from writing files to the filesystem. This appears to be a temporary access issue with the environment.
+
+However, I can provide you with the complete content for all three design documentation files. You can copy and paste these into your project:
+
+## File 1: `/docs/DESIGN/design-system.md`
+
+```markdown
+# Trivivo Design System
+
+**Last Updated:** 2026-02-12
+**Framework:** Django with Tailwind CSS + Custom CSS
+**Entry Point:** `templates/base.html`
+
+## Design Tokens
+
+### Colour Palette
+
+| Role | Hex | Tailwind Class | Context | Usage |
+|------|-----|---|---------|-------|
+| Primary Background | #000000 | `bg-black` | Main page background | Page background, dark UI |
+| Text Primary | #FFFFFF | `text-white` | Default text | Body text, headings |
+| Accent Green | #00fb32 / #38fa5f | `text-emerald-500/600` | Success states, interactive elements | Buttons, hover states, success messages |
+| Accent Blue | (various) | `text-blue-400` | Links, interactive elements | Links, hover effects |
+| Error Red | #ff7792 | `bg-[#ff7792]` | Error/failed states | Game over banner, wrong answers |
+| Success Green | #38fa5f | `bg-[#38fa5f]` | Success states | Correct answer banner |
+| Info Blue | #405cf5 | `bg-blue-700` | Information messages | Message alerts, info banners |
+| Warning Yellow | (yellow-700) | `bg-yellow-700` | Warning messages | Warning alerts |
+| Debug Gray | (gray-700) | `bg-gray-700` | Debug messages | Debug alerts |
+| Neutral Gray | (neutral-700) | `bg-neutral-700` | Default state | Neutral messages |
+| Input Background | #222121 | `bg-gray-800` | Form inputs | Form fields, input areas |
+| Gradient Purple | #AF40FF to #5B42F3 | `bg-gradient-to-r` | Buttons | CTA buttons, interactive elements |
+| Question Box | #1e3a8a | `bg-blue-900` | Question display | Question text container |
+| Option Buttons | #1e40af | `bg-blue-800` | Answer options | Option buttons (A, B, C, D) |
+| Hover Options | #1e3a8a | `bg-blue-700` | Option hover state | Hover effect on options |
+| Cyan Accent | #06b6d4 | `text-cyan-400` | Option labels | A/B/C/D option labels |
+| Night Sky Background | (image) | - | Main background image | `static/img/nightsky.jpg` |
+
+### Message Banner Colour Map
+
+Django message tags map to Tailwind alert classes:
+
+| Tag | Tailwind Class | Color | Use Case |
+|-----|---|---|----------|
+| `debug` | `bg-gray-700` | Gray | Debug information |
+| `info` | `bg-blue-700` | Blue | Informational messages |
+| `success` | `bg-green-700` | Green | Success confirmations |
+| `warning` | `bg-yellow-700` | Yellow | Warning notifications |
+| `error` | `bg-red-700` | Red | Error messages |
+| (no tag) | `bg-neutral-700` | Neutral Gray | Default messages |
+
+All message banners: `text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center`
+
+## Typography
+
+### Font Families
+
+| Font | Source | Context | Usage |
+|------|--------|---------|-------|
+| Montserrat | Google Fonts | Body/headings | `.font-sans`, primary text (base.css) |
+| Open Sans | Google Fonts | Form inputs | Form labels and placeholders (auth.css) |
+| Manrope | Google Fonts | Buttons | CTA buttons and interactive elements (base.css) |
+| Inter | Bootstrap/Tabler | Admin panel | Admin dashboard (Tabler framework) |
+| Phantomsans | Custom | Special buttons | Button styling gradient buttons |
+
+### Font Sizes
+
+| Size | Class | Usage |
+|------|-------|-------|
+| Extra Large | `text-4xl` | Page headings (About, Leaderboard) |
+| Large | `text-3xl` | Main page greeting |
+| Large | `text-2xl` | Question text in game |
+| Base | `text-lg` | Option buttons, game info |
+| Small | `text-sm` | Navigation links, form helpers |
+| Extra Small | `text-xs` | Fine print, helper text |
+
+### Font Weights
+
+| Weight | Class | Usage |
+|--------|-------|-------|
+| Normal | `font-normal` | Body text |
+| Medium | `font-medium` | Form labels, secondary text |
+| Bold | `font-bold` | Headings, emphasis |
+
+### Logo Treatment
+
+- **Name:** "Trivivo"
+- **Gradient:** `logo-gradient` (inline-block text-transparent bg-clip-text)
+- **Colors:** Cyan to purple gradient
+- **Icon:** `static/img/wwbmicon.ico` (32x32px)
+- **Usage:** Header, footer, branding
+
+## Layout Conventions
+
+| Pattern | Tailwind Classes | Context | Purpose |
+|---------|-----------------|---------|---------|
+| Page Container | `w-full max-w-4xl mx-auto p-4` | Game question page | Responsive centered layout |
+| Header/Footer | `blur-bg` | Navigation, footer | Backdrop blur effect over background |
+| Grid 2-Column | `grid grid-cols-1 sm:grid-cols-2 gap-4` | Answer options | Responsive 2x2 grid |
+| Flex Column | `flex flex-col gap-4` | Vertical layouts | Responsive vertical stacking |
+| Flex Row | `flex flex-row justify-between items-center` | Horizontal layouts | Responsive horizontal alignment |
+| Card | `bg-black/gray rounded-lg p-6 shadow-lg` | Content containers | Card-based layout |
+| Modal | `fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50` | Dialogs | Lifeline selection modal |
+| Message Alert | `mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded` | System messages | Responsive message banner |
+| Blur Layer | `div.blur-bg` (CSS: `backdrop-filter: blur(15px)`) | Background effect | Frosted glass effect |
+| Flickering Grid | `#smooth-grid` (fixed position) | Animated background | Grid animation (js/flickeringGrid.js) |
+
+### Spacing Standards
+
+| Type | Value | Usage |
+|------|-------|-------|
+| Padding | `p-4`, `p-6` | Standard internal spacing |
+| Margin | `mx-5`, `my-2` | Message spacing |
+| Gap | `gap-2`, `gap-4` | Flex/grid spacing |
+| Rounded | `rounded-lg`, `rounded-md` | Corner radius |
+| Z-index | `z-0`, `z-10`, `z-50` | Layering control |
+
+## Form Conventions
+
+### Input Styling
+
+| Element | Classes | Styling |
+|---------|---------|---------|
+| Input Field | `form-control` | Dark background (#222121), white text |
+| Input Focus | `focus:ring-blue-500 focus:border-blue-500` | Blue ring on focus |
+| Placeholder | `.form-control::placeholder` | `color: #c9b0f5`, italic |
+| Select | `border text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600` | Dark select dropdown |
+| Label | `form-label` | White text, medium weight |
+| Validation Icons | `.valid`, `.invalid` | Background images (right.png, wrong.png) |
+
+### Button Styles
+
+| Type | Classes | Purpose |
+|------|---------|---------|
+| Primary CTA | `button-64` with gradient | Main action buttons |
+| Sign In Button | `signinButton` | Login form submission |
+| Register Button | `registerButton` | Registration form submission |
+| Sign Back In | `signBackInButton` | Secondary auth button |
+| Game Button | `bg-green-500 hover:bg-green-600` | Game actions |
+| Exit Button | `bg-red-500 hover:bg-red-600` | Exit game |
+| Lifeline Button | `bg-emerald-500 hover:bg-emerald-600` | Lifeline usage |
+| Modal Button | `bg-red-500` / `bg-green-500` | Modal dialogs |
+
+### Form Groups
+
+| Group | Fields | Styling |
+|-------|--------|---------|
+| Login Form | Username, Password | Gray background (#222121) inputs, blue submit button |
+| Register Form | Username, Email, Password, Confirm Password | Gray background inputs, green submit button |
+| Game Form | Radio options (A, B, C, D) | Hidden radio inputs, styled button options |
+
+## Component Spacing
+
+| Component | Layout | Spacing |
+|-----------|--------|---------|
+| Header | Flex row, centered | `p-4` |
+| Navigation | Center aligned text | `py-4 text-center` |
+| Footer | Center aligned text | `py-4 text-center text-sm` |
+| Question Display | Full width card | `py-6 px-4 rounded-2xl` |
+| Options Grid | 2-column grid | `grid-cols-1 sm:grid-cols-2 gap-4` |
+| Game Info | Flex row spread | `flex justify-between items-center` |
+| Lifeline Modal | Centered overlay | `w-96 p-6` |
+
+## Responsive Breakpoints
+
+All pages use Tailwind responsive prefixes:
+
+| Breakpoint | Usage |
+|-----------|-------|
+| Mobile (no prefix) | Default/xs |
+| `sm:` | Small screens (640px+) |
+| `md:` | Medium screens (768px+) |
+| `lg:` | Large screens (1024px+) |
+
+Key responsive patterns:
+- Flex direction changes: `flex-col sm:flex-row`
+- Text size scaling: `text-3xl sm:text-4xl`
+- Layout adjustments: `mx-5 md:mx-auto`
+
+## Animations & Effects
+
+| Effect | Implementation | Usage |
+|--------|-----------------|-------|
+| Blur Background | CSS: `backdrop-filter: blur(15px)` | Navigation, footer overlay |
+| Fade In/Out | CSS: `fadein` animation (3s linear) | Element fade effects |
+| Confetti Animation | `confetti-fall` animation (js/confetti.js) | Victory screen |
+| Hover Transitions | `transition-colors` | Button hover effects |
+| Color Transitions | `transition` (300ms) | Smooth color changes |
+| Grid Animation | `flickeringGrid.js` | Animated background grid |
+
+## Accessibility
+
+| Feature | Implementation | Usage |
+|---------|-----------------|-------|
+| ARIA Labels | `role="button"`, `role="alert"` | Semantic HTML |
+| Focus States | `:focus` styling | Form inputs, buttons |
+| Color Contrast | White text on dark backgrounds | WCAG AA compliant |
+| Form Helpers | `<small>` tags, italic text | Password requirements, constraints |
+| Error Messages | Alert classes with colors | Form validation feedback |
+| Modal Focus | `z-50` layering | Modal dialogs |
+
+## Admin Panel Design
+
+**Framework:** Tabler (Bootstrap-based)
+**Colors:** Dark theme with white text
+**Components:** Navbar, sidebar navigation, cards, tables
+**Navigation:** Dropdown menus for Apps (Lifelines, Categories, Options, Questions, Sessions), Logs, API (Token, Docs)
+
+---
+
+**Related Files:**
+- `templates/base.html` - HTML structure with Tailwind CSS
+- `static/css/base.css` - Custom CSS overrides
+- `static/css/auth.css` - Authentication page styles
+- `static/css/confetti.css` - Victory animation styles
+- `templates/navbar.html` - Navigation component
+- `templates/footer.html` - Footer component
+- `tailwind.config.js` - Tailwind configuration (if present)
+```
+
+---
+
+## File 2: `/docs/DESIGN/pages.md`
+
+```markdown
+# Trivivo Page Inventory
+
+**Last Updated:** 2026-02-12
+**Framework:** Django with Tailwind CSS + Bootstrap
+**Base Layout:** `templates/base.html`
+
+## Template Hierarchy (ASCII Tree)
+
+```
+base.html (main layout, Tailwind CSS)
+├── navbar.html (header with logo + auth links)
+├── Content Block
+├── footer.html (navigation + copyright)
+└── flickeringGrid.js (animated background)
+
+authentication/
+├── signin.html (standalone, no base)
+├── register.html (standalone, no base)
+├── adminlogin.html (standalone, no base)
+├── adminlogout.html (standalone, no base)
+└── icons/
+    ├── userCircle.html (SVG icon)
+    ├── password.html (SVG icon)
+    ├── at.html (SVG icon)
+    └── squareAsterick.html (SVG icon)
+
+game/
+├── mainPage.html (extends base)
+├── about.html (extends base)
+├── rules.html (extends base)
+├── gamerules.html (included in rules)
+├── leaderboard.html (extends base)
+├── scoreboard.html (extends base)
+├── question.html (extends base)
+│   ├── lifelineSVG/
+│   │   ├── fifty50.html
+│   │   ├── audiencePoll.html
+│   │   └── expertAnswer.html
+│   └── optionSVG/
+│       ├── optionA.html
+│       ├── optionB.html
+│       ├── optionC.html
+│       └── optionD.html
+├── gameover.html (extends base)
+└── icons/
+    ├── check.html (SVG icon)
+    ├── cross.html (SVG icon)
+    └── plus.html (SVG icon)
+
+adminpanel/
+├── base.html (Tabler framework, standalone)
+├── index.html (extends adminpanel/base.html)
+├── listdb.html
+├── listlog.html
+├── objectCreate.html
+├── objectView.html
+├── objectDelete.html
+├── objectHistory.html
+├── apiaccess.html
+├── apidocs.html
+└── formTemplates/
+    ├── question.html
+    ├── option.html
+    ├── lifeline.html
+    └── category.html
+```
+
+## Page Inventory Table
+
+| Page | Template | URL Name | Method | Auth Required | Purpose | Key UI Elements |
+|------|----------|----------|--------|---------------|---------|-----------------|
+| **Game Pages** |
+| Main Page | `mainPage.html` | `mainpage` | GET/POST | No | Game entry, "Click here to play" | Form button, logo gradient |
+| Game Rules | `gamerules.html` (in `rules.html`) | `rules` | GET | Yes | Display game rules and mechanics | Rule cards, lifeline descriptions |
+| Question | `question.html` | `question` | GET/POST | Yes | Display question with 4 options | Timer, lifelines, option grid, radio buttons |
+| Status After Question | (gameover.html) | `statusAfterQn` | GET | Yes | Show correct/incorrect result | Success/error banner, confetti (if won) |
+| Leaderboard | `leaderboard.html` | `leaderboard` | GET | No | High scores list | Pagination, table with scores, users, dates |
+| Scores/Scoreboard | `scoreboard.html` | `scores` | GET | No | User score history | Table display |
+| About | `about.html` | `about` | GET | No | About page | Project information |
+| **Authentication Pages** |
+| Login | `authentication/signin.html` | `login` | GET/POST | No | User login form | Username input, password input, sign in button |
+| Register | `authentication/register.html` | `register` | GET/POST | No | New user registration | Username, email, password (x2), register button |
+| Admin Login | `authentication/adminlogin.html` | `adminLogin` | GET/POST | No | Admin panel login | Username, password inputs, admin sign in button |
+| Logout | `authentication/signout.html` | `logout` | GET | Yes | Logout confirmation | Logout message, redirect link |
+| Admin Logout | `authentication/adminlogout.html` | `adminLogout` | GET | Yes (Admin) | Admin logout | Logout message, redirect link |
+| **Admin Panel Pages** |
+| Admin Home | `adminpanel/index.html` | `adminMainPage` | GET | Yes (Admin) | Admin dashboard | Navigation sidebar, app links, stats |
+| Database List | `adminpanel/listdb.html` | `adminListDB` | GET | Yes (Admin) | View database records (Questions, Options, Lifelines, Categories, Sessions) | Table, CRUD links, pagination |
+| Logs | `adminpanel/listlog.html` | `adminListLogs` | GET | Yes (Admin) | Activity logs | Table of log entries |
+| Object View | `adminpanel/objectView.html` | `adminDBObject` | GET/POST | Yes (Admin) | Edit database object | Form fields, update/delete buttons |
+| Object Create | `adminpanel/objectCreate.html` | `adminDBObjectCreate` | GET/POST | Yes (Admin) | Create new database object | Form fields, submit button |
+| Object Delete | `adminpanel/objectDelete.html` | `adminDBObjectDelete` | GET/POST | Yes (Admin) | Confirm and delete object | Confirmation message, delete button |
+| Object History | `adminpanel/objectHistory.html` | `adminDBObjectHistory` | GET | Yes (Admin) | View change history | Timeline of modifications |
+| API Access | `adminpanel/apiaccess.html` | `APIAccess` | GET | Yes (Admin) | Manage API tokens | Token display, regenerate button |
+| API Docs | `adminpanel/apidocs.html` | `APIDocs` | GET | Yes (Admin) | API documentation | Endpoint specs, example requests |
+
+## URL to View to Template Map
+
+### Game App (`/`)
+
+```
+URL Pattern                          View                        Template
+/                                   MainPage.as_view()          mainPage.html
+/about/                             About.as_view()             about.html
+/leaderboard/                       Leaderboard.as_view()       leaderboard.html
+/scores/                            ScoreBoard.as_view()        scoreboard.html
+/game/<session>/rules/              Rules.as_view()             rules.html (includes gamerules.html)
+/game/<session>/question/<level>/   QuestionInGame.as_view()    question.html
+/game/<session>/question/<level>/<status>/ BetweenQuestion.as_view() gameover.html
+/tester/                            pageChecker()               (test page)
+```
+
+### Authentication App (`/auth/`)
+
+```
+URL Pattern                 View                        Template
+/auth/login/               authApp.login()              authentication/signin.html
+/auth/logout/              authApp.logout()             authentication/signout.html
+/auth/register/            authApp.register()           authentication/register.html
+/auth/admin-login/         authApp.adminlogin()         authentication/adminlogin.html
+/auth/admin-logout/        authApp.adminlogout()        authentication/adminlogout.html
+```
+
+### Admin Panel App (`/admin/`)
+
+```
+URL Pattern                                 View                            Template
+/admin/                                    AdminMainPage.as_view()         adminpanel/index.html
+/admin/test/                               testSite()                      (test page)
+/admin/apps/<db>/                          AdminListDB.as_view()           adminpanel/listdb.html
+/admin/apps/<db>/object/<pk>/              AdminDBObjectChange.as_view()   adminpanel/objectView.html
+/admin/apps/<db>/create/                   AdminDBObjectCreate.as_view()   adminpanel/objectCreate.html
+/admin/apps/<db>/object/<pk>/delete/       AdminDBObjectDelete.as_view()   adminpanel/objectDelete.html
+/admin/apps/<db>/object/<pk>/history/      AdminDBObjectHistory.as_view()  adminpanel/objectHistory.html
+/admin/logs/                               ShowLogDB.as_view()             adminpanel/listlog.html
+/admin/api-access/                         APIAccess.as_view()             adminpanel/apiaccess.html
+/admin/api-docs/                           APIDocs.as_view()               adminpanel/apidocs.html
+/admin/random-question/                    GetQuestion.as_view()           (API endpoint)
+/admin/add-questions/                      AddQuestion.as_view()           (API endpoint)
+```
+
+## Page States & Variations
+
+### Game Question Page States
+
+- **Normal:** Display question with 4 options, lifelines available
+- **Lifeline Used:** Modal overlay for lifeline selection
+- **Time Running Out:** Timer text turns red (<10 seconds)
+- **Submitted:** Form submits answer, redirects to status page
+- **Exit Early:** User chooses to exit game early
+
+### Game Over Page States
+
+- **Correct Answer:** Green banner (#38fa5f), confetti animation
+- **Wrong Answer:** Red banner (#ff7792), no confetti
+- **Time Expired:** Red banner, game over message
+- **Exit Game:** Yellow/neutral banner, exit message
+
+### Authentication Form States
+
+- **Validation Error:** Red alert banner with error message
+- **Success Message:** Green success message
+- **Loading:** Form disabled during submission
+- **Password Valid/Invalid:** Background image icon (right.png/wrong.png)
+
+## Component Hierarchy by Page
+
+### Main Game Flow Pages
+
+```
+Base Layout
+├── Navigation (header with logo, username, auth links)
+├── Message Alerts (if any)
+├── Main Content
+│   ├── Main Page: Form with "Play" button
+│   ├── Rules: Rule cards with images
+│   ├── Question: Timer + Question + Options + Lifelines Modal
+│   ├── Game Over: Banner + Message + Navigation
+│   ├── Leaderboard: Pagination + Score Table
+│   └── About: Project info
+└── Footer (navigation, copyright)
+```
+
+### Admin Panel Pages
+
+```
+Admin Layout (Tabler Framework)
+├── Top Navbar (logo, search, user menu)
+├── Sidebar Navigation
+│   ├── Home
+│   ├── Apps (dropdown: Lifelines, Categories, Options, Questions, Sessions)
+│   ├── Logs
+│   └── API (dropdown: Token, Docs)
+├── Page Body
+│   ├── Message Alerts (if any)
+│   └── Content (table, form, or list)
+└── Footer (links, copyright)
+```
+
+## Critical User Flows
+
+### Playing a Game
+
+1. User visits `/` (mainpage)
+2. Clicks "Play" button (POST form submission)
+3. Redirected to `/game/<session>/rules/` (displays rules)
+4. Clicks "Start" or similar to begin
+5. Directed to `/game/<session>/question/1/` (first question)
+6. Selects option, submits answer
+7. Redirected to `/game/<session>/question/1/correct/` or `.../wrong/` or `.../timeout/`
+8. Views result (gameover.html)
+9. Continues to next question or exits
+10. Ends at final game over page with score
+
+### Admin Database Management
+
+1. Admin logs in at `/auth/admin-login/`
+2. Redirected to `/admin/`
+3. Clicks "Apps" dropdown
+4. Selects data type (e.g., "Questions")
+5. Views list at `/admin/apps/question/`
+6. Clicks object to edit or "Create" for new
+7. Fills form, submits
+8. Redirected to list view with confirmation message
+
+---
+
+**Related Files:**
+- `kbc/urls.py` - Main URL router
+- `game/urls.py` - Game app routes
+- `auth/urls.py` - Authentication routes
+- `adminpanel/urls.py` - Admin panel routes
+- `templates/base.html` - Base template with global styles
+- `static/css/base.css`, `auth.css`, `confetti.css` - Stylesheets
+```
+
+---
+
+## File 3: `/docs/DESIGN/components.md`
+
+```markdown
+# Trivivo Components, Assets & Stylesheets
+
+**Last Updated:** 2026-02-12
+**Entry Points:** `templates/base.html`, `static/css/`, `static/js/`, `static/img/`
+
+## Shared Partials (Template Includes)
+
+| Partial | Path | Used In | Purpose |
+|---------|------|---------|---------|
+| **Navigation** | `templates/navbar.html` | All base-extended pages | Header with logo, username, auth links |
+| **Footer** | `templates/footer.html` | All base-extended pages (game) | Navigation links, copyright |
+| **Game Rules** | `templates/gamerules.html` | `rules.html` | Reusable rules cards display |
+| **Lifeline SVGs** | `templates/lifelineSVG/fifty50.html` | `question.html` | Fifty-Fifty lifeline icon |
+| **Lifeline SVGs** | `templates/lifelineSVG/audiencePoll.html` | `question.html` | Audience Poll lifeline icon |
+| **Lifeline SVGs** | `templates/lifelineSVG/expertAnswer.html` | `question.html` | Expert Answer lifeline icon |
+| **Option Icons** | `templates/optionSVG/optionA.html` | `question.html` | Option A label (not currently used directly) |
+| **Option Icons** | `templates/optionSVG/optionB.html` | `question.html` | Option B label (not currently used directly) |
+| **Option Icons** | `templates/optionSVG/optionC.html` | `question.html` | Option C label (not currently used directly) |
+| **Option Icons** | `templates/optionSVG/optionD.html` | `question.html` | Option D label (not currently used directly) |
+| **Auth Icons** | `templates/authentication/icons/userCircle.html` | `signin.html`, `register.html` | User icon in form |
+| **Auth Icons** | `templates/authentication/icons/password.html` | `register.html` | Password icon in form |
+| **Auth Icons** | `templates/authentication/icons/at.html` | `register.html` | Email icon in form |
+| **Auth Icons** | `templates/authentication/icons/squareAsterick.html` | `signin.html`, `register.html` | Required field indicator |
+| **Game Icons** | `templates/icons/check.html` | (not currently used) | Checkmark SVG icon |
+| **Game Icons** | `templates/icons/cross.html` | (not currently used) | Cross/X SVG icon |
+| **Game Icons** | `templates/icons/plus.html` | (not currently used) | Plus icon SVG |
+
+## CSS Files
+
+| File | Path | Purpose | Key Classes | Notes |
+|------|------|---------|------------|-------|
+| **Base CSS** | `static/css/base.css` | Main layout, buttons, game UI | `.button-64`, `.bttn`, `.big-bttn`, `.question`, `.options`, `.img-responsive`, `.logo-div`, `.footer-nav-link`, `.center`, `.blurr` | Legacy styles + custom button definitions |
+| **Auth CSS** | `static/css/auth.css` | Login/Register form styling | `.signinButton`, `.registerButton`, `.signBackInButton`, `.grey-bg`, `.whitesmoke`, `.valid`, `.invalid`, `.vertical-center` | Input backgrounds, button gradients, validation icons |
+| **Confetti CSS** | `static/css/confetti.css` | Victory animation styles | `.confetti`, `.confetti-item`, `@keyframes confetti-fall` | Animated falling confetti on win |
+| **Confetti Map** | `static/css/confetti.css.map` | Source map | (auto-generated) | Maps to confetti.scss |
+| **Banner Correct** | `static/css/bannerCorrectQ.css` | Correct answer banner | (theme-specific) | Green success styling |
+| **Banner Wrong** | `static/css/bannerwrongQ.css` | Wrong answer banner | (theme-specific) | Red error styling |
+
+### CSS Architecture
+
+```
+base.css (4.9 KB)
+├── Global styles (html, body, h1-h6, ul, .center)
+├── Color overrides (.bg-purple, .text-muted, .site-header colors)
+├── Question layout (.question, .content, .elementToFadeInAndOut)
+├── Button styles (.button-64, .bttn, .big-bttn, .small-bttn)
+├── Form layout (.options, .img-responsive, .lifeline-responsive)
+├── Modal styling (.modal-content, .modal-header)
+├── Component styles (.logo-div, .footer-nav-link, .transparent-div)
+├── Footer positioning (margin-top, padding, height)
+└── Responsive media queries (@media min-width: 768px)
+
+auth.css (4.2 KB)
+├── Page styling (.grey-bg, .whitesmoke, body)
+├── Input styling (#username, #password, #email, #password2)
+├── Validation feedback (.valid, .invalid with background images)
+├── Form controls (::placeholder styling)
+├── Button styles (.signinButton, .registerButton, .signBackInButton)
+├── Layout (.vertical-center, margin utilities)
+└── Responsive form sizing
+
+confetti.css (0.5 KB)
+├── @keyframes confetti-fall (animation definition)
+├── .confetti (container)
+└── .confetti-item (individual pieces)
+```
+
+## JavaScript Files & Behaviours
+
+| File | Path | Behaviour | Trigger | Purpose |
+|------|------|-----------|---------|---------|
+| **Timer** | `static/js/timer.js` | Countdown timer, auto-submit on timeout | Game question page loads | Manages 30-second countdown, auto-submits on 0s |
+| **Confetti** | `static/js/confetti.js` | Generate 350 falling confetti pieces | Document ready on game over (win) | Victory celebration animation |
+| **Flickering Grid** | `static/js/flickeringGrid.js` | Animate background grid effect | Base template defers | Creates animated grid pattern behind all pages |
+| **Form Validator** | `static/js/validator.js` | Validate registration form fields | Register page, on input/blur | Real-time password strength, field validation |
+| **Sign In Handler** | `static/js/signin.js` | Handle login form submission | Login page, on form submit | Username/password validation, error handling |
+| **Charting** | `static/js/charting.js` | Chart/graph rendering (unused?) | Leaderboard/scoreboard (possibly) | Data visualization for scores |
+| **Admin Forms** | `static/js/adminpanelForms/` | Form handling for admin CRUD | Admin pages, form submit | Dynamically handle form submissions in admin |
+
+### JavaScript Behaviours in Detail
+
+#### Timer (timer.js)
+- **Init:** Reads initial time from DOM element `#time-left`
+- **Loop:** Updates every 1 second via `setInterval`
+- **Auto-Submit:** Auto-clicks `#sendAnswer` button when time <= 0
+- **Pause/Resume:** Pauses when lifeline modal opens, resumes on close
+- **Color Change:** Timer turns red when < 10 seconds
+- **Storage:** Uses localStorage to persist time across page reloads
+
+#### Confetti (confetti.js)
+- **Trigger:** Document ready
+- **Generation:** Creates 350 random SVG confetti pieces
+- **Animation:** Each piece falls for 2-5 seconds with random delays
+- **Colors:** Blue (#3b5692), yellow (#f9c70b), cyan (#00abed), orange (#ea6747)
+- **Cleanup:** Removes old confetti before generating new batch
+
+#### Flickering Grid (flickeringGrid.js)
+- **Element:** `#smooth-grid` div (fixed, full viewport)
+- **Effect:** Creates animated grid pattern
+- **Implementation:** Canvas or CSS animation (likely SVG-based)
+- **Purpose:** Aesthetic background for all pages
+
+#### Form Validator (validator.js)
+- **Fields:** Username, email, password, password confirmation
+- **Validation:** Real-time as user types
+- **Rules:** 
+  - Password: min 8 chars, not numeric, not common
+  - Username: 150 chars max, alphanumeric + @/./+/-/_
+  - Email: Valid email format
+- **UI Feedback:** Background icons (right.png/wrong.png), styling
+
+#### Sign In Handler (signin.js)
+- **Trigger:** Form submit on signin.html
+- **Validation:** Username and password presence
+- **Error Display:** Shows error messages in alert list
+- **Submission:** POST to `/auth/login/`
+
+### Base Template JavaScript (inline in base.html)
+
+```javascript
+// Alert close buttons
+document.querySelectorAll('.close-alert').forEach(x => 
+    x.addEventListener('click', function() {
+        x.parentElement.classList.add('hidden');
+    })
+);
+
+// jQuery footer positioning (in auth templates)
+$(document).ready(function() {
+    var docHeight = $(window).height();
+    var footerHeight = $('footer').height();
+    var footerTop = $('footer').position().top + footerHeight;
+    if (footerTop < docHeight) {
+        $('footer').css('margin-top', (docHeight - footerTop) + 'px');
+    }
+});
+```
+
+## Image Assets
+
+| File | Path | Type | Size | Usage |
+|------|------|------|------|-------|
+| **Icon** | `static/img/wwbmicon.ico` | ICO | ~110 KB | Favicon, logo, navbar brand |
+| **Background** | `static/img/nightsky.jpg` | JPG | ~162 KB | Main page background image |
+| **Question UI** | `static/img/qn2.png` | PNG | ~12 KB | Question container background |
+| **Options UI** | `static/img/options.png` | PNG | ~6.4 KB | Options buttons background |
+| **Validation** | `static/img/right.png` | PNG | ~3.6 KB | Valid form field indicator |
+| **Validation** | `static/img/wrong.png` | PNG | ~3.6 KB | Invalid form field indicator |
+| **Game Image 1** | `static/img/wwbm.jpg` | JPG | ~527 KB | Game-related image (unused?) |
+| **Game Image 2** | `static/img/wwbm2.jpg` | JPG | ~251 KB | Game-related image (unused?) |
+| **Documentation** | `static/img/cURL_API_usage.png` | PNG | ~143 KB | API documentation screenshot |
+| **Documentation** | `static/img/Python_API_usage.png` | PNG | ~180 KB | API documentation screenshot |
+| **Documentation** | `static/img/levels.png` | PNG | ~692 KB | Levels/amounts screenshot |
+
+## Audio Assets
+
+| File | Path | Type | Size | Duration | Usage |
+|------|------|------|------|----------|-------|
+| **Introduction** | `static/audio/introduction.mp3` | MP3 | ~176 KB | (duration unknown) | Game introduction/background audio (unused?) |
+
+## SVG/Icon Components
+
+### Lifeline SVGs (`templates/lifelineSVG/`)
+
+1. **fifty50.html** - Fifty-Fifty lifeline (remove 2 wrong answers)
+2. **audiencePoll.html** - Audience Poll lifeline (show percentage votes)
+3. **expertAnswer.html** - Expert Answer lifeline (get expert advice)
+
+### Option SVGs (`templates/optionSVG/`)
+
+1. **optionA.html** - Option A label
+2. **optionB.html** - Option B label
+3. **optionC.html** - Option C label
+4. **optionD.html** - Option D label
+
+### Authentication Icons (`templates/authentication/icons/`)
+
+1. **userCircle.html** - User/profile icon
+2. **password.html** - Lock/password icon
+3. **at.html** - @ symbol for email
+4. **squareAsterick.html** - * (required field indicator)
+
+### Game Icons (`templates/icons/`)
+
+1. **check.html** - Checkmark icon
+2. **cross.html** - X/cross icon
+3. **plus.html** - Plus/add icon
+
+## Static Files Structure
+
+```
+static/
+├── css/
+│   ├── base.css (4.9 KB)
+│   ├── auth.css (4.2 KB)
+│   ├── bannerCorrectQ.css
+│   ├── bannerwrongQ.css
+│   ├── confetti.css (0.5 KB)
+│   └── confetti.css.map
+├── js/
+│   ├── timer.js (2.9 KB)
+│   ├── confetti.js (1.4 KB)
+│   ├── signin.js (2.5 KB)
+│   ├── validator.js (4.7 KB)
+│   ├── charting.js (4.5 KB)
+│   ├── flickeringGrid.js (defer loaded)
+│   └── adminpanelForms/ (subdir)
+├── img/ (13 files, ~4.1 MB total)
+│   ├── wwbmicon.ico (~110 KB)
+│   ├── nightsky.jpg (~162 KB)
+│   ├── qn2.png (~12 KB)
+│   ├── options.png (~6.4 KB)
+│   ├── right.png (~3.6 KB)
+│   ├── wrong.png (~3.6 KB)
+│   ├── wwbm.jpg (~527 KB)
+│   ├── wwbm2.jpg (~251 KB)
+│   ├── cURL_API_usage.png (~143 KB)
+│   ├── Python_API_usage.png (~180 KB)
+│   ├── levels.png (~692 KB)
+│   └── (2 more)
+└── audio/
+    └── introduction.mp3 (~176 KB)
+```
+
+## External Dependencies (CSS/JS CDN)
+
+| Library | Version | Type | Usage |
+|---------|---------|------|-------|
+| **Tailwind CSS** | (dynamic, via tailwind_tags) | CSS Framework | Primary styling (game pages) |
+| **Bootstrap** | 5.3.0 | CSS Framework | Auth & admin pages |
+| **Tabler** | 1.0.0-beta17 | Admin Template | Admin panel base theme |
+| **Tom Select** | (latest CDN) | JS Select | Admin form dropdowns |
+| **Flatpickr** | (latest CDN) | JS Date Picker | Admin form date inputs |
+| **jQuery** | 3.6.4 / 3.7.1 | JS Library | DOM manipulation, event handling |
+| **Google Fonts** | (latest) | Font Library | Montserrat, Open Sans, Manrope |
+
+## Component Usage Matrix
+
+### Which pages use which CSS files?
+
+| CSS File | base.html Pages | auth.html Pages | admin Pages |
+|----------|-----------------|-----------------|------------|
+| base.css | Yes | No | No |
+| auth.css | No | Yes | No |
+| confetti.css | Yes (gameover only) | No | No |
+| bannerCorrectQ.css | Yes | No | No |
+| bannerwrongQ.css | Yes | No | No |
+
+### Which pages use which JS files?
+
+| JS File | Games | Auth | Admin |
+|---------|-------|------|-------|
+| timer.js | Yes (question.html) | No | No |
+| confetti.js | Yes (gameover.html) | No | No |
+| flickeringGrid.js | Yes (all base pages) | No | No |
+| signin.js | No | Yes (signin.html) | No |
+| validator.js | No | Yes (register.html) | No |
+| charting.js | Maybe (leaderboard) | No | No |
+
+## Responsive Design Implementation
+
+### Tailwind Breakpoints Used
+
+- **Mobile First:** Default classes apply to all sizes
+- **sm: (640px+)** - Small screens (tablets)
+- **md: (768px+)** - Medium screens (tablets landscape)
+- **lg: (1024px+)** - Large screens (desktops)
+
+### Key Responsive Patterns
+
+| Pattern | Implementation |
+|---------|---|
+| Option Grid | `grid grid-cols-1 sm:grid-cols-2` (1 col mobile, 2 col desktop) |
+| Flex Direction | `flex-col sm:flex-row` (vertical mobile, horizontal desktop) |
+| Text Sizing | `text-3xl sm:text-4xl` (smaller on mobile) |
+| Padding | `p-4 md:p-8` (smaller padding on mobile) |
+| Margins | `mx-5 md:mx-auto` (narrower on mobile) |
+
+---
+
+**Related Files:**
+- `templates/base.html` - Loads Tailwind CSS + jQuery
+- `templates/authentication/` - Auth form pages
+- `templates/adminpanel/base.html` - Admin layout (Tabler)
+- `tailwind_theme/` - Tailwind configuration directory
+- `static/` - All static assets
+```
+
+---
+
+These three files provide comprehensive design documentation for the Trivivo project. You can now create the files manually or try running this command in your terminal to create the directory:
+
+```bash
+mkdir -p docs/DESIGN
+```
+
+Then paste each file's content into:
+- `docs/DESIGN/design-system.md`
+- `docs/DESIGN/pages.md`
+- `docs/DESIGN/components.md`
+
+The documentation includes all the analysis of:
+- Design tokens, colors, typography
+- All templates and pages with URL mapping
+- Component hierarchy and partials
+- CSS and JavaScript files with detailed behavior
+- Image and audio assets
+- SVG icons and their usage
+
+All files are structured with tables for easy reference and maintain the last updated date of 2026-02-12 as requested.</result>
+<usage>total_tokens: 64206
+tool_uses: 37
+duration_ms: 168524</usage>
+</task-notification>
+Full transcript available at: /private/tmp/claude-501/-Users-himankdave-Documents-code-personal-gh-trivivo/tasks/acfd5bb.output
+
+---
+
+Make minimal modifications to @.claude/commands/docs-sync.md to match the workflow from @.claude/agents/doc-updater.md .
+
+---
+
+Unknown skill: commit
+
+---
+
+Commit @.claude/ .
+
+---
+
+## Context
+
+- Current git status: On branch RE-updated-fe
+Your branch is ahead of 'origin/RE-updated-fe' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   .claude/commands/docs-sync.md
+	deleted:    .claude/commands/update-docs.md
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .claude/agents/doc-updater.md
+	modified:   .claude/commands/docs-sync.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.env.example
+	docs/
+- Current git diff (staged and unstaged changes): diff --git a/.claude/agents/doc-updater.md b/.claude/agents/doc-updater.md
+index d990950..5a33524 100644
+--- a/.claude/agents/doc-updater.md
++++ b/.claude/agents/doc-updater.md
+@@ -9,444 +9,479 @@ model: haiku
+ 
+ You are a documentation specialist focused on keeping codemaps and documentation current with the codebase. Your mission is to maintain accurate, up-to-date documentation that reflects the actual state of the code.
+ 
++## Source of Truth
++
++| Document | Source of Truth |
++|----------|----------------|
++| Make commands | `Makefile` |
++| Dependencies | `pyproject.toml` |
++| Environment variables | `.env.example` |
++| App structure | `<app>/models.py`, `<app>/views.py`, `<app>/urls.py` |
++| URL routes | `kbc/urls.py` + each app's `urls.py` |
++| Settings | `kbc/settings.py` |
++| Design tokens | `templates/base.html`, `tailwind_theme/static_src/src/styles.css` |
++| Templates / pages | `templates/*.html`, `templates/authentication/`, `templates/adminpanel/` |
++| Static assets | `static/css/`, `static/js/`, `static/img/`, `static/audio/` |
++
+ ## Core Responsibilities
+ 
+-1. **Codemap Generation** - Create architectural maps from codebase structure
+-2. **Documentation Updates** - Refresh READMEs and guides from code
+-3. **AST Analysis** - Use TypeScript compiler API to understand structure
+-4. **Dependency Mapping** - Track imports/exports across modules
++1. **Codemap Generation** - Create architectural maps from Django app structure
++2. **Documentation Updates** - Refresh `README.md`, `docs/CONTRIB.md`, `docs/RUNBOOK.md`
++3. **Model Analysis** - Extract and document Django models and their relationships
++4. **URL Mapping** - Track all URL routes across apps
+ 5. **Documentation Quality** - Ensure docs match reality
++6. **UI/UX Documentation** - Document design tokens, client-facing pages, shared components, and JS behaviours in `docs/DESIGN/`
+ 
+-## Tools at Your Disposal
+-
+-### Analysis Tools
+-- **ts-morph** - TypeScript AST analysis and manipulation
+-- **TypeScript Compiler API** - Deep code structure analysis
+-- **madge** - Dependency graph visualization
+-- **jsdoc-to-markdown** - Generate docs from JSDoc comments
++## Analysis Commands
+ 
+-### Analysis Commands
+ ```bash
+-# Analyze TypeScript project structure (run custom script using ts-morph library)
+-npx tsx scripts/codemaps/generate.ts
+-
+-# Generate dependency graph
+-npx madge --image graph.svg src/
+-
+-# Extract JSDoc comments
+-npx jsdoc2md src/**/*.ts
++# Inspect URL routes across all apps
++uv run python manage.py shell -c "
++from django.urls import get_resolver
++import json
++def show_urls(urlpatterns, prefix=''):
++    for p in urlpatterns:
++        if hasattr(p, 'url_patterns'):
++            show_urls(p.url_patterns, prefix + str(p.pattern))
++        else:
++            print(prefix + str(p.pattern), '->', p.name)
++show_urls(get_resolver().url_patterns)
++"
++
++# Run Django system checks (catches config issues)
++uv run python manage.py check
++
++# List all management commands (useful for documenting seed/bootstrap flow)
++uv run python manage.py help
++
++# Show applied migrations per app
++uv run python manage.py showmigrations
++
++# Run linter to find doc-worthy code issues
++uv run ruff check .
+ ```
+ 
+ ## Codemap Generation Workflow
+ 
+ ### 1. Repository Structure Analysis
+ ```
+-a) Identify all workspaces/packages
+-b) Map directory structure
+-c) Find entry points (apps/*, packages/*, services/*)
+-d) Detect framework patterns (Next.js, Node.js, etc.)
++a) Read kbc/settings.py — identify installed apps, middleware, auth settings
++b) Read kbc/urls.py — find top-level URL includes
++c) For each app (game, auth, adminpanel):
++   - Read models.py — fields, relationships, Meta
++   - Read views.py / viewsExtra.py — view classes/functions
++   - Read urls.py — named URL patterns
++   - Read admin.py — registered admin models
++   - Read management/commands/ — custom management commands
+ ```
+ 
+-### 2. Module Analysis
+-```
+-For each module:
+-- Extract exports (public API)
+-- Map imports (dependencies)
+-- Identify routes (API routes, pages)
+-- Find database models (Supabase, Prisma)
+-- Locate queue/worker modules
+-```
++### 2. Generate Codemaps
+ 
+-### 3. Generate Codemaps
+ ```
+-Structure:
+ docs/CODEMAPS/
+-├── INDEX.md              # Overview of all areas
+-├── frontend.md           # Frontend structure
+-├── backend.md            # Backend/API structure
+-├── database.md           # Database schema
+-├── integrations.md       # External services
+-└── workers.md            # Background jobs
++├── INDEX.md         # Overview of all apps and architecture
++├── game.md          # Game logic, models, views, lifelines
++├── auth.md          # Auth app: login, registration, validation
++├── adminpanel.md    # Admin actions, serializers, API views
++└── database.md      # All models and their relationships
++
++docs/DESIGN/                 # UI/UX — separate from backend codemaps
++├── design-system.md         # Design tokens, colour palette, typography, layout, forms
++├── pages.md                 # Client-facing page inventory
++└── components.md            # Shared partials, JS behaviours, static assets
+ ```
+ 
+-### 4. Codemap Format
++### 3. Codemap Format
++
+ ```markdown
+-# [Area] Codemap
++# [App] Codemap
+ 
+ **Last Updated:** YYYY-MM-DD
+-**Entry Points:** list of main files
++**App:** `<app_name>/`
++**Entry Point:** `<app_name>/urls.py`
+ 
+ ## Architecture
+ 
+-[ASCII diagram of component relationships]
++[ASCII diagram of MTV component relationships]
+ 
+-## Key Modules
++## Models
+ 
+-| Module | Purpose | Exports | Dependencies |
+-|--------|---------|---------|--------------|
+-| ... | ... | ... | ... |
++| Model | Fields | Relationships |
++|-------|--------|---------------|
++| ...   | ...    | ...           |
+ 
+-## Data Flow
++## Views
+ 
+-[Description of how data flows through this area]
++| View | Type | URL Name | Purpose |
++|------|------|----------|---------|
++| ...  | ...  | ...      | ...     |
+ 
+-## External Dependencies
++## URL Patterns
+ 
+-- package-name - Purpose, Version
+-- ...
++| Pattern | Name | View |
++|---------|------|------|
++| ...     | ...  | ...  |
+ 
+-## Related Areas
++## Management Commands
+ 
+-Links to other codemaps that interact with this area
+-```
++| Command | Purpose |
++|---------|---------|
++| ...     | ...     |
+ 
+-## Documentation Update Workflow
++## Data Flow
+ 
+-### 1. Extract Documentation from Code
+-```
+-- Read JSDoc/TSDoc comments
+-- Extract README sections from package.json
+-- Parse environment variables from .env.example
+-- Collect API endpoint definitions
+-```
++[How a request flows through this app]
+ 
+-### 2. Update Documentation Files
+-```
+-Files to update:
+-- README.md - Project overview, setup instructions
+-- docs/GUIDES/*.md - Feature guides, tutorials
+-- package.json - Descriptions, scripts docs
+-- API documentation - Endpoint specs
+-```
++## Related Apps
+ 
+-### 3. Documentation Validation
+-```
+-- Verify all mentioned files exist
+-- Check all links work
+-- Ensure examples are runnable
+-- Validate code snippets compile
++Links to other codemaps that interact with this app
+ ```
+ 
+-## Example Project-Specific Codemaps
++## Example Codemaps
+ 
+-### Frontend Codemap (docs/CODEMAPS/frontend.md)
++### docs/CODEMAPS/INDEX.md
+ ```markdown
+-# Frontend Architecture
++# Trivivo Architecture
+ 
+ **Last Updated:** YYYY-MM-DD
+-**Framework:** Next.js 15.1.4 (App Router)
+-**Entry Point:** website/src/app/layout.tsx
++**Framework:** Django 5.1.x
++**Python:** 3.11+
+ 
+-## Structure
++## App Overview
+ 
+-website/src/
+-├── app/                # Next.js App Router
+-│   ├── api/           # API routes
+-│   ├── markets/       # Markets pages
+-│   ├── bot/           # Bot interaction
+-│   └── creator-dashboard/
+-├── components/        # React components
+-├── hooks/             # Custom hooks
+-└── lib/               # Utilities
++| App | Purpose | Key Models |
++|-----|---------|------------|
++| `game` | Game logic, scoring, lifelines, leaderboard | Question, Level, Category, Lifeline |
++| `auth` | User login, registration, validation | (uses Django's built-in User) |
++| ... | ... | ... |
+ 
+-## Key Components
++## Request Lifecycle
+ 
+-| Component | Purpose | Location |
+-|-----------|---------|----------|
+-| HeaderWallet | Wallet connection | components/HeaderWallet.tsx |
+-| MarketsClient | Markets listing | app/markets/MarketsClient.js |
+-| SemanticSearchBar | Search UI | components/SemanticSearchBar.js |
++Browser → nginx (prod) → Django WSGI → Middleware stack → URL router
++  → View (game/auth/adminpanel) → Template → Response
+ 
+-## Data Flow
++## Middleware Stack
+ 
+-User → Markets Page → API Route → Supabase → Redis (optional) → Response
++SecurityMiddleware → SessionMiddleware → CommonMiddleware → CsrfViewMiddleware
++  → AuthenticationMiddleware → MessageMiddleware → XFrameOptionsMiddleware
++  → BrowserReloadMiddleware (dev only)
+ 
+ ## External Dependencies
+ 
+-- Next.js 15.1.4 - Framework
+-- React 19.0.0 - UI library
+-- Privy - Authentication
+-- Tailwind CSS 3.4.1 - Styling
+-```
+-
+-### Backend Codemap (docs/CODEMAPS/backend.md)
+-```markdown
+-# Backend Architecture
+-
+-**Last Updated:** YYYY-MM-DD
+-**Runtime:** Next.js API Routes
+-**Entry Point:** website/src/app/api/
+-
+-## API Routes
+-
+-| Route | Method | Purpose |
+-|-------|--------|---------|
+-| /api/markets | GET | List all markets |
+-| /api/markets/search | GET | Semantic search |
+-| /api/market/[slug] | GET | Single market |
+-| /api/market-price | GET | Real-time pricing |
+-
+-## Data Flow
+-
+-API Route → Supabase Query → Redis (cache) → Response
++- Django 5.1.x — web framework
++- Django REST Framework — admin API layer
++- ...
+ 
+-## External Services
++## Documentation
+ 
+-- Supabase - PostgreSQL database
+-- Redis Stack - Vector search
+-- OpenAI - Embeddings
++- [CONTRIB.md](../CONTRIB.md) — developer setup and workflow
++- [RUNBOOK.md](../RUNBOOK.md) — deployment and operations
++- ...
+ ```
+ 
+-### Integrations Codemap (docs/CODEMAPS/integrations.md)
++### docs/CODEMAPS/game.md
+ ```markdown
+-# External Integrations
++# Game App Codemap
+ 
+ **Last Updated:** YYYY-MM-DD
++**App:** `game/`
++**Entry Point:** `game/urls.py`
+ 
+-## Authentication (Privy)
+-- Wallet connection (Solana, Ethereum)
+-- Email authentication
+-- Session management
+-
+-## Database (Supabase)
+-- PostgreSQL tables
+-- Real-time subscriptions
+-- Row Level Security
+-
+-## Search (Redis + OpenAI)
+-- Vector embeddings (text-embedding-ada-002)
+-- Semantic search (KNN)
+-- Fallback to substring search
+-
+-## Blockchain (Solana)
+-- Wallet integration
+-- Transaction handling
+-- Meteora CP-AMM SDK
+-```
++## Architecture
+ 
+-## README Update Template
++Browser → game/urls.py → views.py → models.py → templates/game/
+ 
+-When updating README.md:
++## Models
+ 
+-```markdown
+-# Project Name
++| Model | Key Fields | Relationships |
++|-------|-----------|---------------|
++| Question | text, difficulty, category | ForeignKey(Category), M2M(Option) |
++| Level | number, timeout_seconds | — |
++| ... | ... | ... |
+ 
+-Brief description
++## Views
+ 
+-## Setup
++| View | Type | URL Name | Purpose |
++|------|------|----------|---------|
++| MainPage | TemplateView | mainpage | Game home / leaderboard |
++| GameView | View | game | Active game session |
++| ...  | ...  | ...      | ...     |
+ 
+-\`\`\`bash
+-# Installation
+-npm install
++## Management Commands
+ 
+-# Environment variables
+-cp .env.example .env.local
+-# Fill in: OPENAI_API_KEY, REDIS_URL, etc.
++| Command | Purpose |
++|---------|---------|
++| `fetchqns` | Fetch questions from OpenTriviaDB, write to JSON |
++| `extractoptions` | Parse answer options from fetched JSON |
++| ... | ... |
+ 
+-# Development
+-npm run dev
++## Data Flow
+ 
+-# Build
+-npm run build
+-\`\`\`
++Seed: `fetchqns` → JSON file → `extractoptions` → `addquestions` → DB
+ 
+-## Architecture
++Gameplay: Request → GameView → fetch Question for current Level
++  → validate answer → advance Level or end game → update score
++```
+ 
+-See [docs/CODEMAPS/INDEX.md](docs/CODEMAPS/INDEX.md) for detailed architecture.
++## UI/UX Design System Documentation (`docs/DESIGN/`)
+ 
+-### Key Directories
++Generate or update these files whenever templates, static assets, or visual patterns change. **Always read the source files before writing** — do not invent class names, colours, or file paths.
+ 
+-- `src/app` - Next.js App Router pages and API routes
+-- `src/components` - Reusable React components
+-- `src/lib` - Utility libraries and clients
++### Sources to read
+ 
+-## Features
++| File | What to extract |
++|------|----------------|
++| `templates/base.html` | Base layout classes, global JS/CSS includes, Django message colour map |
++| `tailwind_theme/static_src/src/styles.css` | Custom Tailwind directives and overrides |
++| `static/css/*.css` | Per-feature stylesheets and their purpose |
++| `static/js/*.js` | Client-side behaviour scripts |
++| `templates/navbar.html`, `templates/footer.html` | Shared layout partials |
++| `templates/icons/`, `templates/lifelineSVG/`, `templates/optionSVG/` | SVG component partials |
++| `templates/authentication/icons/` | Auth form icon partials |
++| `templates/*.html` (non-admin) | Client-facing page inventory and key UI elements |
++| `templates/authentication/*.html` | Auth page inventory |
+ 
+-- [Feature 1] - Description
+-- [Feature 2] - Description
++### `docs/DESIGN/design-system.md`
+ 
+-## Documentation
++Documents the visual language of the app. Sections:
+ 
+-- [Setup Guide](docs/GUIDES/setup.md)
+-- [API Reference](docs/GUIDES/api.md)
+-- [Architecture](docs/CODEMAPS/INDEX.md)
++```markdown
++# Design System
++**Last Updated:** YYYY-MM-DD
++**Styling:** Tailwind CSS (django-tailwind) + `static/css/`
++**Forms:** django-crispy-forms + crispy-bootstrap5
++
++## Colour Palette
++| Role | Tailwind Class | Context |
++|------|---------------|---------|
++| Page background | `bg-black` | Global (`base.html` body) |
++| Success | `bg-green-700` | Correct answer, success messages |
++| ... | ... | ... |
++
++## Typography
++[Font families, sizes, weight classes — extracted from base.html and styles.css]
++
++## Layout Conventions
++| Pattern | Tailwind Classes | Usage |
++|---------|-----------------|-------|
++| Page shell | `min-h-screen flex flex-col` | `base.html` body |
++| Background layer | `fixed inset-0 z-0` | `#smooth-grid` decorative bg |
++| ... | ... | ... |
++
++## Form Conventions
++- Rendered with `crispy_forms` using the `bootstrap5` pack
++- Field wrappers: Bootstrap 5 `form-control` classes
++- Custom field icons injected via `templates/authentication/icons/` partials
++- Submit button styled via crispy `FormHelper`
++
++## Message Banner Pattern
++Colour map defined in `base.html` per Django message level:
++`debug` → `gray-700` | `info` → `blue-700` | `success` → `green-700`
++`warning` → `yellow-700` | `error` → `red-700`
++```
+ 
+-## Contributing
++### `docs/DESIGN/pages.md`
+ 
+-See [CONTRIBUTING.md](CONTRIBUTING.md)
+-```
++Documents every client-facing page. Sections:
+ 
+-## Scripts to Power Documentation
++```markdown
++# Client-Facing Pages
++**Last Updated:** YYYY-MM-DD
+ 
+-### scripts/codemaps/generate.ts
+-```typescript
+-/**
+- * Generate codemaps from repository structure
+- * Usage: tsx scripts/codemaps/generate.ts
+- */
++## Template Hierarchy
++templates/base.html                         ← global layout (dark theme)
++├── templates/navbar.html                   ← included navigation
++├── templates/footer.html                   ← included footer
++├── templates/*.html                        ← client pages (extend base.html)
++└── templates/adminpanel/base.html          ← separate admin layout
++    └── templates/adminpanel/*.html         ← admin-only pages (not client-facing)
++
++## Page Inventory
++| Page | Template | URL Name | Auth Required | Purpose | Key UI Elements |
++|------|----------|----------|---------------|---------|-----------------|
++| Home | `mainPage.html` | `mainpage` | No | Game entry, top scores | Leaderboard, start CTA |
++| Question | `question.html` | — | Yes | Active game question | Question text, 4 options, timer, lifelines |
++| ... | ... | ... | ... | ... | ... |
++
++## URL → View → Template Map
++[Generated by reading each app's urls.py and views.py]
++```
+ 
+-import { Project } from 'ts-morph'
+-import * as fs from 'fs'
+-import * as path from 'path'
++### `docs/DESIGN/components.md`
+ 
+-async function generateCodemaps() {
+-  const project = new Project({
+-    tsConfigFilePath: 'tsconfig.json',
+-  })
++Documents all reusable UI pieces and static assets. Sections:
+ 
+-  // 1. Discover all source files
+-  const sourceFiles = project.getSourceFiles('src/**/*.{ts,tsx}')
++```markdown
++# UI Components & Assets
++**Last Updated:** YYYY-MM-DD
+ 
+-  // 2. Build import/export graph
+-  const graph = buildDependencyGraph(sourceFiles)
++## Shared Partials
++| Partial | Path | Used in |
++|---------|------|---------|
++| Navbar | `templates/navbar.html` | All client pages via base.html |
++| Footer | `templates/footer.html` | All client pages via base.html |
++| ... | ... | ... |
++
++## CSS Files
++| File | Purpose |
++|------|---------|
++| `static/css/base.css` | Global baseline styles |
++| `static/css/auth.css` | Login/registration styles |
++| ... | ... |
++
++## JavaScript Behaviours
++| File | Behaviour | Trigger |
++|------|-----------|---------|
++| `static/js/timer.js` | Question countdown | Page load on question view |
++| `static/js/confetti.js` | Win confetti burst | Correct game-end state |
++| ... | ... | ... |
++
++## Image Assets
++| File | Usage |
++|------|-------|
++| `static/img/nightsky.jpg` | Background imagery |
++| `static/img/wwbmicon.ico` | Browser favicon |
++| ... | ... |
++
++## Audio
++| File | Usage |
++|------|-------|
++| `static/audio/introduction.mp3` | Game intro audio |
++```
+ 
+-  // 3. Detect entrypoints (pages, API routes)
+-  const entrypoints = findEntrypoints(sourceFiles)
++---
+ 
+-  // 4. Generate codemaps
+-  await generateFrontendMap(graph, entrypoints)
+-  await generateBackendMap(graph, entrypoints)
+-  await generateIntegrationsMap(graph)
++## Documentation Update Workflow
+ 
+-  // 5. Generate index
+-  await generateIndex()
+-}
++### 1. Extract from Code
+ 
+-function buildDependencyGraph(files: SourceFile[]) {
+-  // Map imports/exports between files
+-  // Return graph structure
+-}
++For each Django app, read these files in order:
++```
++<app>/models.py       → model names, fields, Meta.verbose_name
++<app>/views.py        → view class/function names and their URL names
++<app>/urls.py         → urlpatterns list
++<app>/admin.py        → registered ModelAdmin classes
++<app>/management/commands/*.py → custom management command names
++```
+ 
+-function findEntrypoints(files: SourceFile[]) {
+-  // Identify pages, API routes, entry files
+-  // Return list of entrypoints
+-}
++For project-level docs, read:
++```
++Makefile              → all make targets (primary source for command docs)
++pyproject.toml        → dependencies, dev dependencies, tool config
++kbc/settings.py       → installed apps, middleware, auth settings
++.env.example          → environment variable reference
+ ```
+ 
+-### scripts/docs/update.ts
+-```typescript
+-/**
+- * Update documentation from code
+- * Usage: tsx scripts/docs/update.ts
+- */
++### 2. Files to Update
+ 
+-import * as fs from 'fs'
+-import { execSync } from 'child_process'
++| File | Triggered by |
++|------|-------------|
++| `README.md` | Project structure changes, new apps |
++| `docs/CONTRIB.md` | New make targets, changed setup steps, new deps |
++| `docs/RUNBOOK.md` | New env vars, deployment steps, new management commands |
++| `docs/CODEMAPS/INDEX.md` | New apps, middleware changes |
++| `docs/CODEMAPS/<app>.md` | Model/view/URL changes in that app |
++| `docs/DESIGN/design-system.md` | Tailwind config changes, new colour roles, form convention changes |
++| `docs/DESIGN/pages.md` | New or removed templates, URL/view changes affecting client pages |
++| `docs/DESIGN/components.md` | New partials, CSS files, JS files, or static assets added/removed |
+ 
+-async function updateDocs() {
+-  // 1. Read codemaps
+-  const codemaps = readCodemaps()
++### 3. Documentation Validation
+ 
+-  // 2. Extract JSDoc/TSDoc
+-  const apiDocs = extractJSDoc('src/**/*.ts')
++```bash
++# Verify all file paths referenced in docs actually exist
++# Check all make targets listed in CONTRIB.md exist in Makefile
++grep -E "^[a-zA-Z_-]+:" Makefile | awk -F: '{print $1}'
+ 
+-  // 3. Update README.md
+-  await updateReadme(codemaps, apiDocs)
++# Confirm env vars in .env.example match settings.py usage
++grep "values\." kbc/settings.py
++```
+ 
+-  // 4. Update guides
+-  await updateGuides(codemaps)
++## README Update Template
+ 
+-  // 5. Generate API reference
+-  await generateAPIReference(apiDocs)
+-}
++```markdown
++# Trivivo
+ 
+-function extractJSDoc(pattern: string) {
+-  // Use jsdoc-to-markdown or similar
+-  // Extract documentation from source
+-}
+-```
++A Django trivia game — answer 15 questions of varying difficulty to score
++the highest on the leaderboard.
+ 
+-## Pull Request Template
++## Quick Start
+ 
+-When opening PR with documentation updates:
++\`\`\`bash
++cp .env.example .env       # add SECRET_KEY
++make setup                 # venv + deps + tailwind + migrate
++make bootstrap             # seed categories, levels, lifelines
++make seed                  # fetch questions from OpenTriviaDB
++make run                   # http://127.0.0.1:8000
++\`\`\`
+ 
+-```markdown
+-## Docs: Update Codemaps and Documentation
+-
+-### Summary
+-Regenerated codemaps and updated documentation to reflect current codebase state.
+-
+-### Changes
+-- Updated docs/CODEMAPS/* from current code structure
+-- Refreshed README.md with latest setup instructions
+-- Updated docs/GUIDES/* with current API endpoints
+-- Added X new modules to codemaps
+-- Removed Y obsolete documentation sections
+-
+-### Generated Files
+-- docs/CODEMAPS/INDEX.md
+-- docs/CODEMAPS/frontend.md
+-- docs/CODEMAPS/backend.md
+-- docs/CODEMAPS/integrations.md
+-
+-### Verification
+-- [x] All links in docs work
+-- [x] Code examples are current
+-- [x] Architecture diagrams match reality
+-- [x] No obsolete references
+-
+-### Impact
+-🟢 LOW - Documentation only, no code changes
+-
+-See docs/CODEMAPS/INDEX.md for complete architecture overview.
++See [docs/CONTRIB.md](docs/CONTRIB.md) for full development guide.
++See [docs/RUNBOOK.md](docs/RUNBOOK.md) for deployment and operations.
+ ```
+ 
+ ## Maintenance Schedule
+ 
+-**Weekly:**
+-- Check for new files in src/ not in codemaps
+-- Verify README.md instructions work
+-- Update package.json descriptions
++**After model changes:**
++- Update `docs/CODEMAPS/database.md`
++- Update the affected app's codemap
++
++**After adding make targets:**
++- Update command table in `docs/CONTRIB.md`
++- Update `docs/RUNBOOK.md` if it's a deployment/db command
+ 
+-**After Major Features:**
+-- Regenerate all codemaps
+-- Update architecture documentation
+-- Refresh API reference
+-- Update setup guides
++**After adding env vars:**
++- Update `.env.example` with the new variable and a comment
++- Update env var table in `docs/RUNBOOK.md`
+ 
+-**Before Releases:**
+-- Comprehensive documentation audit
+-- Verify all examples work
+-- Check all external links
+-- Update version references
++**Before releases:**
++- Audit all codemaps against current code
++- Verify all make commands in CONTRIB.md still exist
++- Check all file paths mentioned in docs exist
+ 
+ ## Quality Checklist
+ 
+ Before committing documentation:
+-- [ ] Codemaps generated from actual code
+-- [ ] All file paths verified to exist
+-- [ ] Code examples compile/run
+-- [ ] Links tested (internal and external)
+-- [ ] Freshness timestamps updated
+-- [ ] ASCII diagrams are clear
+-- [ ] No obsolete references
+-- [ ] Spelling/grammar checked
++- [ ] Codemaps match actual models/views/URLs in code
++- [ ] All `make` commands in docs exist in `Makefile`
++- [ ] All env vars in docs exist in `.env.example`
++- [ ] All file paths referenced in docs exist on disk
++- [ ] Freshness timestamps updated (`YYYY-MM-DD`)
++- [ ] ASCII diagrams reflect current architecture
++- [ ] No references to removed models, views, or commands
++- [ ] `docs/DESIGN/pages.md` page inventory matches templates on disk
++- [ ] `docs/DESIGN/components.md` asset tables match files in `static/`
++- [ ] `docs/DESIGN/design-system.md` colour/layout classes match `base.html`
+ 
+ ## Best Practices
+ 
+-1. **Single Source of Truth** - Generate from code, don't manually write
+-2. **Freshness Timestamps** - Always include last updated date
+-3. **Token Efficiency** - Keep codemaps under 500 lines each
+-4. **Clear Structure** - Use consistent markdown formatting
+-5. **Actionable** - Include setup commands that actually work
+-6. **Linked** - Cross-reference related documentation
+-7. **Examples** - Show real working code snippets
+-8. **Version Control** - Track documentation changes in git
++1. **Single Source of Truth** — generate from code; never manually invent structure
++2. **Freshness Timestamps** — always include last updated date in codemaps
++3. **Token Efficiency** — keep each codemap under 300 lines
++4. **Makefile First** — all runnable commands documented via Makefile targets
++5. **Linked** — cross-reference related codemaps and docs
++6. **No Invented Details** — if unsure about a field/view, read the source file
+ 
+ ## When to Update Documentation
+ 
+-**ALWAYS update documentation when:**
+-- New major feature added
+-- API routes changed
+-- Dependencies added/removed
+-- Architecture significantly changed
+-- Setup process modified
++**ALWAYS update when:**
++- Django model added, changed, or removed
++- New URL pattern or view added
++- New management command added
++- New make target added
++- New dependency added to `pyproject.toml`
++- New environment variable required
++
++**ALWAYS update `docs/DESIGN/` when:**
++- New template added or removed
++- New CSS, JS, or image/audio asset added or removed
++- Tailwind config or custom styles changed
++- New shared partial (icon, SVG component) added
++- Client-facing URL or view added/renamed
+ 
+ **OPTIONALLY update when:**
+-- Minor bug fixes
+-- Cosmetic changes
+-- Refactoring without API changes
++- Minor bug fixes with no API/model/template changes
++- Test additions
++- Admin-only template changes (not client-facing)
+ 
+ ---
+ 
+-**Remember**: Documentation that doesn't match reality is worse than no documentation. Always generate from source of truth (the actual code).
++**Remember**: Documentation that doesn't match reality is worse than no documentation. Always read the source files before writing docs.
+diff --git a/.claude/commands/docs-sync.md b/.claude/commands/docs-sync.md
+new file mode 100644
+index 0000000..43ee5b7
+--- /dev/null
++++ b/.claude/commands/docs-sync.md
+@@ -0,0 +1,37 @@
++---
++description: Check if documentation is in sync with code
++allowed-tools: Read, Glob, Grep, Bash(git:*)
++---
++
++# Documentation Sync
++
++Check if documentation matches the current code state.
++
++## Instructions
++
++1. **Find recent code changes**:
++   ```bash
++   git log --since="30 days ago" --name-only --pretty=format: -- "*.py" "*.html" "Makefile" "pyproject.toml" ".env.example" | sort -u
++   ```
++
++2. **Find related documentation**:
++   - Search `docs/CODEMAPS/` for codemaps covering changed apps
++   - Check `docs/DESIGN/` if templates or static assets changed
++   - Check `docs/CONTRIB.md` if `Makefile` or `pyproject.toml` changed
++   - Check `docs/RUNBOOK.md` if `kbc/settings.py` or `.env.example` changed
++
++3. **Verify documentation accuracy** using the source-of-truth files:
++   - `Makefile` → `docs/CONTRIB.md` make-commands table
++   - `pyproject.toml` → `docs/CONTRIB.md` dependencies section
++   - `.env.example` → `docs/RUNBOOK.md` env-vars table
++   - `<app>/models.py` → `docs/CODEMAPS/<app>.md` models table and `docs/CODEMAPS/database.md`
++   - `<app>/views.py` + `<app>/urls.py` → `docs/CODEMAPS/<app>.md` views and URL tables
++   - `templates/` + `static/` → `docs/DESIGN/pages.md` and `docs/DESIGN/components.md`
++   - `templates/base.html` → `docs/DESIGN/design-system.md` colour map and layout classes
++
++4. **Report only actual problems**:
++   - Documentation is a living document
++   - Only flag things that are WRONG, not missing
++   - Don't suggest documentation for documentation's sake
++
++5. **Output a checklist** of documentation that needs updating
+diff --git a/.claude/commands/update-docs.md b/.claude/commands/update-docs.md
+deleted file mode 100644
+index 3dd0f89..0000000
+--- a/.claude/commands/update-docs.md
++++ /dev/null
+@@ -1,31 +0,0 @@
+-# Update Documentation
+-
+-Sync documentation from source-of-truth:
+-
+-1. Read package.json scripts section
+-   - Generate scripts reference table
+-   - Include descriptions from comments
+-
+-2. Read .env.example
+-   - Extract all environment variables
+-   - Document purpose and format
+-
+-3. Generate docs/CONTRIB.md with:
+-   - Development workflow
+-   - Available scripts
+-   - Environment setup
+-   - Testing procedures
+-
+-4. Generate docs/RUNBOOK.md with:
+-   - Deployment procedures
+-   - Monitoring and alerts
+-   - Common issues and fixes
+-   - Rollback procedures
+-
+-5. Identify obsolete documentation:
+-   - Find docs not modified in 90+ days
+-   - List for manual review
+-
+-6. Show diff summary
+-
+-Single source of truth: package.json and .env.example
+- Current branch: RE-updated-fe
+- Recent commits: 2e4d8f1 chore: add Claude Code agent configs and skill commands
+fa322b0 chore: remove issue markdown files now tracked in Linear
+b1f9ddc chore: add issue docs for ARCH, BUG, PERF, SEC, and TEST tickets
+3c62126 chore: add Claude agents, skills, and issues directory
+2ab003c chore: add commit-commands plugin and excalidraw skill
+ed6f45f docs: reorganize issue labels in README
+87f43a2 docs: add issue labels reference to README Entire-Checkpoint: 1ea9f6f3b65e
+589cb72 chore: add enabled plugins and reorganize Claude Code settings Entire-Checkpoint: b346092a3311
+6ff5db9 chore: add uv.lock dependency lockfile Entire-Checkpoint: b346092a3311
+95a8531 fix: resolve IntegrityError on game start by querying lifeline IDs dynamically
+
+## Your task
+
+Based on the above changes, create a single git commit.
+
+You have the capability to call multiple tools in a single response. Stage and create the commit using a single message. Do not use any other tools or do anything else. Do not send any other text or messages besides these tool calls.
+
+
+ARGUMENTS: .claude/
