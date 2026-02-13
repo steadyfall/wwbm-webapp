@@ -64,7 +64,7 @@ $('#submitButton').on('click', function (e) {
     var isValid = inputValid(uname, usernameRegex(uname.value)) && inputValid(pwd, passwordRegex(pwd.value));
     if (!isValid) {
         e.preventDefault(); //prevent the default action
-        var warning = '<li class="alert alert-danger">Enter proper credentials.</li>';
+        var warning = '<li class="bg-red-700 text-white rounded px-3 py-2 mb-1">Enter proper credentials.</li>';
         if (ul.innerHTML.indexOf(warning) === -1) {
             ul.innerHTML += warning;
         }
