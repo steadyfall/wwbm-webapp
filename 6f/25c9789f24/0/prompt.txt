@@ -1,0 +1,70 @@
+# Update Documentation
+
+Sync documentation from source-of-truth:
+
+1. Read package.json scripts section
+   - Generate scripts reference table
+   - Include descriptions from comments
+
+2. Read .env.example
+   - Extract all environment variables
+   - Document purpose and format
+
+3. Generate docs/CONTRIB.md with:
+   - Development workflow
+   - Available scripts
+   - Environment setup
+   - Testing procedures
+
+4. Generate docs/RUNBOOK.md with:
+   - Deployment procedures
+   - Monitoring and alerts
+   - Common issues and fixes
+   - Rollback procedures
+
+5. Identify obsolete documentation:
+   - Find docs not modified in 90+ days
+   - List for manual review
+
+6. Show diff summary
+
+Single source of truth: package.json and .env.example
+
+
+ARGUMENTS: Generate documentation for this project.
+
+---
+
+Modify @.claude/agents/doc-updater.md for this project, ie. Django project.
+
+---
+
+Modify @.claude/agents/doc-updater.md to make it more token efficient while not losing any detail and also include creating documentation of design system / UI / UX of the client-facing applications/views under clear sections.
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+Modify @.claude/agents/doc-updater.md  to create/update documentation of design system / UI / UX of the client-facing applications/views under clear sections in a seperate file(s).
+
+---
+
+Remove unnecessary examples in @.claude/agents/doc-updater.md to make it more abstract. (once docs are generated, we will already have an example.)
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+Keep examples limited to one or two entries in tables. Keep the skeleton example there as reference.
+
+---
+
+Can it be cut down more, ie. made more concise without losing any detail (and save tokens) in the process?
+
+---
+
+[Request interrupted by user for tool use]
