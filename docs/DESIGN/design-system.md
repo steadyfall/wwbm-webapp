@@ -2,7 +2,6 @@
 
 **Last Updated:** 2026-02-12
 **Styling:** Tailwind CSS (django-tailwind) + `static/css/`
-**Forms:** django-crispy-forms + crispy-bootstrap5
 
 ## Colour Palette
 
@@ -74,10 +73,10 @@ Banner wrapper: `mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-betw
 
 ## Form Conventions
 
-- Rendered with `crispy_forms` using the `bootstrap5` pack
+- Hand-written Tailwind HTML (no crispy forms); input groups use a flex wrapper with an icon span and a styled `<input>`
 - Input background: `#222121`, white text, placeholder colour `#c9b0f5` italic
 - Validation icons injected via `templates/authentication/icons/` partials (right.png / wrong.png)
-- Submit buttons styled via crispy `FormHelper`
+- Submit buttons styled via `.signinButton` / `.registerButton` classes in `static/css/auth.css`
 
 ### Button Styles
 

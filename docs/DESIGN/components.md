@@ -73,7 +73,7 @@
 | Library | Purpose | Used In |
 |---------|---------|---------|
 | Tailwind CSS (django-tailwind) | Primary CSS framework | All `base.html` pages |
-| Bootstrap 5.3.0 | Auth + admin pages | `authentication/`, `adminpanel/` |
+| Bootstrap 5.3.0 | Admin panel theme base | `adminpanel/` |
 | Tabler 1.0.0-beta17 | Admin panel theme | `adminpanel/base.html` |
 | Tom Select | Searchable select dropdowns | Admin forms |
 | Flatpickr | Date picker | Admin forms |
