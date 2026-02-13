@@ -7,3 +7,4 @@ misc
 .vscode
 .env
 .env.mcp
+*.egg-info
