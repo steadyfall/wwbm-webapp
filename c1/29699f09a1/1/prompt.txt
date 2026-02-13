@@ -1,0 +1,88 @@
+Implement the following plan:
+
+# Plan: Create 2 Linear issues as sub-issues of TRI-24
+
+## Context
+Three logo-related tasks need to be tracked in Linear under the Trivivo team:
+1. Resizing the logo and making it transparent on the main page
+2. Investigating a transparent logo for the favicon
+3. Looking into a new logo
+
+Both should be created with the "default" issue template and linked as sub-issues of TRI-24
+("Unify auth, game, and admin CSS surfaces to Tailwind design system").
+
+## Key IDs
+- **Trivivo team ID:** `f18dc596-a380-41d0-853c-d9df2b50fb38`
+- **TRI-24 issue ID:** `fdc89a95-2012-44c1-9ab4-b32a898294a1`
+
+## Steps
+
+### 1. Find the "default" template ID
+Use `mcp__linear-server__list_documents` or query available issue templates for the Trivivo team.
+If the `create_issue` tool accepts a `templateId` parameter, pass it; otherwise create with
+labels that match TRI-24's pattern (`area: frontend`, `quality: design`).
+
+### 2. Create Issue A — Logo resize + transparency on main page
+- **Title:** `Resize and make logo transparent on main page`
+- **Team:** Trivivo (`f18dc596-a380-41d0-853c-d9df2b50fb38`)
+- **Template:** default (if templateId is discoverable)
+- **Labels:** area: frontend, quality: design
+- **Parent:** TRI-24 (`fdc89a95-2012-44c1-9ab4-b32a898294a1`)
+
+### 3. Create Issue B — Transparent favicon logo investigation
+- **Title:** `Investigate transparent logo for favicon`
+- **Team:** Trivivo (`f18dc596-a380-41d0-853c-d9df2b50fb38`)
+- **Template:** default (if templateId is discoverable)
+- **Labels:** area: frontend, quality: design
+- **Parent:** TRI-24 (`fdc89a95-2012-44c1-9ab4-b32a898294a1`)
+
+### 4. Create Issue C — Look into a new logo
+- **Title:** `Look into a new logo`
+- **Team:** Trivivo (`f18dc596-a380-41d0-853c-d9df2b50fb38`)
+- **Template:** default (if templateId is discoverable)
+- **Labels:** area: frontend, quality: design
+- **Parent:** TRI-24 (`fdc89a95-2012-44c1-9ab4-b32a898294a1`)
+
+### 5. Link as sub-issues
+Use `mcp__linear-server__sub_issue_write` (or set `parentId` in `create_issue`) to attach
+all three new issues under TRI-24.
+
+## Verification
+- Confirm both new issues appear in Linear under the Trivivo team
+- Confirm each issue lists TRI-24 as its parent
+- Note the new issue identifiers (e.g., TRI-XX) and report them to the user
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/himankdave/.REDACTED.jsonl
+
+---
+
+Add description to all the 3 tickets. Use the "Default" template in trivivo team.
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+Use the Linear MCP itself.
+
+---
+
+Create commit for current changes (incremental/standalone commmits) and link Linear issue in commit message.
+
+---
+
+Check if acceptance criteria and tests are fulfilled for TRI-51.
+
+---
+
+The app is running at port 8000. Use Playwright MCP to test, since this will be manual testing for now.
+
+---
+
+Validation error message unstyled on login (signin.js:68) - fix this and valid credentials include: admin, a1d2m3i4n5
+
+---
+
+[Request interrupted by user for tool use]
