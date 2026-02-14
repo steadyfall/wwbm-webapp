@@ -116,7 +116,7 @@ $('#submitButton').on('click', function (e) {
         inputValid(pwd, passwordRegex(pwd.value.toLowerCase())) && inputValid(pwd2, password2Regex(pwd2.value));
     if (!isValid) {
         e.preventDefault(); //prevent the default action
-        var warning = '<li class="alert alert-danger">Modify before submitting.</li>';
+        var warning = '<li class="bg-red-700 text-white rounded px-3 py-2 mb-1">Modify before submitting.</li>';
         if (ul.innerHTML.indexOf(warning) === -1) {
             ul.innerHTML += warning;
         }
