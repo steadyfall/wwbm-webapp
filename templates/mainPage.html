@@ -6,17 +6,21 @@
 {% block content %}
 <form method="post">
     {% csrf_token %}
-    <div class="content">
-        <div class="content blurr" id="wrapper">
-            <div class="elementToFadeInAndOut unblurr">
-                <span style="font-family: 'Open Sans', sans-serif; font-size: 40px;">
-                    <p class="text-center">Want to PLAY</p>
-                    <p><b>Who Wants to become a Millionaire?</b></p>
-                </span>
-                <button type="submit" name="startPlay" value="yes" class="button-64" role="button"
-                    style="margin-left: 36%;"><span class="text">PLAY</span></button>
-            </div>
-        </div>
+    <div class="text-3xl sm:text-4xl text-center p-1 md:p-4 rounded-lg blur-bg inline-block">
+        Click
+        <button
+            type="submit"
+            name="startPlay"
+            value="yes"
+            role="button"
+            class="text-emerald-500 hover:text-emerald-600 bg-transparent font-bold rounded-lg"
+        >
+            here
+        </button>
+        to play
+        <span class="font-bold logo-gradient inline-block text-transparent bg-clip-text">
+            Trivivo
+        </span>.
     </div>
 </form>
 {% endblock %}

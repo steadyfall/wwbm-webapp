@@ -1,4 +1,4 @@
-{% load static %}
+{% load static tailwind_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,79 +6,94 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            var docHeight = $(window).height();
-            var footerHeight = $('footer').height();
-            var footerTop = $('footer').position().top + footerHeight;
-            if (footerTop < docHeight) {
-                $('footer').css('margin-top', (docHeight - footerTop) + 'px');
-            }
-        });
-        $(window).bind('resize', resizeHandler);
-        function resizeHandler() {
-            var newWidth = $(document).width();
-            $('footer').css('width', newWidth);
-        }
-    </script>
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" />
-
-    <!-- Font from Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
-
-
-    <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}" />
-    <link rel="icon" type="image/x-icon" href="{% static 'img/wwbmicon.ico' %}">
-
     {% if title %}
     <title>{{ title }}</title>
     {% else %}
-    <title>Who Wants to be a Millionaire?</title>
+    <title>Trivivo</title>
     {% endif %}
+
+    {% tailwind_css %}
+    <link rel="icon" type="image/x-icon" href="{% static 'img/wwbmicon.ico' %}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
 </head>
 
-<body>
+<body class="bg-black text-white min-h-screen flex flex-col">
+    <div id="smooth-grid" class="fixed inset-0 z-0"></div>
     {% block header %}{% endblock %}
 
-    <main role="main" class="container">
+    <div class="flex flex-col w-full relative z-10">
         {% if messages %}
-        <div class="row">
-            <div class="col-md-12">
-                {% for message in messages %}
-                <div {% if message.tags %} {% if message.tags == 'error' %} class="alert alert-danger center"
-                {% else %} class="alert alert-{{ message.tags }} center" {% endif %}
-                {% endif %} role="alert">
-                    {{ message|safe }}
-                </div>
-                {% endfor %}
-            </div>
+        {% for message in messages %}
+        <div
+            {% if message.tags %}
+                {% if message.tags == 'debug' %}
+                    class="bg-gray-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
+                {% elif message.tags == 'info' %}
+                    class="bg-blue-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
+                {% elif message.tags == 'success' %}
+                    class="bg-green-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
+                {% elif message.tags == 'warning' %}
+                    class="bg-yellow-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
+                {% elif message.tags == 'error' %}
+                    class="bg-red-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
+                {% else %}
+                    class="bg-neutral-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
+                {% endif %}
+            {% endif %}
+            role="alert"
+        >
+            <span class="text-center flex-grow"> {{ message|safe }} </span>
+            <strong class="text-xl cursor-pointer close-alert ml-4">&times;</strong>
         </div>
-        {% endif%}
-        {% block content %}{% endblock %}
-        <br style="clear: both" />
+        {% endfor %}
+        {% endif %}
 
+        {% if expertAnswerText or audiencePollText or fifty50Text %}
+        <div class="bg-green-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center" role="alert">
+            <span class="text-center flex-grow">
+                {% if expertAnswerText %}
+                {{ expertAnswerText|safe }}
+                {% elif audiencePollText %}
+                Audience Poll tells us the following:
+                <ul class="text-center p-0 list-none">
+                    {{ audiencePollText|safe }}
+                </ul>
+                {% elif fifty50Text %}
+                <span class="text-danger">{{ fifty50Text|safe }}</span>
+                {% endif %}
+            </span>
+            <strong class="text-xl cursor-pointer close-alert ml-4">&times;</strong>
+        </div>
+        {% endif %}
+    </div>
+
+    <main class="flex-grow flex flex-col items-center justify-center relative z-10 mt-5">
+        {% block content %}{% endblock %}
     </main>
 
     {% block footer %}{% endblock %}
 
+    <script defer src="{% static 'js/flickeringGrid.js' %}"></script>
+    <script>
+        var close_alert = document.querySelectorAll('.close-alert');
+        close_alert.forEach((x) =>
+        x.addEventListener('click', function () {
+            x.parentElement.classList.add('hidden');
+        })
+        );
+    </script>
+
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"
+    ></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
         integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"
-        integrity="sha384-fbbOQedDUMZZ5KreZpsbe1LCZPVmfTnH7ois6mU1QK+m14rQ1l2bGBq41eYeM/fS"
-        crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script> -->
 </body>
 
 </html>

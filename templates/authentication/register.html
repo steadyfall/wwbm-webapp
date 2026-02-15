@@ -1,4 +1,4 @@
-{% load static %}
+{% load static tailwind_tags %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,36 +8,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            var docHeight = $(window).height();
-            var footerHeight = $('footer').height();
-            var footerTop = $('footer').position().top + footerHeight;
-            if (footerTop < docHeight) {
-                $('footer').css('margin-top', (docHeight - footerTop) + 'px');
-            }
-        });
-        $(window).bind('resize', resizeHandler);
-        function resizeHandler() {
-            var newWidth = $(document).width();
-            $('footer').css('width', newWidth);
-        }
-    </script>
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" />
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- Font from Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Manrope&family=Open+Sans&display=swap" rel="stylesheet">
 
+    {% tailwind_css %}
     <link rel="icon" type="image/x-icon" href="{% static 'img/wwbmicon.ico' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/auth.css' %}" />
     <script defer type="text/javascript" src="{% static 'js/validator.js' %}"></script>
@@ -45,23 +25,29 @@
     <title>Register</title>
 </head>
 
-<body class="d-flex flex-column">
-    <div class="vertical-center">
-        <div class="container-xl py-4" style="width:37%; height: 50%;">
-            <div class="text-center mb-4">
-                <a href="#" class="navbar-brand navbar-brand-autodark"><img src="{% static 'img/wwbmicon.ico' %}"
-                        height="50" alt="Who Wants To Be A Millionaire?" /></a>
+<body class="flex flex-col bg-black">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="w-full max-w-md mx-auto py-4 px-4">
+            <div class="text-center mb-6">
+                <a href="#" class="inline-block"><img src="{% static 'img/wwbmicon.ico' %}"
+                        class="h-[70px] w-auto rounded-full" alt="Who Wants To Be A Millionaire?" /></a>
             </div>
-            <div class="card card-md grey-bg">
-                <div class="card-body m-2">
-                    <h2 class="h2 text-center mb-4 whitesmoke">Create a new account</h2>
-                    <ul class="messages text-center" style="list-style-type: none; padding: 0;" id="allAlerts">
+            <div class="bg-[#222121] rounded-lg border border-neutral-700">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-center mb-6 text-white">Create a new account</h2>
+                    <ul class="list-none p-0 text-center mb-3" id="allAlerts">
                         {% for message in messages %}
                         <li{% if message.tags %}
                         {% if message.tags == 'error' %}
-                        class="alert alert-danger"
+                        class="bg-red-700 text-white rounded px-3 py-2 mb-1"
+                        {% elif message.tags == 'success' %}
+                        class="bg-green-700 text-white rounded px-3 py-2 mb-1"
+                        {% elif message.tags == 'warning' %}
+                        class="bg-yellow-700 text-white rounded px-3 py-2 mb-1"
+                        {% elif message.tags == 'info' %}
+                        class="bg-blue-700 text-white rounded px-3 py-2 mb-1"
                         {% else %}
-                        class="alert alert-{{ message.tags }}"
+                        class="bg-neutral-700 text-white rounded px-3 py-2 mb-1"
                         {% endif %}
                         {% endif %}>
                             {{ message }}
@@ -70,89 +56,71 @@
                     </ul>
                     <form method="post">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label" id="username" required>Username</label>
-                            <div class="row align-items-center">
-                                <div class="col-lg-10">
-                                    <div class="input-group">
-                                        <span class="input-group-text">{% include 'authentication/icons/userCircle.html' %}</span>
-                                        <input type="text" id="usernameInput" name="username" class="form-control"
-                                            autocomplete="off" placeholder="eg. JohnDoe" required/>
-                                    </div>
-                                </div>
-                                <div class="col-auto"></div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-white mb-1" id="username" required>Username</label>
+                            <div class="flex rounded-md overflow-hidden border border-neutral-600">
+                                <span class="flex items-center px-3 bg-neutral-800 text-white border-r border-neutral-600">{% include 'authentication/icons/userCircle.html' %}</span>
+                                <input type="text" id="usernameInput" name="username"
+                                    class="flex-1 !bg-[#222121] text-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-[#c9b0f5] placeholder:italic placeholder:text-sm"
+                                    autocomplete="off" placeholder="eg. JohnDoe" required/>
                             </div>
-                            <i><small class="whitesmoke" style="font-size: smaller;">
-                                    Required. 150 characters or fewer.
-                                    Letters, digits and @/./+/-/_ only.
-                                </small></i>
+                            <p class="text-white text-xs italic mt-1">
+                                Required. 150 characters or fewer.
+                                Letters, digits and @/./+/-/_ only.
+                            </p>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label" id="email" required>Email</label>
-                            <div class="row align-items-center">
-                                <div class="col-lg-10">
-                                    <div class="input-group">
-                                        <span class="input-group-text">{% include 'authentication/icons/at.html' %}</span>
-                                        <input type="text" id="emailInput" name="email" class="form-control" autocomplete="off"
-                                            placeholder="eg. johndoe@johndoe.com" required />
-                                    </div>
-                                </div>
-                                <div class="col-auto"></div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-white mb-1" id="email" required>Email</label>
+                            <div class="flex rounded-md overflow-hidden border border-neutral-600">
+                                <span class="flex items-center px-3 bg-neutral-800 text-white border-r border-neutral-600">{% include 'authentication/icons/at.html' %}</span>
+                                <input type="text" id="emailInput" name="email"
+                                    class="flex-1 !bg-[#222121] text-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-[#c9b0f5] placeholder:italic placeholder:text-sm"
+                                    autocomplete="off" placeholder="eg. johndoe@johndoe.com" required />
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label" id="password" required>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-white mb-1" id="password" required>
                                 Password
                             </label>
-                            <div class="row align-items-center">
-                                <div class="col-lg-10">
-                                    <div class="input-group">
-                                        <span class="input-group-text">{% include 'authentication/icons/password.html' %}</span>
-                                        <input type="password" id="passwordInput" name="password" class="form-control"
-                                            autocomplete="off" placeholder="eg. johndoe" required />
-                                    </div>
-                                </div>
-                                <div class="col-auto"></div>
+                            <div class="flex rounded-md overflow-hidden border border-neutral-600">
+                                <span class="flex items-center px-3 bg-neutral-800 text-white border-r border-neutral-600">{% include 'authentication/icons/password.html' %}</span>
+                                <input type="password" id="passwordInput" name="password"
+                                    class="flex-1 !bg-[#222121] text-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-[#c9b0f5] placeholder:italic placeholder:text-sm"
+                                    autocomplete="off" placeholder="eg. johndoe" required />
                             </div>
-                            <div class="mt-1">
-                                <i><small class="whitesmoke" style="font-size: smaller;">
-                                        <ul>
-                                            <li>Your password can’t be too similar to your other personal information.
-                                            </li>
-                                            <li>Your password must contain at least 8 characters.</li>
-                                            <li>Your password can’t be a commonly used password.</li>
-                                            <li>Your password can’t be entirely numeric.</li>
-                                        </ul>
-                                    </small></i>
-                            </div>
+                            <details class="mt-1">
+                                <summary class="text-white text-xs cursor-pointer select-none">Requirements</summary>
+                                <ul class="list-disc list-inside mt-1 space-y-0.5 text-xs text-white">
+                                    <li>Your password can't be too similar to your other personal information.</li>
+                                    <li>Your password must contain at least 8 characters.</li>
+                                    <li>Your password can't be a commonly used password.</li>
+                                    <li>Your password can't be entirely numeric.</li>
+                                </ul>
+                            </details>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label" id="password2" required>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-white mb-1" id="password2" required>
                                 Confirm Password
                             </label>
-                            <div class="row align-items-center">
-                                <div class="col-lg-10">
-                                    <div class="input-group">
-                                        <span class="input-group-text">{% include 'authentication/icons/squareAsterick.html' %}</span>
-                                        <input type="password" id="password2Input" name="password2" class="form-control"
-                                            autocomplete="off" placeholder="eg. johndoe" required />
-                                    </div>
-                                </div>
-                                <div class="col-auto"></div>
+                            <div class="flex rounded-md overflow-hidden border border-neutral-600">
+                                <span class="flex items-center px-3 bg-neutral-800 text-white border-r border-neutral-600">{% include 'authentication/icons/squareAsterick.html' %}</span>
+                                <input type="password" id="password2Input" name="password2"
+                                    class="flex-1 !bg-[#222121] text-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-[#c9b0f5] placeholder:italic placeholder:text-sm"
+                                    autocomplete="off" placeholder="eg. johndoe" required />
                             </div>
-                            <i><small class="whitesmoke" style="font-size: smaller;">
-                                    Enter the same password as before, for verification.
-                                </small></i>
+                            <p class="text-white text-xs italic mt-1">
+                                Enter the same password as before, for verification.
+                            </p>
                         </div>
-                        <div class="form-footer">
-                            <button class="registerButton ml-25percent w-50" type="submit" id="submitButton">Register</button><br>
+                        <div class="mt-4">
+                            <button class="registerButton" type="submit" id="submitButton">Register</button>
                         </div>
                     </form>
                 </div>
             </div>
-            <div class="text-center whitesmoke mt-3">
+            <div class="text-center text-white mt-3">
                 Already have an account?
-                <a href="{% url 'login' %}" tabindex="-1" style="text-decoration: none; color: rgb(0, 255, 208);">Sign in.</a>
+                <a href="{% url 'login' %}" tabindex="-1" class="no-underline text-[#00ffd0]">Sign in.</a>
             </div>
         </div>
     </div>

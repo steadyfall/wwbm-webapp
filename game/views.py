@@ -18,11 +18,20 @@ def pageChecker(request):
     if request.method == "POST":
         messages.success(request, "Account created!")
         print(request.POST)
-    return render(request, "about.html", {"lifelines": Lifeline.objects.all()})
+    return render(
+        request,
+        "gameover.html",
+        dict(
+            title="title",
+            message="formatted_message|",
+            mainMessage="header",
+            mode="finished",
+        ),
+    )
 
 
 def rules(request):
-    context = {"lifelines": Lifeline.objects.all()}
+    context = {"lifelines": Lifeline.objects.all(), "levels": Level.objects.all()}
     return render(request, "rules.html", context)
 
 
@@ -59,7 +68,7 @@ class MainPage(View):
                     session_id=Session.get_unused_sessionId(),
                     session_user=self.request.user,
                 )
-                new_session.left_lifelines.set([2, 3, 4])
+                new_session.left_lifelines.set(Lifeline.objects.values_list("id", flat=True))
                 return redirect("rules", session=new_session.session_id, permanent=True)
             else:
                 return redirect("login")
@@ -68,7 +77,11 @@ class MainPage(View):
 
 class About(View):
     def get(self, request, *args, **kwargs):
-        context = {"title": "About The Game", "lifelines": Lifeline.objects.all()}
+        context = {
+            "title": "About The Game",
+            "lifelines": Lifeline.objects.all(),
+            "levels": Level.objects.all(),
+        }
         return render(request, "about.html", context)
 
 
@@ -94,6 +107,7 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
                 context = {
                     "title": "Rules (game about to begin)",
                     "lifelines": Lifeline.objects.all(),
+                    "levels": Level.objects.all(),
                 }
                 return render(request, "rules.html", context)
         return redirect("mainpage", permanent=True)
@@ -169,6 +183,10 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             if (lifeline is not None and lifeline == FIFTY50)
             else randomOptionsCreator(qn)
         )
+        """TODO:
+        Change int(timeleft) to int(timeLeft if timeLeft else 0) for better
+        error handling when timer is not functional
+        """
         timer = (
             int(timeLeft)
             if (
@@ -315,8 +333,8 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                         status="correct",
                         permanent=True,
                     )
-                msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
-                $<u style="color: blueviolet;">{}</u>!"""
+                msg = """You just earned <span class="font-bold">${}</span> \
+                    to make your TOTAL earnings <span class="underline underline-offset-2">${}</span>!"""
                 messages.success(
                     request,
                     msg.format(
@@ -377,28 +395,32 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
         sessionId, level, qStatus = self.get_url_kwargs()
         sessionObj = Session.objects.get(session_id=sessionId)
         total = sessionObj.score
-        header, formatted_message, nextQ = "", "", False
+        header, formatted_message = "", ""
         title = ""
         if mode == "correct":
             title = "Correct answer!"
-            header = "You answered it correctly!"
-            formatted_message = message.format(
-                f"{Level.objects.get(level_number=level).money:,}", f"{total:,}"
+            header = 'You just <span class="font-bold">ANSWERED</span> it correctly!'
+            formatted_message = (
+                message.format(
+                    f"{Level.objects.get(level_number=level).money:,}", f"{total:,}"
+                )
+                if sessionObj.current_level.level_number != 16
+                else message.format(f"{total:,}")
             )
-            nextQ = True
+            mode = mode if sessionObj.current_level.level_number != 16 else "finished"
         elif mode == "over":
-            title = "Game has been quit!"
-            header = "You have quit successfully!"
+            title = "QUIT at the wrong time!"
+            header = 'You just <span class="font-bold">QUIT</span> at the wrong time!'
             formatted_message = message.format(f"{total:,}")
         elif mode == "wrong":
             title = "Wrong answer!"
-            header = "You answered it wrong!"
+            header = 'You just <span class="font-bold">LOST</span> it ALL!'
             formatted_message = message.format(f"{total*99:,}", f"{total:,}")
         context = dict(
             title=title,
             message=formatted_message,
             mainMessage=header,
-            nextQ=nextQ,
+            mode=mode,
         )
         return context
 
@@ -422,9 +444,10 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                     and len(sessionObj.wrong_qn.text) == 4
                     and level_diff in (1, 2)
                 ):
-                    msg = """You just QUIT the game successfully, making your total earnings $<u style="color: blueviolet;">{}</u>!"""
+                    msg = """You just QUIT the game successfully, \
+                        making your total earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
                     return render(
-                        request, "correct.html", self.context_creator(msg, "over")
+                        request, "gameover.html", self.context_creator(msg, "over")
                     )
                 elif (
                     qStatus.lower() == "correct"
@@ -432,24 +455,25 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                     and len(sessionObj.wrong_qn.text) == 4
                 ):
                     if level == 15 and sessionObj.current_level.level_number == 16:
-                        msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
-                        $<u style="color: blueviolet;">{}</u>!"""
+                        msg = """You just <span class="font-bold">FINISHED</span> \
+                            the game to make your total earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
                         return render(
                             request,
-                            "finished.html",
+                            "gameover.html",
                             self.context_creator(msg, "correct"),
                         )
-                    msg = """You just earned $<u style="color: blueviolet;">{}</u> to make your total earnings \
-                    $<u style="color: blueviolet;">{}</u>!"""
+                    msg = """You just earned $<span class="font-bold">{}</span> \
+                        to make your total earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
                     return render(
-                        request, "correct.html", self.context_creator(msg, "correct")
+                        request, "gameover.html", self.context_creator(msg, "correct")
                     )
                 elif (
                     qStatus.lower() == "incorrect"
                     and sessionObj.gameOver
                     and len(sessionObj.wrong_qn.text) > 4
                 ):
-                    msg = """You just lost $<u class="text-light">{}</u> to make your final earnings $<u class="text-light">{}</u>!"""
+                    msg = """You just lost $<span class="font-bold">{}</span> \
+                          to make your final earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
                     return render(request, "gameover.html", self.context_creator(msg))
         return redirect("mainpage", permanent=True)
 
@@ -540,7 +564,6 @@ class ScoreBoard(LoginRequiredMixin, View):
                 ses.correct_qns.all().count(),
                 (True if ses.wrong_qn.pk == Question.get_default_pk() else False),
                 ses.used_lifelines.all().count(),
-                ses.left_lifelines.all().count(),
             )
             for ses in Session.objects.filter(session_user=self.request.user).order_by(
                 "-score", "-date_created"

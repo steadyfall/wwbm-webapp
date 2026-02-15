@@ -1,0 +1,90 @@
+[project]
+name = "trivivo"
+version = "0.1.0"
+description = "Just a trivia game."
+requires-python = ">=3.11"
+dependencies = [
+    "Django>=5.1.2",
+    "djangorestframework>=3.14.0",
+    "django-configurations>=2.5.1",
+    "django-crispy-forms>=2.0",
+    "crispy-bootstrap5>=0.7",
+    "django-tailwind>=3.8.0",
+    "django-browser-reload>=1.12.0",
+    "dj-database-url>=2.2.0",
+    "dj-email-url>=1.0.6",
+    "dj-search-url>=0.1",
+    "django-cache-url>=3.4.5",
+    "aiohttp>=3.11.11",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.7.1",
+    "pytest>=7.4.0",
+    "pytest-django>=4.5.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["kbc*", "game*", "adminpanel*", "auth*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+exclude = [
+    ".venv",
+    "venv",
+    "node_modules",
+    "migrations",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # Pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["game", "adminpanel", "auth", "kbc"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "kbc.settings"
+DJANGO_CONFIGURATION = "Dev"
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-v --tb=short"
+testpaths = ["tests", "game", "adminpanel", "auth"]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "*/__pycache__/*",
+    ".venv/*",
+    "venv/*",
+    "manage.py",
+    "*/tests/*",
+    "conftest.py",
+    "tailwind_theme/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+

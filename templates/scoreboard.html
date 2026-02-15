@@ -5,99 +5,94 @@
 {% include 'navbar.html' %}
 {% endblock header %}
 {% block content %}
-<div class="content blurr">
-    <div class="content unblurr">
-        <div class="row d-flex" style="font-family: 'Open Sans', sans-serif; font-size: 35px;">
-            <b>
-                <h1>{{ heading|safe }}</h1>
-            </b>
-        </div>
-        <br style="clear: both" />
-        <div class="row row-deck row-cards">
-            <div class="table-responsive">
-                <table class="table table-vcenter table-striped table-dark">
-                    <thead>
-                        <tr>
-                            <th class="w-1"></th>
-                            <th class="text-center">Score</th>
-                            <th class="text-center">Level Reached</th>
-                            <th class="text-center">Date Played</th>
-                            <th class="text-center">Correct Questions</th>
-                            <th class="text-center">User Quit?</th>
-                            <th class="text-center"><b>Used</b> Lifelines</th>
-                            <th class="text-center"><b>Unused</b> Lifelines</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for session in allSessions %}
-                        <tr>
-                            <td class="w-1"></td>
-                            <td class="text-center">{{ session|slicer:0 }}</td>
-                            <td class="text-center">{{ session|slicer:1 }}</td>
-                            <td class="text-center">{{ session|slicer:2|date:"j F Y, g:i A e" }}</td>
-                            <td class="text-center">{{ session|slicer:3 }}</td>
-                            <td class="text-center">
+<div class="mb-6 p-4 sm:p-8">
+    <h1 class="text-3xl sm:text-4xl md:text-5xl mb-4 sm:mb-6">Scoreboard for
+        <span class="bg-emerald-300 inline-block text-transparent bg-clip-text">
+            {{ request.user.username }}
+        </span>
+    </h1>
+    <div class="overflow-x-auto">
+        {% if allSessions %}
+            <table class="w-full bg-gray-900 rounded-lg overflow-hidden">
+                <thead class="bg-gray-800">
+                    <tr>
+                        <th class="px-2 py-2 text-center text-gray-400">Score</th>
+                        <th class="px-2 py-2 text-center text-gray-400">Level Reached</th>
+                        <th class="px-2 py-2 text-center text-gray-400">Date Played</th>
+                        <th class="px-2 py-2 text-center text-gray-400">Correct Questions</th>
+                        <th class="px-2 py-2 text-center text-gray-400 max-md:hidden">User Quit?</th>
+                        <th class="px-2 py-2 text-center text-gray-400 max-md:hidden"><b>USED</b> Lifelines</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in allSessions %}
+                    <tr class="border-b items-center border-gray-800">
+                        <td class="px-2 py-2 text-center">{{ session|slicer:0 }}</td>
+                        <td class="px-2 py-2 text-center">{{ session|slicer:1 }}</td>
+                        <td class="px-2 py-2 text-center text-sm sm:text-base md:hidden">{{ session|slicer:2|date:"j-M, H:i e" }}</td>
+                        <td class="px-2 py-2 text-center text-sm sm:text-base max-md:hidden">{{ session|slicer:2|date:"j F Y, g:i A e" }}</td>
+                        <td class="px-2 py-2 text-center">{{ session|slicer:3 }}</td>
+                        <td class="px-2 py-2 justify-between items-center max-md:hidden">
+                            <span
+                                title="{% if session|slicer:4 %}Yes{% else %}No{% endif %}"
+                                class="flex justify-center items-center h-full"
+                            >
                                 {% if session|slicer:4 %}
-                                <span title="Yes">{% include 'icons/check.html' %}</span>
+                                {% include 'icons/check.html' %}
                                 {% else %}
-                                <span title="No">{% include 'icons/cross.html' %}</span>
+                                {% include 'icons/cross.html' %}
                                 {% endif %}
-                            </td>
-                            <td class="text-center">{{ session|slicer:5 }}</td>
-                            <td class="text-center">{{ session|slicer:6 }}</td>
-                            <td class="w-1"></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="d-flex align-items-center">
-                <p class="m-0">
-                    Showing
-                    <span>
-                        {{ allSessions.start_index }}
-                    </span> to
-                    <span>
-                        {{ allSessions.end_index}}
-                    </span> of
-                    <span>
-                        {{ allSessions.paginator.count }}
-                    </span> entries
-                </p>
-                {% if allSessions.has_other_pages %}
-                <ul class="pagination ms-auto justify-content-end">
-                    <li class="page-item {% if allSessions.has_previous %}{% else %}disabled{% endif %}">
-                        <a class="page-link" href="{% if allSessions.has_previous %}?page={{ allSessions.previous_page_number }}{% else %}#{% endif %}" tabindex="-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M15 6l-6 6l6 6" />
-                            </svg>
-                        </a>
-                    </li>
-                    {% for num in allSessions.paginator.page_range %}
-                        {% if allSessions.number == num %}
-                            <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                        {% elif num > allSessions.number|add:'-2' and num < allSessions.number|add:'2' %}
-                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                        {% endif %}
+                            </span>
+                        </td>
+                        <td class="px-2 py-2 text-center max-md:hidden">{{ session|slicer:5 }}</td>
+                    </tr>
                     {% endfor %}
-                    <li class="page-item {% if allSessions.has_next %}{% else %}disabled{% endif %}">
-                        <a class="page-link" href="{% if allSessions.has_next %}?page={{ allSessions.next_page_number }}{% else %}#{% endif %}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M9 6l6 6l-6 6" />
-                            </svg>
-                        </a>
-                    </li>
-                </ul>
-                {% endif %}
-            </div>
+                </tbody>
+            </table>
+        {% else %}
+            <span class="text-gray-300 text-lg">No records to show.</span>
+        {% endif %}
+    </div>
+    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between">
+        <p class="text-sm text-gray-400 mb-2 sm:mb-0">
+            Showing
+            <span>
+                {{ allSessions.start_index }}
+            </span> to
+            <span>
+                {{ allSessions.end_index }}
+            </span> of
+            <span>
+                {{ allSessions.paginator.count }}
+            </span> entries
+        </p>
+        {% if allSessions.has_other_pages %}
+        <div class="flex space-x-2">
+            <button
+                class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
+                {% if allSessions.has_previous %}{% else %}disabled{% endif %}
+            >
+                <a href="{% if allSessions.has_previous %}?page={{ allSessions.previous_page_number }}{% else %}#{% endif %}">&lt;</a>
+            </button>
+            {% for num in allSessions.paginator.page_range %}
+                <button
+                    {% if allSessions.number == num %}
+                        class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    {% elif num > allSessions.number|add:'-2' and num < allSessions.number|add:'2' %}
+                        class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
+                    {% endif %}
+                >
+                    <a href="?page={{ num }}">{{ num }}</a>
+                </button>
+            {% endfor %}
+            <button
+                class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
+                {% if allSessions.has_next %}{% else %}disabled{% endif %}
+            >
+                <a href="{% if allSessions.has_next %}?page={{ allSessions.next_page_number }}{% else %}#{% endif %}">&gt;</a>
+            </button>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}

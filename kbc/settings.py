@@ -1,6 +1,7 @@
 from configurations import Configuration, values
 from pathlib import Path
 import os
+from shutil import which
 
 
 class Base(Configuration):
@@ -17,10 +18,14 @@ class Base(Configuration):
         "django.contrib.messages",
         "django.contrib.staticfiles",
         "django.forms",
+        "django.contrib.humanize",
         "game.apps.GameConfig",
         "rest_framework",
         "rest_framework.authtoken",
         "configurations",
+        "tailwind",
+        "tailwind_theme",
+        "django_browser_reload",
     ]
 
     MIDDLEWARE = [
@@ -31,6 +36,7 @@ class Base(Configuration):
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
+        "django_browser_reload.middleware.BrowserReloadMiddleware",
     ]
 
     ROOT_URLCONF = "kbc.urls"
@@ -110,6 +116,12 @@ class Base(Configuration):
             "rest_framework.authentication.TokenAuthentication",
         ]
     }
+
+    TAILWIND_APP_NAME = "tailwind_theme"
+    INTERNAL_IPS = [
+        "127.0.0.1",
+    ]
+    NPM_BIN_PATH = which("npm")
 
 
 class Dev(Base):
