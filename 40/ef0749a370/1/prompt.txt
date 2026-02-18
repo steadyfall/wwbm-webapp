@@ -1,0 +1,102 @@
+Implement the following plan:
+
+# Plan: Quote `DJANGO_SECRET_KEY` value in `.env`
+
+## Context
+
+The Makefile now prepends `source .env &&` to all pytest targets. However, `source .env` fails immediately with:
+
+```
+.env: line 1: syntax error near unexpected token `('
+```
+
+The root cause: the secret key value in `.env` contains unquoted `(` characters, which bash interprets as subshell syntax:
+
+```
+export DJANGO_SECRET_KEY=801t=!ah9ju!!(x8t^6ffeq8#(v25kbopk14vw5v%_h7w1i
+```
+
+The `(` in the value causes bash to expect a subshell expression. The `!!` and `!` are also problematic in interactive shells (history expansion). Wrapping the value in single quotes fixes both issues.
+
+## Change
+
+**File:** `.env`
+
+Wrap the secret key value in single quotes:
+
+```
+export DJANGO_SECRET_KEY='801t=!ah9ju!!(x8t^6ffeq8#(v25kbopk14vw5v%_h7w1i'
+```
+
+Single quotes cause bash to treat the entire value as a literal string — no special character interpretation, no history expansion.
+
+## Verification
+
+```bash
+source .env && echo $DJANGO_SECRET_KEY   # should print the key without error
+make test
+```
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/himankdave/.REDACTED.jsonl
+
+---
+
+## Context
+
+- Current git status: On branch steadyfall/tri-20-fix-conftestpy-django_db_setup-to-use-pytest-django-blocker
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   Makefile
+
+no changes added to commit (use "git add" and/or "git commit -a")
+- Current git diff (staged and unstaged changes): diff --git a/Makefile b/Makefile
+index e38b3ce..ab64a50 100644
+--- a/Makefile
++++ b/Makefile
+@@ -86,11 +86,11 @@ check: format lint ## Run all code quality checks (format, lint)
+ 
+ test: ## Run pytest test suite with coverage reporting
+ 	@printf "$(CYAN)>>> Running tests with coverage...$(NC)\n"
+-	$(UV) run pytest --cov=. --cov-report=term-missing --cov-report=html
++	source .env && $(UV) run pytest --cov=. --cov-report=term-missing --cov-report=html
+ 
+ test-failed: ## Re-run only failed tests
+ 	@printf "$(CYAN)>>> Re-running failed tests...$(NC)\n"
+-	$(UV) run pytest --lf
++	source .env && $(UV) run pytest --lf
+ 
+ # ------------------------------------------------------------------------------
+ # Code Quality & Formatting
+@@ -177,11 +177,11 @@ restart: _confirm-destructive ##! DESTRUCTIVE: Full restart (nuke db, migrate, b
+ 
+ test-functional: ## Run functional tests only
+ 	@printf "$(CYAN)>>> Running functional tests...$(NC)\n"
+-	$(UV) run pytest tests/functional/ -v
++	source .env && $(UV) run pytest tests/functional/ -v
+ 
+ test-pipeline: ## Run tests with 100% coverage requirement (for CI)
+ 	@printf "$(CYAN)>>> Running pipeline tests with strict coverage...$(NC)\n"
+-	$(UV) run pytest --cov=. --cov-report=term-missing --cov-fail-under=100
++	source .env && $(UV) run pytest --cov=. --cov-report=term-missing --cov-fail-under=100
+ 
+ # ------------------------------------------------------------------------------
+ # Utility Commands
+- Current branch: steadyfall/tri-20-fix-conftestpy-django_db_setup-to-use-pytest-django-blocker
+- Recent commits: 948af98 fix: simplify conftest.py to use pytest-django blocker pattern
+87f6cae feat: migrate frontend to Tailwind CSS and add developer tooling (#17)
+7322506 build: update Django to v5.1.2
+796d5d4 fix: change .gitignore to accomodate directories
+5354594 chore: updated requirements.txt
+d02eed2 chore: update settings.py to accomodate dev and prod settings
+dd0a5ea style: added pre-commit hooks
+4d72755 style: fixed EOF/trailing whitespace, reformatted code with Black
+94c35ff added README.md
+77f0a71 added requirements.txt
+
+## Your task
+
+Based on the above changes, create a single git commit.
+
+You have the capability to call multiple tools in a single response. Stage and create the commit using a single message. Do not use any other tools or do anything else. Do not send any other text or messages besides these tool calls.
