@@ -1,0 +1,55 @@
+Implement the following plan:
+
+# Plan: Prepend `source .env` to all pytest targets in Makefile
+
+## Context
+
+Tests require `DJANGO_SECRET_KEY` to be set (via `kbc/settings.py`'s `values.SecretValue`). This is currently stored in `.env`. Without sourcing it, all four pytest Make targets fail. The fix is to prepend `source .env &&` to every `uv run pytest` invocation in the Makefile.
+
+`SHELL := /bin/bash` is already set at the top of the Makefile, so `source` is valid.
+
+## Affected Targets
+
+All four pytest-running targets in `Makefile`:
+
+| Target | Line | Current command |
+|--------|------|-----------------|
+| `test` | 89 | `$(UV) run pytest --cov=. --cov-report=term-missing --cov-report=html` |
+| `test-failed` | 93 | `$(UV) run pytest --lf` |
+| `test-functional` | 180 | `$(UV) run pytest tests/functional/ -v` |
+| `test-pipeline` | 184 | `$(UV) run pytest --cov=. --cov-report=term-missing --cov-fail-under=100` |
+
+## Change
+
+Prepend `source .env && ` to each of the four commands above. Since Make runs each recipe line in its own shell subprocess, the `source` and the `pytest` call must be on the **same line** joined with `&&`. The `SHELL := /bin/bash` declaration ensures `source` is available.
+
+Example for `test`:
+```makefile
+test: ## Run pytest test suite with coverage reporting
+	@printf "$(CYAN)>>> Running tests with coverage...$(NC)\n"
+	source .env && $(UV) run pytest --cov=. --cov-report=term-missing --cov-report=html
+```
+
+## File to Modify
+
+- `Makefile` — four lines changed, no other files touched
+
+## Verification
+
+```bash
+make test
+make test-failed   # (only if there are previously-failed tests)
+```
+
+`pytest` output should show `django: ... configuration: Dev` and tests should pass without `ValueError: Value 'SECRET_KEY' is required`.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/himankdave/.REDACTED.jsonl
+
+---
+
+.env: line 1: syntax error near unexpected token `(' - what is this error?
+
+---
+
+[Request interrupted by user for tool use]
