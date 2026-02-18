@@ -86,11 +86,11 @@ check: format lint ## Run all code quality checks (format, lint)
 
 test: ## Run pytest test suite with coverage reporting
 	@printf "$(CYAN)>>> Running tests with coverage...$(NC)\n"
-	$(UV) run pytest --cov=. --cov-report=term-missing --cov-report=html
+	source .env && $(UV) run pytest --cov=. --cov-report=term-missing --cov-report=html
 
 test-failed: ## Re-run only failed tests
 	@printf "$(CYAN)>>> Re-running failed tests...$(NC)\n"
-	$(UV) run pytest --lf
+	source .env && $(UV) run pytest --lf
 
 # ------------------------------------------------------------------------------
 # Code Quality & Formatting
@@ -177,11 +177,11 @@ restart: _confirm-destructive ##! DESTRUCTIVE: Full restart (nuke db, migrate, b
 
 test-functional: ## Run functional tests only
 	@printf "$(CYAN)>>> Running functional tests...$(NC)\n"
-	$(UV) run pytest tests/functional/ -v
+	source .env && $(UV) run pytest tests/functional/ -v
 
 test-pipeline: ## Run tests with 100% coverage requirement (for CI)
 	@printf "$(CYAN)>>> Running pipeline tests with strict coverage...$(NC)\n"
-	$(UV) run pytest --cov=. --cov-report=term-missing --cov-fail-under=100
+	source .env && $(UV) run pytest --cov=. --cov-report=term-missing --cov-fail-under=100
 
 # ------------------------------------------------------------------------------
 # Utility Commands
