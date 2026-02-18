@@ -8,3 +8,4 @@ misc
 .env
 .env.mcp
 *.egg-info
+.pytest_cache
