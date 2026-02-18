@@ -20,6 +20,8 @@ class Base(Configuration):
         "django.forms",
         "django.contrib.humanize",
         "game.apps.GameConfig",
+        "auth.apps.AuthConfig",
+        "adminpanel.apps.AdminpanelConfig",
         "rest_framework",
         "rest_framework.authtoken",
         "configurations",
