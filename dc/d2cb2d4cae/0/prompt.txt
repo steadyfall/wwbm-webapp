@@ -1,0 +1,92 @@
+Implement the following plan:
+
+# Plan: Create Draft PRs for TRI-60 & TRI-61
+
+## Context
+Both branches have been implemented, tested, and pushed. The next step is to open draft pull requests targeting `main` for peer review, following `.github/PULL_REQUEST_TEMPLATE.md`.
+
+PR template structure (≤ 500 words total):
+```
+Fixes #...
+
+### Description
+<!-- problem being fixed -->
+
+### Tests
+<!-- tests written/done -->
+```
+
+---
+
+## Critical Info
+
+| Ticket | Branch | File added |
+|--------|--------|------------|
+| TRI-60 | `steadyfall/tri-60-test-usernamevalidator-emailvalidator-passwordvalidator-and` | `tests/unit/test_auth_validation.py` |
+| TRI-61 | `steadyfall/tri-61-test-registration-view-valid-duplicate-username-invalid` | `tests/unit/test_auth_views.py` |
+
+Base branch: `main`
+Repo: `steadyfall/wwbm-webapp`
+
+---
+
+## Execution Plan
+
+Run both `gh pr create` calls in parallel (one per branch), using `--draft` and `--base main`.
+
+### TRI-60 PR body
+```
+Fixes TRI-60
+
+### Description
+No unit tests existed for the four auth validators in `auth/validate.py`. This PR adds a dedicated test module covering all validators.
+
+### Tests
+Added `tests/unit/test_auth_validation.py` — 18 unit tests, no DB required:
+- `TestUsernameValidator` (6): valid input, allowed special chars, disallowed char, empty string, 150-char rejection, 149-char boundary
+- `TestEmailValidator` (4): valid email, missing `@`, missing domain, space in address
+- `TestPasswordValidator` (5): valid, too short, all-numeric, contains username, empty username
+- `TestConfirmPassword` (3): matching valid passwords, mismatched, `password2` fails validation
+
+All 18 tests pass (`uv run pytest tests/unit/test_auth_validation.py`).
+```
+
+### TRI-61 PR body
+```
+Fixes TRI-61
+
+### Description
+No integration tests existed for the `register` view (`auth/views.py:10-41`). This PR adds a test module covering all major registration paths.
+
+### Tests
+Added `tests/unit/test_auth_views.py` — 7 integration tests using `django.test.Client` and `@pytest.mark.django_db`:
+- GET request renders `authentication/register.html`
+- Valid registration → success message, redirect to `/auth/login/`
+- Duplicate username → warning message, redirect to `/auth/login/`
+- Invalid email → error message, redirect to `/auth/register/`
+- Mismatched passwords → error message, redirect to `/auth/register/`
+- Password contains username → error message, redirect to `/auth/register/`
+- Missing required field (`password2`) → error message, redirect to `/auth/register/`
+
+All 7 tests pass (`uv run pytest tests/unit/test_auth_views.py`).
+```
+
+---
+
+## Verification
+After creation, confirm both PRs appear as drafts at `https://github.com/steadyfall/wwbm-webapp/pulls`.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/himankdave/.REDACTED.jsonl
+
+---
+
+but don't include ticket ID in PR title
+
+---
+
+but don't include ticket ID in PR title
+
+---
+
+Create a CLAUDE.md file based on explicit instructions given in this chat/context window.
