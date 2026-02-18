@@ -1,0 +1,102 @@
+Implement the following plan:
+
+# Plan: TRI-20 — Fix conftest.py django_db_setup to use pytest-django blocker pattern
+
+## Context
+
+`conftest.py` currently:
+1. Uses `os.environ.setdefault` to set `DJANGO_SETTINGS_MODULE` and `DJANGO_CONFIGURATION` — these are **already present** in `pyproject.toml` under `[tool.pytest.ini_options]`, making the `os.environ` calls redundant.
+2. Calls `configurations.setup()` manually — `django-configurations` ships a pytest plugin (registered via `pytest11` entry point) that handles this automatically when `DJANGO_CONFIGURATION` is set in pytest config.
+3. Overrides `settings.DATABASES["default"]` directly inside `django_db_setup` — this is the wrong pattern and can cause test isolation issues depending on test ordering.
+
+The `Dev` configuration already uses SQLite (`db.sqlite3`), so no database override is needed. The correct pattern is to use pytest-django's `django_db_blocker` to simply unblock access.
+
+## Changes
+
+### 1. `conftest.py` — simplify and fix fixture
+
+**Remove:**
+- `import os`
+- `os.environ.setdefault(...)` calls
+- `import configurations` and `configurations.setup()`
+- `from django.conf import settings`
+- Direct `settings.DATABASES` mutation
+
+**Fix `django_db_setup`** to use the pytest-django blocker pattern:
+
+```python
+import pytest
+
+
+@pytest.fixture(scope="session")
+def django_db_setup(django_test_environment, django_db_blocker):
+    with django_db_blocker.unblock():
+        pass  # Dev settings already use SQLite
+
+
+@pytest.fixture
+def api_client():
+    """Return a DRF API client."""
+    from rest_framework.test import APIClient
+    return APIClient()
+```
+
+### 2. `pyproject.toml` — no changes needed
+
+Already contains:
+```toml
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "kbc.settings"
+DJANGO_CONFIGURATION = "Dev"
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-v --tb=short"
+testpaths = ["tests", "game", "adminpanel", "auth"]
+```
+
+### 3. `tests/test_smoke.py` — add smoke DB test
+
+Add a simple `@pytest.mark.django_db` test that creates a model instance to satisfy the acceptance criterion:
+
+```python
+import pytest
+from game.models import Lifeline
+
+
+@pytest.mark.django_db
+def test_db_write():
+    """Smoke test: verify django_db_setup allows model creation."""
+    obj = Lifeline.objects.create(name="Test", description="Smoke test lifeline")
+    assert obj.pk is not None
+```
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `conftest.py` | Remove `os`/`configurations` setup; fix `django_db_setup` fixture |
+| `tests/test_smoke.py` | **Create** — smoke DB test |
+
+## Verification
+
+```bash
+# Collect tests without errors
+pytest --co
+
+# Run smoke test
+pytest tests/test_smoke.py -v
+
+# Full test suite
+pytest tests/ -v
+```
+
+Acceptance criteria:
+- `pytest --co` exits cleanly with collected items
+- `test_db_write` passes
+- No `settings.DATABASES` mutation anywhere in fixtures
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/himankdave/.REDACTED.jsonl
+
+---
+
+Commit this, with the ticket number in the commit message.

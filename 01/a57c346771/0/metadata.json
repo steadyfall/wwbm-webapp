@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "01a57c346771",
+  "session_id": "c75a139d-7afe-445c-9075-6e8bc2277393",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-18T06:46:58.812262Z",
+  "branch": "steadyfall/tri-20-fix-conftestpy-django_db_setup-to-use-pytest-django-blocker",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "conftest.py",
+    "tests/test_smoke.py"
+  ],
+  "agent": "Claude Code",
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 16086,
+    "cache_read_tokens": 784904,
+    "output_tokens": 3741,
+    "api_call_count": 26
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T06:46:58.795788Z",
+    "agent_lines": 10,
+    "human_added": 0,
+    "human_modified": 1,
+    "human_removed": 1,
+    "total_committed": 11,
+    "agent_percentage": 90.9090909090909
+  }
+}
