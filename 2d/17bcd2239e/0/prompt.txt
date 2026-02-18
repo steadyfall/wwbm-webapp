@@ -1,0 +1,112 @@
+Implement the following plan:
+
+# Plan: TRI-19 — Register auth and adminpanel apps in INSTALLED_APPS
+
+## Context
+
+`auth` and `adminpanel` are functional Django apps that are not yet listed in `INSTALLED_APPS`. Django's migration runner, signal dispatch, and management command autodiscovery all require app registration. Currently the project works by accident because `game` imports models that the other apps depend on — this is a hidden ordering dependency that will break on a fresh DB.
+
+## Problem Analysis
+
+There is a **label conflict** that must be resolved before registration:
+
+- `django.contrib.auth` (already in `INSTALLED_APPS`) has an implicit `label = "auth"` (last part of its module path)
+- `auth/apps.py` has `name = "auth"`, which also produces `label = "auth"` by default
+- Django will raise a `django.core.exceptions.ImproperlyConfigured` error if two apps share the same label
+
+The fix is to add `label = "trivivo_auth"` to `AuthConfig` (keeping `name = "auth"` to match the directory). This is the Django-idiomatic approach — `name` must match the importable module path, while `label` is the short, unique identifier used for DB table prefixes and reverse lookups.
+
+## Changes
+
+### 1. `auth/apps.py` — Add unique label
+
+```python
+class AuthConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "auth"
+    label = "trivivo_auth"   # avoids collision with django.contrib.auth's label
+```
+
+### 2. `kbc/settings.py` — Register both apps in the `Base` class
+
+Add to `INSTALLED_APPS` after `"game.apps.GameConfig"`:
+
+```python
+"auth.apps.AuthConfig",
+"adminpanel.apps.AdminpanelConfig",
+```
+
+## Critical Files
+
+- `auth/apps.py` — add `label = "trivivo_auth"`
+- `kbc/settings.py` — add both app configs to `INSTALLED_APPS` in `Base`
+
+## Verification
+
+After changes, from project root run:
+
+```bash
+python manage.py check
+python manage.py migrate --check
+```
+
+Both commands should exit with 0 errors. `manage.py check` validates no duplicate app labels; `migrate --check` confirms all migrations are applied without skipping any.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/himankdave/.REDACTED.jsonl
+
+---
+
+Commit this, with the ticket number in the commit message.
+
+---
+
+## Context
+
+- Current git status: On branch steadyfall/tri-19-register-auth-and-adminpanel-apps-in-installed_apps
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   auth/apps.py
+	modified:   kbc/settings.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+- Current git diff (staged and unstaged changes): diff --git a/auth/apps.py b/auth/apps.py
+index 6a09aaa..3e4988d 100644
+--- a/auth/apps.py
++++ b/auth/apps.py
+@@ -4,3 +4,4 @@ from django.apps import AppConfig
+ class AuthConfig(AppConfig):
+     default_auto_field = "django.db.models.BigAutoField"
+     name = "auth"
++    label = "trivivo_auth"  # avoids collision with django.contrib.auth's label
+diff --git a/kbc/settings.py b/kbc/settings.py
+index 3789a84..51a3ea9 100644
+--- a/kbc/settings.py
++++ b/kbc/settings.py
+@@ -20,6 +20,8 @@ class Base(Configuration):
+         "django.forms",
+         "django.contrib.humanize",
+         "game.apps.GameConfig",
++        "auth.apps.AuthConfig",
++        "adminpanel.apps.AdminpanelConfig",
+         "rest_framework",
+         "rest_framework.authtoken",
+         "configurations",
+- Current branch: steadyfall/tri-19-register-auth-and-adminpanel-apps-in-installed_apps
+- Recent commits: 79e0256 fix: resolve pytest DB setup failures (conftest + env sourcing) (#18)
+87f6cae feat: migrate frontend to Tailwind CSS and add developer tooling (#17)
+7322506 build: update Django to v5.1.2
+796d5d4 fix: change .gitignore to accomodate directories
+5354594 chore: updated requirements.txt
+d02eed2 chore: update settings.py to accomodate dev and prod settings
+dd0a5ea style: added pre-commit hooks
+4d72755 style: fixed EOF/trailing whitespace, reformatted code with Black
+94c35ff added README.md
+77f0a71 added requirements.txt
+
+## Your task
+
+Based on the above changes, create a single git commit.
+
+You have the capability to call multiple tools in a single response. Stage and create the commit using a single message. Do not use any other tools or do anything else. Do not send any other text or messages besides these tool calls.

@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "2d17bcd2239e",
+  "strategy": "manual-commit",
+  "branch": "steadyfall/tri-19-register-auth-and-adminpanel-apps-in-installed_apps",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "auth/apps.py",
+    "kbc/settings.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2d/17bcd2239e/0/metadata.json",
+      "transcript": "/2d/17bcd2239e/0/full.jsonl",
+      "context": "/2d/17bcd2239e/0/context.md",
+      "content_hash": "/2d/17bcd2239e/0/content_hash.txt",
+      "prompt": "/2d/17bcd2239e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 6752,
+    "cache_read_tokens": 265763,
+    "output_tokens": 1445,
+    "api_call_count": 10
+  }
+}
