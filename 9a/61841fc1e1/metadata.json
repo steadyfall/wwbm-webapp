@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "9a61841fc1e1",
+  "strategy": "manual-commit",
+  "branch": "steadyfall/tri-63-test-adminlogin-superuser-redirect-non-superuser-redirect-v1",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "tests/unit/test_auth_views.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/9a/61841fc1e1/0/metadata.json",
+      "transcript": "/9a/61841fc1e1/0/full.jsonl",
+      "context": "/9a/61841fc1e1/0/context.md",
+      "content_hash": "/9a/61841fc1e1/0/content_hash.txt",
+      "prompt": "/9a/61841fc1e1/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 21,
+    "cache_creation_tokens": 31441,
+    "cache_read_tokens": 385753,
+    "output_tokens": 4678,
+    "api_call_count": 17
+  }
+}
