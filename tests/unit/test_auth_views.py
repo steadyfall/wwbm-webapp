@@ -6,6 +6,7 @@ from django.urls import reverse
 
 REGISTER_URL = "/auth/register/"
 ADMINLOGIN_URL = "/auth/admin-login/"
+LOGIN_URL = "/auth/login/"
 
 
 def _valid_post_data(**overrides):
@@ -130,3 +131,74 @@ class TestAdminLoginView:
         assert response.url == reverse("adminLogin")
         msgs = list(get_messages(response.wsgi_request))
         assert any(m.level_tag == "error" for m in msgs)
+
+
+def _valid_login_data(**overrides):
+    data = {
+        "username": "testuser",
+        "password": "securePass1",
+    }
+    data.update(overrides)
+    return data
+
+
+@pytest.mark.django_db
+class TestLoginView:
+    def test_get_renders_login_template(self, client):
+        response = client.get(LOGIN_URL)
+        assert response.status_code == 200
+        assert "authentication/signin.html" in [t.name for t in response.templates]
+
+    def test_valid_credentials(self, client):
+        data = _valid_login_data()
+        User.objects.create_user(username=data["username"], password=data["password"])
+        response = client.post(LOGIN_URL, data)
+        assert response.status_code == 302
+        assert response.url == reverse("mainpage")
+
+    def test_nonexistent_username(self, client):
+        response = client.post(LOGIN_URL, _valid_login_data())
+        assert response.status_code == 302
+        assert response.url == "/auth/register/"
+        msgs = list(get_messages(response.wsgi_request))
+        assert any(m.level_tag == "warning" for m in msgs)
+
+    def test_wrong_password(self, client):
+        data = _valid_login_data()
+        User.objects.create_user(username=data["username"], password=data["password"])
+        response = client.post(LOGIN_URL, _valid_login_data(password="wrongPass1"))
+        assert response.status_code == 302
+        assert response.url == LOGIN_URL
+        msgs = list(get_messages(response.wsgi_request))
+        assert any("Wrong password" in str(m) for m in msgs)
+
+    def test_invalid_username_format(self, client):
+        response = client.post(LOGIN_URL, _valid_login_data(username="bad user!"))
+        assert response.status_code == 302
+        assert response.url == LOGIN_URL
+        msgs = list(get_messages(response.wsgi_request))
+        assert any(m.level_tag == "error" for m in msgs)
+
+    def test_invalid_password_format(self, client):
+        response = client.post(LOGIN_URL, _valid_login_data(password="short"))
+        assert response.status_code == 302
+        assert response.url == LOGIN_URL
+        msgs = list(get_messages(response.wsgi_request))
+        assert any(m.level_tag == "error" for m in msgs)
+
+    def test_missing_field(self, client):
+        data = _valid_login_data()
+        del data["password"]
+        response = client.post(LOGIN_URL, data)
+        assert response.status_code == 302
+        assert response.url == LOGIN_URL
+        msgs = list(get_messages(response.wsgi_request))
+        assert any(m.level_tag == "error" for m in msgs)
+
+    def test_already_authenticated_get(self, client):
+        data = _valid_login_data()
+        user = User.objects.create_user(username=data["username"], password=data["password"])
+        client.force_login(user)
+        response = client.get(LOGIN_URL)
+        assert response.status_code == 200
+        assert "authentication/signin.html" in [t.name for t in response.templates]
