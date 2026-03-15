@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "1f96f8764c92",
+  "session_id": "b058f6c1-f906-4c53-91b0-8134a610c5ab",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-15T05:45:06.97173Z",
+  "branch": "steadyfall/tri-27-add-missing-return-before-redirect-in-adminlogin-for",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".context/plans/tri-27-add-missing-return-before-redirect-in-admin.md",
+    "auth/views.py"
+  ],
+  "agent": "Claude Code",
+  "token_usage": {
+    "input_tokens": 11,
+    "cache_creation_tokens": 19711,
+    "cache_read_tokens": 205406,
+    "output_tokens": 1788,
+    "api_call_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-15T05:45:06.958389Z",
+    "agent_lines": 1,
+    "human_added": 45,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 46,
+    "agent_percentage": 2.1739130434782608
+  }
+}

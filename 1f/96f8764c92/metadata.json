@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "1f96f8764c92",
+  "strategy": "manual-commit",
+  "branch": "steadyfall/tri-27-add-missing-return-before-redirect-in-adminlogin-for",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".context/plans/tri-27-add-missing-return-before-redirect-in-admin.md",
+    "auth/views.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/1f/96f8764c92/0/metadata.json",
+      "transcript": "/1f/96f8764c92/0/full.jsonl",
+      "context": "/1f/96f8764c92/0/context.md",
+      "content_hash": "/1f/96f8764c92/0/content_hash.txt",
+      "prompt": "/1f/96f8764c92/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 11,
+    "cache_creation_tokens": 19711,
+    "cache_read_tokens": 205406,
+    "output_tokens": 1788,
+    "api_call_count": 9
+  }
+}
