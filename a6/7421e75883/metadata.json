@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.2",
+  "checkpoint_id": "a67421e75883",
+  "strategy": "manual-commit",
+  "branch": "steadyfall/tri-62-test-login-view-valid-credentials-wrong-password-and-non",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "tests/unit/test_auth_views.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a6/7421e75883/0/metadata.json",
+      "transcript": "/a6/7421e75883/0/full.jsonl",
+      "context": "/a6/7421e75883/0/context.md",
+      "content_hash": "/a6/7421e75883/0/content_hash.txt",
+      "prompt": "/a6/7421e75883/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 23,
+    "cache_creation_tokens": 50126,
+    "cache_read_tokens": 452293,
+    "output_tokens": 4840,
+    "api_call_count": 19
+  }
+}

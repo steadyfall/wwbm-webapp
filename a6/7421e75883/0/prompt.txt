@@ -1,0 +1,178 @@
+<system_instruction>
+You are working inside Conductor, a Mac app that lets the user run many coding agents in parallel.
+Your work should take place in the /Users/himankdave/conductor/workspaces/trivivo/karachi directory (unless otherwise directed), which has been set up for you to work in.
+Each workspace has a .context directory (gitignored) where you can save files to collaborate with other agents.
+The target branch for this workspace is main. Use this for actions like creating new PRs, bisecting, etc., unless you're told otherwise.
+
+If the user asks you to work on several unrelated tasks in parallel, you can suggest they start new workspaces.
+If the user asks for help with Conductor, ask them to email [humans@conductor.build](mailto:humans@conductor.build) or
+click on the comment icon in the bottom left to send feedback.
+</system_instruction>
+
+
+<system_instruction>
+The user has attached these files. Read them before proceeding.
+- /Users/himankdave/conductor/workspaces/trivivo/karachi/.context/attachments/plan.md (3.2 KB)
+</system_instruction>
+
+---
+
+<system-instruction>
+The user has added 2 comments to the diff for this workspace. Please review and address these comments as part of your response. When addressing comments on the "original" side or on specific commits, read the file from that version (not the current version). Below are the comments, including metadata about what git state they were left on:
+
+Comment #1:
+
+File: tests/unit/test_auth_views.py
+Line: 135
+User comment: "use _valid_login_data with overrides here."
+
+Comment metadata:
+This comment was left on the modified branch.
+
+
+Comment #2:
+
+File: tests/unit/test_auth_views.py
+Line: 113
+User comment: "Replace the usage of the same argument across multiple places with `_valid_login_data` returning the username and password."
+
+Comment metadata:
+This comment was left on the modified branch.
+
+</system-instruction>
+
+---
+
+<system-instruction>
+The user has added 1 comment to the diff for this workspace. Please review and address these comments as part of your response. When addressing comments on the "original" side or on specific commits, read the file from that version (not the current version). Below are the comments, including metadata about what git state they were left on:
+
+Comment #1:
+
+File: tests/unit/test_auth_views.py
+Lines: 113-114
+User comment: "Replace `User.objects.create_user(username="testuser", password="securePass1")` with this across all instances in TestLoginView class."
+
+Comment metadata:
+This comment was left on the modified branch.
+
+</system-instruction>
+
+---
+
+## Context
+
+- Current git status: On branch steadyfall/tri-62-test-login-view-valid-credentials-wrong-password-and-non
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   tests/unit/test_auth_views.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+- Current git diff (staged and unstaged changes): diff --git a/tests/unit/test_auth_views.py b/tests/unit/test_auth_views.py
+index b430114..372fc8b 100644
+--- a/tests/unit/test_auth_views.py
++++ b/tests/unit/test_auth_views.py
+@@ -1,9 +1,11 @@
+ import pytest
+ from django.contrib.auth.models import User
+ from django.contrib.messages import get_messages
++from django.urls import reverse
+ 
+ 
+ REGISTER_URL = "/auth/register/"
++LOGIN_URL = "/auth/login/"
+ 
+ 
+ def _valid_post_data(**overrides):
+@@ -76,3 +78,74 @@ class TestRegisterView:
+         assert response.url == "/auth/register/"
+         msgs = list(get_messages(response.wsgi_request))
+         assert any(m.level_tag == "error" for m in msgs)
++
++
++def _valid_login_data(**overrides):
++    data = {
++        "username": "testuser",
++        "password": "securePass1",
++    }
++    data.update(overrides)
++    return data
++
++
++@pytest.mark.django_db
++class TestLoginView:
++    def test_get_renders_login_template(self, client):
++        response = client.get(LOGIN_URL)
++        assert response.status_code == 200
++        assert "authentication/signin.html" in [t.name for t in response.templates]
++
++    def test_valid_credentials(self, client):
++        data = _valid_login_data()
++        User.objects.create_user(username=data["username"], password=data["password"])
++        response = client.post(LOGIN_URL, data)
++        assert response.status_code == 302
++        assert response.url == reverse("mainpage")
++
++    def test_nonexistent_username(self, client):
++        response = client.post(LOGIN_URL, _valid_login_data())
++        assert response.status_code == 302
++        assert response.url == "/auth/register/"
++        msgs = list(get_messages(response.wsgi_request))
++        assert any(m.level_tag == "warning" for m in msgs)
++
++    def test_wrong_password(self, client):
++        data = _valid_login_data()
++        User.objects.create_user(username=data["username"], password=data["password"])
++        response = client.post(LOGIN_URL, _valid_login_data(password="wrongPass1"))
++        assert response.status_code == 302
++        assert response.url == LOGIN_URL
++        msgs = list(get_messages(response.wsgi_request))
++        assert any("Wrong password" in str(m) for m in msgs)
++
++    def test_invalid_username_format(self, client):
++        response = client.post(LOGIN_URL, _valid_login_data(username="bad user!"))
++        assert response.status_code == 302
++        assert response.url == LOGIN_URL
++        msgs = list(get_messages(response.wsgi_request))
++        assert any(m.level_tag == "error" for m in msgs)
++
++    def test_invalid_password_format(self, client):
++        response = client.post(LOGIN_URL, _valid_login_data(password="short"))
++        assert response.status_code == 302
++        assert response.url == LOGIN_URL
++        msgs = list(get_messages(response.wsgi_request))
++        assert any(m.level_tag == "error" for m in msgs)
++
++    def test_missing_field(self, client):
++        data = _valid_login_data()
++        del data["password"]
++        response = client.post(LOGIN_URL, data)
++        assert response.status_code == 302
++        assert response.url == LOGIN_URL
++        msgs = list(get_messages(response.wsgi_request))
++        assert any(m.level_tag == "error" for m in msgs)
++
++    def test_already_authenticated_get(self, client):
++        data = _valid_login_data()
++        user = User.objects.create_user(username=data["username"], password=data["password"])
++        client.force_login(user)
++        response = client.get(LOGIN_URL)
++        assert response.status_code == 200
++        assert "authentication/signin.html" in [t.name for t in response.templates]
+- Current branch: steadyfall/tri-62-test-login-view-valid-credentials-wrong-password-and-non
+- Recent commits: f93e5e5 test: add integration tests for register view
+de5a5a1 test: add unit tests for auth validators
+0513760 chore: add and optimize CLAUDE.md with project conventions Entire-Checkpoint: dcd2cb2d4cae
+497f060 feat: register auth and adminpanel apps in INSTALLED_APPS
+79e0256 fix: resolve pytest DB setup failures (conftest + env sourcing) (#18)
+87f6cae feat: migrate frontend to Tailwind CSS and add developer tooling (#17)
+7322506 build: update Django to v5.1.2
+796d5d4 fix: change .gitignore to accomodate directories
+5354594 chore: updated requirements.txt
+d02eed2 chore: update settings.py to accomodate dev and prod settings
+
+## Your task
+
+Based on the above changes, create a single git commit.
+
+You have the capability to call multiple tools in a single response. Stage and create the commit using a single message. Do not use any other tools or do anything else. Do not send any other text or messages besides these tool calls.
