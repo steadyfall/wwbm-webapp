@@ -92,8 +92,8 @@ def testSite(request):
 
 
 class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "admin_signin"
-    raise_exception = True
+    login_url = "adminLogin"
+    raise_exception = False
 
     def context_creater(self):
         recent_log = list(LogEntry.objects.order_by("-action_time")[:12])
@@ -191,7 +191,7 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
             more_than_ten_sessions=more_than_ten_sessions,
             category_with_most_qs=f"""\
                                 <a style="text-decoration: none;" \
-                                href="{reverse_lazy("adminDBObject", kwargs={'db':'category', 'pk':category_with_most_qs.pk})}" \
+                                href="{reverse_lazy("adminDBObject", kwargs={"db": "category", "pk": category_with_most_qs.pk})}" \
                                 title="{category_with_most_qs.name}">\
                                 This cat.</a>""",
             date_list=date_list,
@@ -221,7 +221,7 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
 
     def get_url_kwargs(self):
         db = str(self.kwargs["db"])
@@ -309,7 +309,7 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
     form_class = None
     initial = {}
 
@@ -407,7 +407,7 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
     form_class = None
     instance = None
 
@@ -474,14 +474,17 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
+        self.set_form_state(model, smallcaseDB, pk)
+        context = self.context_creator()
+        return render(request, "adminpanel/objectView.html", context)
+
+    def set_form_state(self, model, smallcaseDB, pk):
         setattr(AdminDBObjectCreate, "form_class", modelFormDict[smallcaseDB])
         setattr(
             AdminDBObjectChange,
             "instance",
             model.objects.get(pk=int(pk) if pk.isnumeric() else pk),
         )
-        context = self.context_creator()
-        return render(request, "adminpanel/objectView.html", context)
 
     def post(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
@@ -493,6 +496,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
+        self.set_form_state(model, smallcaseDB, pk)
 
         if request.POST.get("cancel"):
             return redirect("adminListDB", db=smallcaseDB)
@@ -512,7 +516,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
             pretty_msg = pretty_change_message(saved_object)
             messages.success(request, pretty_msg)
         if request.POST.get("save"):
-            return redirect("adminDBList", db=smallcaseDB)
+            return redirect("adminListDB", db=smallcaseDB)
         elif request.POST.get("save_continue"):
             return redirect("adminDBObject", db=smallcaseDB, pk=pk)
 
@@ -524,7 +528,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
     form_class = None
     instance = None
 
@@ -672,7 +676,7 @@ class AdminDBObjectHistory(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
 
     def context_creator(self):
         paginator = Paginator(LogEntry.objects.order_by("-action_time"), PAGINATE_NO)
@@ -704,7 +708,7 @@ class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class APIAccess(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
 
     def context_creator(self, request):
         token, created = Token.objects.get_or_create(user=request.user)
@@ -729,7 +733,7 @@ class APIAccess(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class APIDocs(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
 
     def context_creator(self, request):
         context = dict()
@@ -751,12 +755,12 @@ class APIDocs(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
 class GetQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
-    raise_exception = True
+    raise_exception = False
 
     def get(self, request, *args, **kwargs):
         response = {}
         count = self.request.GET.get("count")
-        count = int(count) if count.isdigit() else 1
+        count = int(count) if count and count.isdigit() else 1
         if count > 5:
             response["error"] = "Cannot request more than 5 objects."
             return JsonResponse(response, safe=False, encoder=QuestionEncoder)

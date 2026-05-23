@@ -14,17 +14,13 @@ class ModifiedModelForm(ModelForm):
 
     @cached_property
     def changed_data(self):
-        apparent_changed_data = [
-            name for name, bf in self._bound_items() if bf._has_changed()
-        ]
-        if self._newly_created or not self.has_changed:
+        apparent_changed_data = super().changed_data
+        if self._newly_created or not hasattr(self, "cleaned_data"):
             return apparent_changed_data
-        objectInstance = self.instance
         model = self._meta.model
         actual_changed_fields = list()
         differenceBetweenFields = [
-            (getattr(objectInstance, x), self.cleaned_data[x])
-            for x in apparent_changed_data
+            (self.initial.get(x), self.cleaned_data[x]) for x in apparent_changed_data
         ]
         for idx in range(len(apparent_changed_data)):
             field = apparent_changed_data[idx]
@@ -64,7 +60,7 @@ class ModifiedModelForm(ModelForm):
             return objectInstance
         else:
             objectInstance = self.instance
-            if self.has_changed:
+            if self.has_changed():
                 changed_fields = self.changed_data
                 differenceBetweenFields = [self.cleaned_data[x] for x in changed_fields]
                 for idx in range(len(changed_fields)):
@@ -74,6 +70,7 @@ class ModifiedModelForm(ModelForm):
                         getattr(objectInstance, field).set(newData)
                     else:
                         setattr(objectInstance, field, newData)
+                objectInstance.save()
             return objectInstance
 
 
