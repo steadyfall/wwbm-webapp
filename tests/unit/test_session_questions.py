@@ -44,7 +44,6 @@ class TestSessionQuestionSelection:
         self, player, easy_level, option
     ):
         session = Session.objects.create(
-            session_id="ABC12345",
             session_user=player,
             current_level=easy_level,
         )
@@ -56,7 +55,6 @@ class TestSessionQuestionSelection:
         self, player, easy_level, option
     ):
         session = Session.objects.create(
-            session_id="ABC12345",
             session_user=player,
             current_level=easy_level,
         )
@@ -70,7 +68,6 @@ class TestSessionQuestionSelection:
         self, player, medium_level
     ):
         session = Session.objects.create(
-            session_id="ABC12345",
             session_user=player,
             current_level=medium_level,
         )
@@ -91,7 +88,6 @@ class TestScoreBoardPerformance:
         correct_question = create_question("Correct?", Question.EASY, option, player)
         for index in range(20):
             session = Session.objects.create(
-                session_id=f"S{index:07d}",
                 session_user=player,
                 current_level=easy_level,
                 score=index,

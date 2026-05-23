@@ -15,14 +15,14 @@ class ModifiedModelForm(ModelForm):
     @cached_property
     def changed_data(self):
         apparent_changed_data = super().changed_data
-        if self._newly_created or not self.has_changed():
+        # Before validation, cleaned_data does not exist; defer to Django's raw
+        # bound-field change detection until cleaned values are available.
+        if self._newly_created or not hasattr(self, "cleaned_data"):
             return apparent_changed_data
-        objectInstance = self.instance
         model = self._meta.model
         actual_changed_fields = list()
         differenceBetweenFields = [
-            (getattr(objectInstance, x), self.cleaned_data[x])
-            for x in apparent_changed_data
+            (self.initial.get(x), self.cleaned_data[x]) for x in apparent_changed_data
         ]
         for idx in range(len(apparent_changed_data)):
             field = apparent_changed_data[idx]
@@ -62,7 +62,7 @@ class ModifiedModelForm(ModelForm):
             return objectInstance
         else:
             objectInstance = self.instance
-            if self.has_changed:
+            if self.has_changed():
                 changed_fields = self.changed_data
                 differenceBetweenFields = [self.cleaned_data[x] for x in changed_fields]
                 for idx in range(len(changed_fields)):

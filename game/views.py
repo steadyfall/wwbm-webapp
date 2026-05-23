@@ -1,15 +1,23 @@
-from django.shortcuts import render, redirect
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-from django.views.generic import View
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib import messages
-from django.db.models import Count
-
-from game.models import *
-from .lifelines import *
 import random
 
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Count
+from django.shortcuts import redirect, render
+from django.views.generic import View
+
+from game.models import Level, Lifeline, Option, Question, Session
+
+from .lifelines import (
+    AUDIENCE_POLL,
+    EXPERT_ANSWER,
+    FIFTY50,
+    LIFELINE_NAMES,
+    audiencePoll,
+    expertAnswer,
+    fifty50,
+)
 
 # Testing pages
 
@@ -21,12 +29,12 @@ def pageChecker(request):
     return render(
         request,
         "gameover.html",
-        dict(
-            title="title",
-            message="formatted_message|",
-            mainMessage="header",
-            mode="finished",
-        ),
+        {
+            "title": "title",
+            "message": "formatted_message|",
+            "mainMessage": "header",
+            "mode": "finished",
+        },
     )
 
 
@@ -65,7 +73,6 @@ class MainPage(View):
         if self.request.POST["startPlay"] == "yes":
             if self.request.user.is_authenticated:
                 new_session = Session.objects.create(
-                    session_id=Session.get_unused_sessionId(),
                     session_user=self.request.user,
                 )
                 new_session.left_lifelines.set(
@@ -117,21 +124,21 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
         check = Session.objects.filter(session_id=sessionId).exists()
+        if not check:
+            return redirect("mainpage", permanent=True)
+        sessionObj = Session.objects.get(session_id=sessionId)
         if "agreed" not in tuple(self.request.POST.keys()):
             sessionObj.delete()
             return redirect("mainpage", permanent=True)
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
-            if self.request.POST["agreed"] == "yes":
-                sessionObj.agreedToRules = True
-                sessionObj.prev_level = Level.objects.get(level_number=-1)
-                sessionObj.current_level = Level.objects.get(level_number=1)
-                sessionObj.save(
-                    update_fields=["agreedToRules", "current_level", "prev_level"]
-                )
-                return redirect("question", session=sessionId, level=1, permanent=True)
-            else:
-                sessionObj.delete()
+        if self.request.POST["agreed"] == "yes":
+            sessionObj.agreedToRules = True
+            sessionObj.prev_level = Level.objects.get(level_number=-1)
+            sessionObj.current_level = Level.objects.get(level_number=1)
+            sessionObj.save(
+                update_fields=["agreedToRules", "current_level", "prev_level"]
+            )
+            return redirect("question", session=sessionId, level=1, permanent=True)
+        sessionObj.delete()
         return redirect("mainpage", permanent=True)
 
 
@@ -220,22 +227,22 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             )
             else None
         )
-        context = dict(
-            title=f"WWBM - Question for $ {forAmount:,}",
-            session=sessionObj,
-            question=qn,
-            total=f"{total:,}",
-            forAmount=f"{forAmount:,}",
-            timer=timer,
-            option1=options[order[0]],
-            option2=options[order[1]],
-            option3=options[order[2]],
-            option4=options[order[3]],
-            expertAnswerText=expertAnswerText,
-            audiencePollText=audiencePollText,
-            fifty50Text=fifty50Text,
-            usedLifelineRecently=usedLifelineRecently,
-        )
+        context = {
+            "title": f"WWBM - Question for $ {forAmount:,}",
+            "session": sessionObj,
+            "question": qn,
+            "total": f"{total:,}",
+            "forAmount": f"{forAmount:,}",
+            "timer": timer,
+            "option1": options[order[0]],
+            "option2": options[order[1]],
+            "option3": options[order[2]],
+            "option4": options[order[3]],
+            "expertAnswerText": expertAnswerText,
+            "audiencePollText": audiencePollText,
+            "fifty50Text": fifty50Text,
+            "usedLifelineRecently": usedLifelineRecently,
+        }
         return context
 
     def get(self, request, *args, **kwargs):
@@ -283,9 +290,10 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             return redirect("mainpage", permanent=True)
 
         if "lifelineSubmit" in set(self.request.POST.keys()):
-            if self.request.POST["lifelineSubmit"] == "yes" and self.request.POST[
-                "lifeline"
-            ] in set(mappedLifelines.keys()):
+            if (
+                self.request.POST["lifelineSubmit"] == "yes"
+                and self.request.POST["lifeline"] in LIFELINE_NAMES
+            ):
                 return render(
                     self.request,
                     "question.html",
@@ -423,12 +431,12 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
             title = "Wrong answer!"
             header = 'You just <span class="font-bold">LOST</span> it ALL!'
             formatted_message = message.format(f"{total * 99:,}", f"{total:,}")
-        context = dict(
-            title=title,
-            message=formatted_message,
-            mainMessage=header,
-            mode=mode,
-        )
+        context = {
+            "title": title,
+            "message": formatted_message,
+            "mainMessage": header,
+            "mode": mode,
+        }
         return context
 
     def get(self, request, *args, **kwargs):
@@ -550,11 +558,11 @@ class Leaderboard(View):
             objects_list = paginator.page(1)
         except EmptyPage:
             objects_list = paginator.page(paginator.num_pages)
-        context = dict(
-            title="WWBM Leaderboard",
-            heading="Leaderboard",
-            allSessions=objects_list,
-        )
+        context = {
+            "title": "WWBM Leaderboard",
+            "heading": "Leaderboard",
+            "allSessions": objects_list,
+        }
         return context
 
     def get(self, request, *args, **kwargs):
@@ -588,11 +596,11 @@ class ScoreBoard(LoginRequiredMixin, View):
             objects_list = paginator.page(1)
         except EmptyPage:
             objects_list = paginator.page(paginator.num_pages)
-        context = dict(
-            title="Scoreboard",
-            heading=f'Scoreboard for <u><span class="text-info"><i>{self.request.user.username}</i></span></u>',
-            allSessions=objects_list,
-        )
+        context = {
+            "title": "Scoreboard",
+            "heading": f'Scoreboard for <u><span class="text-info"><i>{self.request.user.username}</i></span></u>',
+            "allSessions": objects_list,
+        }
         return context
 
     def get(self, request, *args, **kwargs):

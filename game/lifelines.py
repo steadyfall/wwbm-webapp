@@ -1,12 +1,19 @@
-from game.models import *
-import random, secrets
+import random
+import secrets
+
+from game.models import Lifeline, Question, Session
 
 FIFTY50 = "Fifty-50"
 AUDIENCE_POLL = "Audience Poll"
 EXPERT_ANSWER = "Expert Answer"
+LIFELINE_NAMES = (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER)
 
-mappedLifelines = [(2, FIFTY50), (3, AUDIENCE_POLL), (4, EXPERT_ANSWER)]
-mappedLifelines = dict(tuple(map(lambda x: x[::-1], mappedLifelines)))
+
+def get_lifeline_map():
+    return {
+        lifeline.name: lifeline.pk
+        for lifeline in Lifeline.objects.filter(name__in=LIFELINE_NAMES)
+    }
 
 
 def general_procedure(lifeline_id, question_id, session_id):
@@ -19,14 +26,14 @@ def general_procedure(lifeline_id, question_id, session_id):
 
 
 def expertAnswer(question_id, session_id):
-    general_procedure(mappedLifelines[EXPERT_ANSWER], question_id, session_id)
+    general_procedure(get_lifeline_map()[EXPERT_ANSWER], question_id, session_id)
     question = Question.objects.get(pk=question_id)
     answer = f"The expert says that the answer would be <b>{question.correct_option.text}</b>."
     return answer
 
 
 def fifty50(question_id, session_id):
-    general_procedure(mappedLifelines[FIFTY50], question_id, session_id)
+    general_procedure(get_lifeline_map()[FIFTY50], question_id, session_id)
     question = Question.objects.get(pk=question_id)
     random_incorrect = secrets.choice(
         [o.text for o in question.incorrect_options.all()]
@@ -39,7 +46,7 @@ def fifty50(question_id, session_id):
 
 
 def audiencePoll(question_id, session_id):
-    general_procedure(mappedLifelines[AUDIENCE_POLL], question_id, session_id)
+    general_procedure(get_lifeline_map()[AUDIENCE_POLL], question_id, session_id)
     question = Question.objects.get(pk=question_id)
     correct_answer = question.correct_option.text
     incorrectOptions = [o.text for o in question.incorrect_options.all()]

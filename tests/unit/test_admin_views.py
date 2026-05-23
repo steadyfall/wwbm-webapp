@@ -23,7 +23,7 @@ def regular_user():
     return User.objects.create_user(username="player", password="playerPass123")
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def admin_data(superuser):
     category = Category.objects.create(name="General")
     none_category = Category.objects.get_or_create(name="None")[0]
@@ -42,7 +42,7 @@ def admin_data(superuser):
     question.falls_under.set([category, none_category])
     question.incorrect_options.set(wrong_options)
     Lifeline.objects.create(name="Ask an expert", description="Expert help")
-    Session.objects.create(session_id="ADMIN001", session_user=superuser, score=100)
+    Session.objects.create(session_user=superuser, score=100)
     return {
         "category": category,
         "correct": correct,
@@ -57,9 +57,7 @@ def admin_client(client, superuser):
     return client
 
 
-def _admin_urls(admin_data):
-    category = admin_data["category"]
-    question = admin_data["question"]
+def _admin_urls(category_pk=1, question_pk=1):
     return [
         reverse("adminMainPage"),
         reverse("adminListDB", kwargs={"db": "session"}),
@@ -68,9 +66,9 @@ def _admin_urls(admin_data):
         reverse("adminListDB", kwargs={"db": "question"}),
         reverse("adminListDB", kwargs={"db": "option"}),
         reverse("adminDBObjectCreate", kwargs={"db": "category"}),
-        reverse("adminDBObject", kwargs={"db": "category", "pk": category.pk}),
-        reverse("adminDBObjectDelete", kwargs={"db": "category", "pk": category.pk}),
-        reverse("adminDBObjectHistory", kwargs={"db": "question", "pk": question.pk}),
+        reverse("adminDBObject", kwargs={"db": "category", "pk": category_pk}),
+        reverse("adminDBObjectDelete", kwargs={"db": "category", "pk": category_pk}),
+        reverse("adminDBObjectHistory", kwargs={"db": "question", "pk": question_pk}),
         reverse("adminListLogs"),
         reverse("APIAccess"),
         reverse("APIDocs"),
@@ -78,37 +76,49 @@ def _admin_urls(admin_data):
     ]
 
 
+def _admin_urls_for_data(admin_data):
+    return _admin_urls(
+        category_pk=admin_data["category"].pk,
+        question_pk=admin_data["question"].pk,
+    )
+
+
+ADMIN_URL_CASES = [
+    pytest.param(url, id=f"admin-url-{index}")
+    for index, url in enumerate(_admin_urls(), start=1)
+]
+
+
 @pytest.mark.django_db
 class TestAdminAccessControl:
-    @pytest.mark.parametrize("url_index", range(14))
-    def test_unauthenticated_requests_redirect_to_admin_login(
-        self, client, admin_data, url_index
-    ):
-        url = _admin_urls(admin_data)[url_index]
-
+    @pytest.mark.parametrize("url", ADMIN_URL_CASES)
+    def test_unauthenticated_requests_redirect_to_admin_login(self, client, url):
         response = client.get(url)
 
         assert response.status_code == 302
         assert response.url.startswith(reverse("adminLogin"))
 
-    @pytest.mark.parametrize("url_index", range(14))
-    def test_non_superuser_requests_return_403(
-        self, client, regular_user, admin_data, url_index
-    ):
+    @pytest.mark.parametrize("url", ADMIN_URL_CASES)
+    def test_non_superuser_requests_return_403(self, client, regular_user, url):
         client.force_login(regular_user)
-        url = _admin_urls(admin_data)[url_index]
 
         response = client.get(url)
 
         assert response.status_code == 403
 
-    @pytest.mark.parametrize("url_index", range(14))
+    @pytest.mark.parametrize(
+        "url_getter",
+        [
+            pytest.param(
+                lambda data, index=index: _admin_urls_for_data(data)[index], id=case.id
+            )
+            for index, case in enumerate(ADMIN_URL_CASES)
+        ],
+    )
     def test_superuser_requests_return_success_or_expected_redirect(
-        self, admin_client, admin_data, url_index
+        self, admin_client, admin_data, url_getter
     ):
-        url = _admin_urls(admin_data)[url_index]
-
-        response = admin_client.get(url)
+        response = admin_client.get(url_getter(admin_data))
 
         assert response.status_code in {200, 302}
 
@@ -131,20 +141,22 @@ class TestAdminDashboardPerformance:
 @pytest.mark.django_db
 class TestAdminCRUDViews:
     @pytest.mark.parametrize(
-        ("model_name", "expected_text"),
-        [
-            ("session", "ADMIN001"),
-            ("lifeline", "Ask an expert"),
-            ("category", "General"),
-            ("question", "Existing question?"),
-            ("option", "Correct"),
-        ],
+        "model_name",
+        ["session", "lifeline", "category", "question", "option"],
     )
-    def test_admin_list_db_shows_records(self, admin_client, model_name, expected_text):
+    def test_admin_list_db_shows_records(self, admin_client, admin_data, model_name):
+        expected_text_by_model = {
+            "session": str(Session.objects.get(score=100)),
+            "lifeline": "Ask an expert",
+            "category": "General",
+            "question": "Existing question?",
+            "option": "Correct",
+        }
+
         response = admin_client.get(reverse("adminListDB", kwargs={"db": model_name}))
 
         assert response.status_code == 200
-        assert expected_text in response.content.decode()
+        assert expected_text_by_model[model_name] in response.content.decode()
 
     def test_create_category_adds_object_and_log_entry(self, admin_client, superuser):
         response = admin_client.post(
