@@ -69,13 +69,12 @@ def log_addition(request, obj, message):
     """
     from django.contrib.admin.models import ADDITION, LogEntry
 
-    return LogEntry.objects.log_action(
+    return LogEntry.objects.log_actions(
         user_id=request.user.pk,
-        content_type_id=get_content_type_for_model(obj).pk,
-        object_id=obj.pk,
-        object_repr=str(obj),
+        queryset=[obj],
         action_flag=ADDITION,
         change_message=message,
+        single_object=True,
     )
 
 
@@ -86,13 +85,12 @@ def log_change(request, obj, message):
     """
     from django.contrib.admin.models import CHANGE, LogEntry
 
-    return LogEntry.objects.log_action(
+    return LogEntry.objects.log_actions(
         user_id=request.user.pk,
-        content_type_id=get_content_type_for_model(obj).pk,
-        object_id=obj.pk,
-        object_repr=str(obj),
+        queryset=[obj],
         action_flag=CHANGE,
         change_message=message,
+        single_object=True,
     )
 
 
@@ -104,13 +102,17 @@ def log_deletion(request, obj, object_repr):
     """
     from django.contrib.admin.models import DELETION, LogEntry
 
-    return LogEntry.objects.log_action(
+    # Django's log_actions() derives object_repr from str(obj). Deletion logs
+    # keep accepting an explicit repr so callers can capture it before delete.
+    log_entry = LogEntry(
         user_id=request.user.pk,
         content_type_id=get_content_type_for_model(obj).pk,
         object_id=obj.pk,
         object_repr=object_repr,
         action_flag=DELETION,
     )
+    log_entry.save()
+    return log_entry
 
 
 def pretty_change_message(obj):
