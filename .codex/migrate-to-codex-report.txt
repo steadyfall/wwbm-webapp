@@ -1,0 +1,83 @@
+Migration inventory:
+  active: instruction files - 2 found
+    - CLAUDE.md
+    - AGENTS.md
+  active: skills - 9 found
+    - coding-standards
+    - django-patterns
+    - django-security
+    - django-tdd
+    - django-verification
+    - excalidraw
+    - python-patterns
+    - python-testing
+    - tdd-workflow
+  active: command sources - 7 found
+    provider: source command (7)
+      - code-review
+      - docs-sync
+      - e2e
+      - multi-execute
+      - python-review
+      - tdd
+      - test-coverage
+  active: subagents - 7 found
+    - architect
+    - code-reviewer
+    - doc-updater
+    - e2e-runner
+    - planner
+    - python-reviewer
+    - tdd-guide
+Migration surfaces:
+  active: AGENTS.md - 1 instruction file(s) found.
+  active: skills - 16 skill(s) converted.
+  active: MCP config - 0 MCP server(s) converted into config.toml.
+  active: subagents - 7 subagent(s) converted.
+Migration report:
+  symlinked: AGENTS.md - Linked to CLAUDE.md.
+  rewritten: .codex/hooks.json - Unsupported Claude hook fields need review: `hooks.SessionEnd`, `hooks.Stop.matcher`, `hooks.UserPromptSubmit.matcher`. Rewritten for Codex hooks; review behavior before relying on it. Codex hooks require `[features].codex_hooks = true`, only execute `command` handlers, skip `async` / `prompt` / `agent` handlers, ignore `matcher` for `UserPromptSubmit` and `Stop`, and `PreToolUse` / `PostToolUse` currently run for shell commands only.
+  rewritten: .agents/skills/coding-standards/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/django-patterns/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/django-security/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/django-tdd/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/django-verification/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/excalidraw/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/python-patterns/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/python-testing/SKILL.md - Converted Claude skill.
+  rewritten: .agents/skills/tdd-workflow/SKILL.md - Converted Claude skill.
+  manual_fix_required: .agents/skills/source-command-code-review/SKILL.md - Converted source command `code-review` to a single-file Codex skill; review invocation and template placeholder semantics.
+  manual_fix_required: .agents/skills/source-command-docs-sync/SKILL.md - Converted source command `docs-sync` to a single-file Codex skill; review invocation and template placeholder semantics.
+  manual_fix_required: .agents/skills/source-command-e2e/SKILL.md - Converted source command `e2e` to a single-file Codex skill; review invocation and template placeholder semantics.
+  manual_fix_required: .agents/skills/source-command-multi-execute/SKILL.md - Converted source command `multi-execute` to a single-file Codex skill; review invocation and template placeholder semantics.
+  manual_fix_required: .agents/skills/source-command-python-review/SKILL.md - Converted source command `python-review` to a single-file Codex skill; review invocation and template placeholder semantics.
+  manual_fix_required: .agents/skills/source-command-tdd/SKILL.md - Converted source command `tdd` to a single-file Codex skill; review invocation and template placeholder semantics.
+  manual_fix_required: .agents/skills/source-command-test-coverage/SKILL.md - Converted source command `test-coverage` to a single-file Codex skill; review invocation and template placeholder semantics.
+  rewritten: .codex/config.toml - Converted 0 MCP server entries.
+  manual_fix_required: .codex/agents/architect.toml - Manual review required for Claude subagent fields: `tools`.
+  manual_fix_required: .codex/agents/code-reviewer.toml - Manual review required for Claude subagent fields: `tools`.
+  manual_fix_required: .codex/agents/doc-updater.toml - Manual review required for Claude subagent fields: `tools`.
+  manual_fix_required: .codex/agents/e2e-runner.toml - Manual review required for Claude subagent fields: `tools`.
+  manual_fix_required: .codex/agents/planner.toml - Manual review required for Claude subagent fields: `tools`.
+  manual_fix_required: .codex/agents/python-reviewer.toml - Manual review required for Claude subagent fields: `tools`.
+  manual_fix_required: .codex/agents/tdd-guide.toml - Manual review required for Claude subagent fields: `tools`.
+  overwritten: .agents/skills/django-security - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/excalidraw - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/source-command-e2e - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/source-command-docs-sync - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/python-testing - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/source-command-python-review - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/python-patterns - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/source-command-tdd - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/django-tdd - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/django-verification - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/django-patterns - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/coding-standards - Existing Codex skill will be replaced.
+  overwritten: .agents/skills/tdd-workflow - Existing Codex skill will be replaced.
+  overwritten: .codex/agents/e2e-runner.toml - Existing Codex subagent will be replaced.
+  overwritten: .codex/agents/architect.toml - Existing Codex subagent will be replaced.
+  overwritten: .codex/agents/code-reviewer.toml - Existing Codex subagent will be replaced.
+  overwritten: .codex/agents/doc-updater.toml - Existing Codex subagent will be replaced.
+  overwritten: .codex/agents/planner.toml - Existing Codex subagent will be replaced.
+  overwritten: .codex/agents/tdd-guide.toml - Existing Codex subagent will be replaced.
+  overwritten: .codex/agents/python-reviewer.toml - Existing Codex subagent will be replaced.
