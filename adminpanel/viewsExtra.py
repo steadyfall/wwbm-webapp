@@ -69,7 +69,7 @@ def log_addition(request, obj, message):
     """
     from django.contrib.admin.models import ADDITION, LogEntry
 
-    return LogEntry.objects.log_action(
+    return LogEntry.objects.create(
         user_id=request.user.pk,
         content_type_id=get_content_type_for_model(obj).pk,
         object_id=obj.pk,
@@ -86,7 +86,7 @@ def log_change(request, obj, message):
     """
     from django.contrib.admin.models import CHANGE, LogEntry
 
-    return LogEntry.objects.log_action(
+    return LogEntry.objects.create(
         user_id=request.user.pk,
         content_type_id=get_content_type_for_model(obj).pk,
         object_id=obj.pk,
@@ -104,7 +104,7 @@ def log_deletion(request, obj, object_repr):
     """
     from django.contrib.admin.models import DELETION, LogEntry
 
-    return LogEntry.objects.log_action(
+    return LogEntry.objects.create(
         user_id=request.user.pk,
         content_type_id=get_content_type_for_model(obj).pk,
         object_id=obj.pk,

@@ -68,7 +68,9 @@ class MainPage(View):
                     session_id=Session.get_unused_sessionId(),
                     session_user=self.request.user,
                 )
-                new_session.left_lifelines.set(Lifeline.objects.values_list("id", flat=True))
+                new_session.left_lifelines.set(
+                    Lifeline.objects.values_list("id", flat=True)
+                )
                 return redirect("rules", session=new_session.session_id, permanent=True)
             else:
                 return redirect("login")
@@ -256,7 +258,12 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                         level_number=1 + sessionObj.prev_level.level_number
                     )
                     sessionObj.save(update_fields=["prev_level"])
-                    Session.set_question(sessionId)
+                    if Session.set_question(sessionId) is None:
+                        messages.error(
+                            request,
+                            "No questions are available for this level.",
+                        )
+                        return redirect("mainpage")
                 return render(request, "question.html", self.context_creator())
         return redirect("mainpage", permanent=True)
 
@@ -415,7 +422,7 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
         elif mode == "wrong":
             title = "Wrong answer!"
             header = 'You just <span class="font-bold">LOST</span> it ALL!'
-            formatted_message = message.format(f"{total*99:,}", f"{total:,}")
+            formatted_message = message.format(f"{total * 99:,}", f"{total:,}")
         context = dict(
             title=title,
             message=formatted_message,
@@ -561,13 +568,17 @@ class ScoreBoard(LoginRequiredMixin, View):
                 f"$ {ses.score:,}",
                 ses.current_level.level_number,
                 ses.date_created,
-                ses.correct_qns.all().count(),
-                (True if ses.wrong_qn.pk == Question.get_default_pk() else False),
-                ses.used_lifelines.all().count(),
+                ses.correct_count,
+                (True if ses.wrong_qn.text == "None" else False),
+                ses.lifeline_count,
             )
-            for ses in Session.objects.filter(session_user=self.request.user).order_by(
-                "-score", "-date_created"
+            for ses in Session.objects.filter(session_user=self.request.user)
+            .select_related("current_level", "wrong_qn")
+            .annotate(
+                correct_count=Count("correct_qns", distinct=True),
+                lifeline_count=Count("used_lifelines", distinct=True),
             )
+            .order_by("-score", "-date_created")
         ]
         paginator = Paginator(allSessions, PAGINATE_NO)
         page = self.request.GET.get("page", 1)

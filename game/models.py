@@ -6,7 +6,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.crypto import get_random_string
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-import random
 
 
 class Lifeline(models.Model):
@@ -97,7 +96,7 @@ class ChosenOption(models.Model):
         verbose_name_plural = "chosen options"
 
     def __str__(self):
-        produce = f'{self.user.__str__()} chose {self.option.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen.timetuple())} UTC'
+        produce = f"{self.user.__str__()} chose {self.option.__str__()} on {strftime('%d-%m-%Y %I:%M:%S %p', self.date_chosen.timetuple())} UTC"
         return produce
 
 
@@ -145,7 +144,7 @@ class Question(models.Model):
         max_length=20, choices=question_type_choices, default=MULTIPLE
     )
     difficulty = models.CharField(
-        max_length=20, choices=difficulty_choices, default=UNASSIGNED
+        max_length=20, choices=difficulty_choices, default=UNASSIGNED, db_index=True
     )
     asked_to = models.ManyToManyField(User, related_name="questions_asked")
 
@@ -155,7 +154,7 @@ class Question(models.Model):
             text="None",
             correct_option=Option.objects.get(pk=Option.get_default_pk()),
         )
-        question.incorrect_options.set([Option.get_default_pk()]),
+        question.incorrect_options.set([Option.get_default_pk()])
         return question.pk
 
     class Meta:
@@ -170,12 +169,13 @@ class Question(models.Model):
 
 class Session(models.Model):
     session_id = models.CharField(primary_key=True, editable=False, max_length=8)
-    date_created = models.DateTimeField(default=timezone.now)
+    date_created = models.DateTimeField(default=timezone.now, db_index=True)
     session_user = models.ForeignKey(
         get_user_model(),
         default=get_sentinel_user,
         on_delete=models.SET(get_sentinel_user),
         related_name="initiated_sessions",
+        db_index=True,
     )
     prev_level = models.ForeignKey(
         Level,
@@ -241,20 +241,25 @@ class Session(models.Model):
             mode = Question.MEDIUM
         else:
             mode = Question.EASY
-        questionsAskedToUser = list(sessionObj.session_user.questions_asked.all())
-        mode_questions = list(Question.objects.filter(difficulty=mode))
-        desirable_questions = list(set(mode_questions) - set(questionsAskedToUser))
-        qn = random.choice(desirable_questions)
-        return qn
+        asked_pks = sessionObj.questions_asked.values_list("pk", flat=True)
+        return (
+            Question.objects.filter(difficulty=mode)
+            .exclude(pk__in=asked_pks)
+            .order_by("?")
+            .first()
+        )
 
     @classmethod
     def set_question(cls, session_id):
         sessionObj = cls.objects.get(session_id=session_id)
         nextQuestion = cls.get_next_question(session_id)
+        if nextQuestion is None:
+            return None
         sessionObj.current_question = nextQuestion
         nextQuestion.asked_to.add(sessionObj.session_user)
         sessionObj.save(update_fields=["current_question"])
         sessionObj.questions_asked.add(nextQuestion)
+        return nextQuestion
 
     class Meta:
         verbose_name = "session"
@@ -268,12 +273,12 @@ class Session(models.Model):
 class QuestionOrder(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
-    date_chosen = models.DateTimeField(default=timezone.now)
+    date_chosen = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
         verbose_name = "ordering of question in session"
         verbose_name_plural = "ordering of questions in session"
 
     def __str__(self):
-        produce = f'{self.session.session_id} - {self.question.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen.timetuple())} UTC'
+        produce = f"{self.session.session_id} - {self.question.__str__()} on {strftime('%d-%m-%Y %I:%M:%S %p', self.date_chosen.timetuple())} UTC"
         return produce

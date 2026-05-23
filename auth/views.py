@@ -82,7 +82,7 @@ def logout(request):
 def adminlogin(request):
     if request.user.is_authenticated:
         if request.user.is_superuser:
-            redirect("admin_page")
+            return redirect("adminMainPage")
         else:
             return redirect("mainpage")
 

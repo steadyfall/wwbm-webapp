@@ -14,10 +14,8 @@ class ModifiedModelForm(ModelForm):
 
     @cached_property
     def changed_data(self):
-        apparent_changed_data = [
-            name for name, bf in self._bound_items() if bf._has_changed()
-        ]
-        if self._newly_created or not self.has_changed:
+        apparent_changed_data = super().changed_data
+        if self._newly_created or not self.has_changed():
             return apparent_changed_data
         objectInstance = self.instance
         model = self._meta.model
@@ -74,6 +72,7 @@ class ModifiedModelForm(ModelForm):
                         getattr(objectInstance, field).set(newData)
                     else:
                         setattr(objectInstance, field, newData)
+                objectInstance.save()
             return objectInstance
 
 
