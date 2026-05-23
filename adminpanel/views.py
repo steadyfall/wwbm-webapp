@@ -323,7 +323,7 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def get_form_class(self):
         """Return the form class to use."""
-        return AdminDBObjectCreate.form_class
+        return self.form_class
 
     def get_form(self, form_class=None):
         """Return an instance of the form to be used in this view."""
@@ -378,8 +378,7 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
             "lifeline",
         ):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
-        model = modelDict[smallcaseDB]
-        setattr(AdminDBObjectCreate, "form_class", modelFormDict[smallcaseDB])
+        self.form_class = modelFormDict[smallcaseDB]
         context = self.context_creator()
         return render(request, "adminpanel/objectCreate.html", context)
 
@@ -392,6 +391,7 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
         if request.POST.get("cancel"):
             return redirect("adminListDB", db=smallcaseDB)
+        self.form_class = modelFormDict[smallcaseDB]
         form = self.get_form()
         if not form.is_valid():
             context = self.context_creator()
@@ -417,11 +417,11 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
 
     def get_instance(self):
         """Return the initial data to use for forms on this view."""
-        return AdminDBObjectChange.instance
+        return self.instance
 
     def get_form_class(self):
         """Return the form class to use."""
-        return AdminDBObjectCreate.form_class
+        return self.form_class
 
     def get_form(self, form_class=None):
         """Return an instance of the form to be used in this view."""
@@ -479,12 +479,8 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/objectView.html", context)
 
     def set_form_state(self, model, smallcaseDB, pk):
-        setattr(AdminDBObjectCreate, "form_class", modelFormDict[smallcaseDB])
-        setattr(
-            AdminDBObjectChange,
-            "instance",
-            model.objects.get(pk=int(pk) if pk.isnumeric() else pk),
-        )
+        self.form_class = modelFormDict[smallcaseDB]
+        self.instance = model.objects.get(pk=int(pk) if pk.isnumeric() else pk)
 
     def post(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()

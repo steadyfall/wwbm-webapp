@@ -15,6 +15,8 @@ class ModifiedModelForm(ModelForm):
     @cached_property
     def changed_data(self):
         apparent_changed_data = super().changed_data
+        # Before validation, cleaned_data does not exist; defer to Django's raw
+        # bound-field change detection until cleaned values are available.
         if self._newly_created or not hasattr(self, "cleaned_data"):
             return apparent_changed_data
         model = self._meta.model

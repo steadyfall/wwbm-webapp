@@ -19,7 +19,7 @@ def regular_user():
     return User.objects.create_user(username="player", password="playerPass123")
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def admin_data(superuser):
     category = Category.objects.create(name="General")
     none_category = Category.objects.get_or_create(name="None")[0]
@@ -53,9 +53,7 @@ def admin_client(client, superuser):
     return client
 
 
-def _admin_urls(admin_data):
-    category = admin_data["category"]
-    question = admin_data["question"]
+def _admin_urls(category_pk=1, question_pk=1):
     return [
         reverse("adminMainPage"),
         reverse("adminListDB", kwargs={"db": "session"}),
@@ -64,9 +62,9 @@ def _admin_urls(admin_data):
         reverse("adminListDB", kwargs={"db": "question"}),
         reverse("adminListDB", kwargs={"db": "option"}),
         reverse("adminDBObjectCreate", kwargs={"db": "category"}),
-        reverse("adminDBObject", kwargs={"db": "category", "pk": category.pk}),
-        reverse("adminDBObjectDelete", kwargs={"db": "category", "pk": category.pk}),
-        reverse("adminDBObjectHistory", kwargs={"db": "question", "pk": question.pk}),
+        reverse("adminDBObject", kwargs={"db": "category", "pk": category_pk}),
+        reverse("adminDBObjectDelete", kwargs={"db": "category", "pk": category_pk}),
+        reverse("adminDBObjectHistory", kwargs={"db": "question", "pk": question_pk}),
         reverse("adminListLogs"),
         reverse("APIAccess"),
         reverse("APIDocs"),
@@ -74,37 +72,49 @@ def _admin_urls(admin_data):
     ]
 
 
+def _admin_urls_for_data(admin_data):
+    return _admin_urls(
+        category_pk=admin_data["category"].pk,
+        question_pk=admin_data["question"].pk,
+    )
+
+
+ADMIN_URL_CASES = [
+    pytest.param(url, id=f"admin-url-{index}")
+    for index, url in enumerate(_admin_urls(), start=1)
+]
+
+
 @pytest.mark.django_db
 class TestAdminAccessControl:
-    @pytest.mark.parametrize("url_index", range(14))
-    def test_unauthenticated_requests_redirect_to_admin_login(
-        self, client, admin_data, url_index
-    ):
-        url = _admin_urls(admin_data)[url_index]
-
+    @pytest.mark.parametrize("url", ADMIN_URL_CASES)
+    def test_unauthenticated_requests_redirect_to_admin_login(self, client, url):
         response = client.get(url)
 
         assert response.status_code == 302
         assert response.url.startswith(reverse("adminLogin"))
 
-    @pytest.mark.parametrize("url_index", range(14))
-    def test_non_superuser_requests_return_403(
-        self, client, regular_user, admin_data, url_index
-    ):
+    @pytest.mark.parametrize("url", ADMIN_URL_CASES)
+    def test_non_superuser_requests_return_403(self, client, regular_user, url):
         client.force_login(regular_user)
-        url = _admin_urls(admin_data)[url_index]
 
         response = client.get(url)
 
         assert response.status_code == 403
 
-    @pytest.mark.parametrize("url_index", range(14))
+    @pytest.mark.parametrize(
+        "url_getter",
+        [
+            pytest.param(
+                lambda data, index=index: _admin_urls_for_data(data)[index], id=case.id
+            )
+            for index, case in enumerate(ADMIN_URL_CASES)
+        ],
+    )
     def test_superuser_requests_return_success_or_expected_redirect(
-        self, admin_client, admin_data, url_index
+        self, admin_client, admin_data, url_getter
     ):
-        url = _admin_urls(admin_data)[url_index]
-
-        response = admin_client.get(url)
+        response = admin_client.get(url_getter(admin_data))
 
         assert response.status_code in {200, 302}
 

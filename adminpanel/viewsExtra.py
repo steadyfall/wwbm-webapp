@@ -102,6 +102,8 @@ def log_deletion(request, obj, object_repr):
     """
     from django.contrib.admin.models import DELETION, LogEntry
 
+    # Django's log_actions() derives object_repr from str(obj). Deletion logs
+    # keep accepting an explicit repr so callers can capture it before delete.
     log_entry = LogEntry(
         user_id=request.user.pk,
         content_type_id=get_content_type_for_model(obj).pk,
