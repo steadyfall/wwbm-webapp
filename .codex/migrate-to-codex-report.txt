@@ -35,7 +35,7 @@ Migration surfaces:
   active: MCP config - 0 MCP server(s) converted into config.toml.
   active: subagents - 7 subagent(s) converted.
 Migration report:
-  symlinked: AGENTS.md - Linked to CLAUDE.md.
+  rewritten: AGENTS.md - Kept as a regular Codex instruction file during conflict resolution.
   rewritten: .codex/hooks.json - Unsupported Claude hook fields need review: `hooks.SessionEnd`, `hooks.Stop.matcher`, `hooks.UserPromptSubmit.matcher`. Rewritten for Codex hooks; review behavior before relying on it. Codex hooks require `[features].codex_hooks = true`, only execute `command` handlers, skip `async` / `prompt` / `agent` handlers, ignore `matcher` for `UserPromptSubmit` and `Stop`, and `PreToolUse` / `PostToolUse` currently run for shell commands only.
   rewritten: .agents/skills/coding-standards/SKILL.md - Converted Claude skill.
   rewritten: .agents/skills/django-patterns/SKILL.md - Converted Claude skill.
