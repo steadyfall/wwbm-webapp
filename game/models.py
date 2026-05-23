@@ -1,12 +1,12 @@
+import random
+import uuid
+from time import strftime
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
-from time import strftime
-from django.core.validators import MaxValueValidator, MinValueValidator
-from django.utils.crypto import get_random_string
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-import random
 
 
 class Lifeline(models.Model):
@@ -97,7 +97,7 @@ class ChosenOption(models.Model):
         verbose_name_plural = "chosen options"
 
     def __str__(self):
-        produce = f'{self.user.__str__()} chose {self.option.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen.timetuple())} UTC'
+        produce = f"{self.user.__str__()} chose {self.option.__str__()} on {strftime('%d-%m-%Y %I:%M:%S %p', self.date_chosen.timetuple())} UTC"
         return produce
 
 
@@ -155,7 +155,7 @@ class Question(models.Model):
             text="None",
             correct_option=Option.objects.get(pk=Option.get_default_pk()),
         )
-        question.incorrect_options.set([Option.get_default_pk()]),
+        question.incorrect_options.set([Option.get_default_pk()])
         return question.pk
 
     class Meta:
@@ -169,7 +169,7 @@ class Question(models.Model):
 
 
 class Session(models.Model):
-    session_id = models.CharField(primary_key=True, editable=False, max_length=8)
+    session_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     date_created = models.DateTimeField(default=timezone.now)
     session_user = models.ForeignKey(
         get_user_model(),
@@ -223,14 +223,6 @@ class Session(models.Model):
         return reverse('session', kwargs={'session_id': self.session_id}) """
 
     @classmethod
-    def get_unused_sessionId(cls):
-        used_sessionId = {ssn.session_id for ssn in cls.objects.all()}
-        newSessionId = get_random_string(8)
-        while newSessionId in used_sessionId:
-            newSessionId = get_random_string(8)
-        return newSessionId
-
-    @classmethod
     def get_next_question(cls, session_id):
         sessionObj = cls.objects.get(session_id=session_id)
         level_number = sessionObj.current_level.level_number
@@ -275,5 +267,5 @@ class QuestionOrder(models.Model):
         verbose_name_plural = "ordering of questions in session"
 
     def __str__(self):
-        produce = f'{self.session.session_id} - {self.question.__str__()} on {strftime("%d-%m-%Y %I:%M:%S %p", self.date_chosen.timetuple())} UTC'
+        produce = f"{self.session.session_id} - {self.question.__str__()} on {strftime('%d-%m-%Y %I:%M:%S %p', self.date_chosen.timetuple())} UTC"
         return produce
