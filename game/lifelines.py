@@ -9,24 +9,31 @@ EXPERT_ANSWER = "Expert Answer"
 LIFELINE_NAMES = (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER)
 
 
-def general_procedure(lifeline_name, question_id, session_id):
+def get_lifeline_map():
+    return {
+        lifeline.name: lifeline.pk
+        for lifeline in Lifeline.objects.filter(name__in=LIFELINE_NAMES)
+    }
+
+
+def general_procedure(lifeline_id, question_id, session_id):
     session = Session.objects.get(session_id=session_id)
     question = Question.objects.get(pk=question_id)
-    lifeline = Lifeline.objects.get(name=lifeline_name)
+    lifeline = Lifeline.objects.get(pk=lifeline_id)
     session.lifeline_qns.add(question)
     session.left_lifelines.remove(lifeline)
     session.used_lifelines.add(lifeline)
 
 
 def expertAnswer(question_id, session_id):
-    general_procedure(EXPERT_ANSWER, question_id, session_id)
+    general_procedure(get_lifeline_map()[EXPERT_ANSWER], question_id, session_id)
     question = Question.objects.get(pk=question_id)
     answer = f"The expert says that the answer would be <b>{question.correct_option.text}</b>."
     return answer
 
 
 def fifty50(question_id, session_id):
-    general_procedure(FIFTY50, question_id, session_id)
+    general_procedure(get_lifeline_map()[FIFTY50], question_id, session_id)
     question = Question.objects.get(pk=question_id)
     random_incorrect = secrets.choice(
         [o.text for o in question.incorrect_options.all()]
@@ -39,7 +46,7 @@ def fifty50(question_id, session_id):
 
 
 def audiencePoll(question_id, session_id):
-    general_procedure(AUDIENCE_POLL, question_id, session_id)
+    general_procedure(get_lifeline_map()[AUDIENCE_POLL], question_id, session_id)
     question = Question.objects.get(pk=question_id)
     correct_answer = question.correct_option.text
     incorrectOptions = [o.text for o in question.incorrect_options.all()]

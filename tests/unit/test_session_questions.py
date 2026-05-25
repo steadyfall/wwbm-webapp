@@ -133,6 +133,7 @@ class TestScoreBoardPerformance:
             session_user=player,
             current_level=easy_level,
             wrong_qn=lookalike,
+            gameOver=True,
         )
 
         request = RequestFactory().get(reverse("scores"))
@@ -142,7 +143,7 @@ class TestScoreBoardPerformance:
 
         result = list(view.context_creator()["allSessions"])[0]
 
-        assert result[4] is False
+        assert result.voluntary_quit is False
 
     def test_scoreboard_context_stays_under_query_budget(
         self, player, easy_level, option

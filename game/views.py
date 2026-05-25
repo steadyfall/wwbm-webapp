@@ -69,10 +69,7 @@ def player_levels():
 
 
 def create_player_session(user):
-    session = Session.objects.create(
-        session_id=Session.get_unused_sessionId(),
-        session_user=user,
-    )
+    session = Session.objects.create(session_user=user)
     session.left_lifelines.set(Lifeline.objects.all())
     session.agreedToRules = True
     session.prev_level = Level.objects.get(level_number=-1)

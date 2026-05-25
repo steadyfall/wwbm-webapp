@@ -48,17 +48,25 @@ def question():
 
 
 @pytest.mark.django_db
-def test_start_game_creates_uuid_session_and_redirects_to_rules(
+def test_quiz_start_creates_uuid_session_and_redirects_to_question(
     client, lifelines, levels, player
 ):
     client.force_login(player)
 
-    response = client.post(reverse("mainpage"), {"startPlay": "yes"})
+    landing_response = client.post(reverse("mainpage"), {"startPlay": "yes"})
 
-    assert response.status_code == 301
+    assert landing_response.status_code == 302
+    assert landing_response.url == reverse("quiz_start")
+    assert not Session.objects.filter(session_user=player).exists()
+
+    response = client.post(reverse("quiz_start"), {"startQuiz": "yes"})
+
+    assert response.status_code == 302
     session = Session.objects.get(session_user=player)
     assert isinstance(session.session_id, uuid.UUID)
-    assert response.url == reverse("rules", kwargs={"session": session.session_id})
+    assert response.url == reverse(
+        "question", kwargs={"session": session.session_id, "level": 1}
+    )
     assert set(session.left_lifelines.all()) == set(lifelines.values())
 
 
