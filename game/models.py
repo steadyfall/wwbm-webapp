@@ -178,7 +178,6 @@ class Session(models.Model):
         default=get_sentinel_user,
         on_delete=models.SET(get_sentinel_user),
         related_name="initiated_sessions",
-        db_index=True,
     )
     prev_level = models.ForeignKey(
         Level,
