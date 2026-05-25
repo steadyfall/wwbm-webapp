@@ -549,7 +549,9 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
             context = self.context_creator()
             return render(request, "adminpanel/objectView.html", context)
 
-        if request.POST.get("save") or request.POST.get("save_continue"):
+        if (request.POST.get("save") or request.POST.get("save_continue")) and (
+            len(form.changed_data) != 0
+        ):
             saved_object = form.save()
             change_message = construct_change_message(form, None, False)
             log_change(request, saved_object, change_message)

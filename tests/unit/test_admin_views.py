@@ -200,6 +200,29 @@ class TestAdminCRUDViews:
         log = LogEntry.objects.get(object_id=str(category.pk), action_flag=CHANGE)
         assert log.user == superuser
 
+    def test_change_category_without_changes_does_not_save_or_log(self, admin_client):
+        category = Category.objects.create(
+            name="Unchanged",
+            date_created=timezone.now().replace(microsecond=0),
+        )
+
+        with CaptureQueriesContext(connection) as queries:
+            response = admin_client.post(
+                reverse("adminDBObject", kwargs={"db": "category", "pk": category.pk}),
+                {
+                    "name": category.name,
+                    "date_created": category.date_created.strftime("%Y-%m-%d %H:%M:%S"),
+                    "save_continue": "Save and continue",
+                },
+            )
+
+        sql = " ".join(query["sql"] for query in queries)
+        assert response.status_code == 302
+        assert 'UPDATE "game_category"' not in sql
+        assert not LogEntry.objects.filter(
+            object_id=str(category.pk), action_flag=CHANGE
+        ).exists()
+
     def test_delete_category_yes_deletes_object_and_adds_log_entry(
         self, admin_client, superuser
     ):
