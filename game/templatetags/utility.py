@@ -33,7 +33,10 @@ def user_check(value):
 def obj_exists(value):
     if hasattr(value, "object_exists"):
         return value.object_exists
-    return value.content_type.model_class().objects.filter(pk=value.object_id).exists()
+    model = value.content_type.model_class()
+    if model is None:
+        return False
+    return model.objects.filter(pk=value.object_id).exists()
 
 
 @register.filter
