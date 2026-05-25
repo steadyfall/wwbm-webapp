@@ -571,13 +571,14 @@ class Leaderboard(View):
 
 class ScoreBoard(LoginRequiredMixin, View):
     def context_creator(self):
+        default_wrong_qn_pk = Question.get_default_pk()
         allSessions = [
             (
                 f"$ {ses.score:,}",
                 ses.current_level.level_number,
                 ses.date_created,
                 ses.correct_count,
-                (True if ses.wrong_qn.text == "None" else False),
+                ses.wrong_qn_id == default_wrong_qn_pk,
                 ses.lifeline_count,
             )
             for ses in Session.objects.filter(session_user=self.request.user)

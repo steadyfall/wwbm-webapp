@@ -150,11 +150,13 @@ class Question(models.Model):
 
     @classmethod
     def get_default_pk(cls):
+        default_option_pk = Option.get_default_pk()
         question, created = cls.objects.get_or_create(
             text="None",
-            correct_option=Option.objects.get(pk=Option.get_default_pk()),
+            correct_option_id=default_option_pk,
         )
-        question.incorrect_options.set([Option.get_default_pk()])
+        if created or not question.incorrect_options.filter(pk=default_option_pk).exists():
+            question.incorrect_options.add(default_option_pk)
         return question.pk
 
     class Meta:

@@ -81,6 +81,25 @@ class TestSessionQuestionSelection:
 
 @pytest.mark.django_db
 class TestScoreBoardPerformance:
+    def test_scoreboard_does_not_treat_matching_text_as_default_wrong_question(
+        self, player, easy_level, option
+    ):
+        lookalike = create_question("None", Question.EASY, option, player)
+        Session.objects.create(
+            session_user=player,
+            current_level=easy_level,
+            wrong_qn=lookalike,
+        )
+
+        request = RequestFactory().get(reverse("scores"))
+        request.user = player
+        view = ScoreBoard()
+        view.request = request
+
+        result = list(view.context_creator()["allSessions"])[0]
+
+        assert result[4] is False
+
     def test_scoreboard_context_stays_under_query_budget(
         self, player, easy_level, option
     ):
