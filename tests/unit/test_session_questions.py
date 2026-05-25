@@ -82,6 +82,32 @@ class TestSessionQuestionSelection:
 
         assert Session.get_next_question(current_session.session_id) == available
 
+    def test_get_next_question_selects_a_random_offset_without_random_sort(
+        self, player, easy_level, option, monkeypatch
+    ):
+        session = Session.objects.create(
+            session_user=player,
+            current_level=easy_level,
+        )
+        first = create_question("First?", Question.EASY, option, player)
+        create_question("Second?", Question.EASY, option, player)
+        offset_bounds = []
+
+        def choose_first(bound):
+            offset_bounds.append(bound)
+            return 0
+
+        monkeypatch.setattr("game.models.random.randrange", choose_first)
+
+        with CaptureQueriesContext(connection) as queries:
+            selected = Session.get_next_question(session.session_id)
+
+        sql = " ".join(query["sql"].upper() for query in queries)
+        assert selected == first
+        assert offset_bounds == [2]
+        assert "ORDER BY RAND" not in sql
+        assert "RANDOM()" not in sql
+
     def test_set_question_returns_none_without_changing_current_question(
         self, player, medium_level
     ):

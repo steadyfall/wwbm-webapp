@@ -1,3 +1,4 @@
+import random
 import uuid
 from time import strftime
 
@@ -236,12 +237,15 @@ class Session(models.Model):
         else:
             mode = Question.EASY
         asked_pks = sessionObj.session_user.questions_asked.values_list("pk", flat=True)
-        return (
+        available_questions = (
             Question.objects.filter(difficulty=mode)
             .exclude(pk__in=asked_pks)
-            .order_by("?")
-            .first()
+            .order_by("pk")
         )
+        question_count = available_questions.count()
+        if question_count == 0:
+            return None
+        return available_questions[random.randrange(question_count)]
 
     @classmethod
     def set_question(cls, session_id):
