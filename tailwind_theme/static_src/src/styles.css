@@ -104,8 +104,11 @@ summary:focus-visible {
 }
 
 .nav-link {
+    align-items: center;
     color: var(--color-secondary);
+    display: inline-flex;
     font-size: 16px;
+    min-height: 44px;
     padding: 8px 4px;
     text-decoration: none;
 }
@@ -217,7 +220,7 @@ summary:focus-visible {
     border-width: 2px;
     box-shadow: 3px 3px 0 var(--color-secondary);
     font-size: 15px;
-    min-height: 42px;
+    min-height: 44px;
     padding: 8px 14px;
 }
 
@@ -769,6 +772,7 @@ summary:focus-visible {
 .table-panel {
     overflow: hidden;
     padding: 0;
+    position: relative;
 }
 
 .table-head,
@@ -881,7 +885,7 @@ summary:focus-visible {
     padding: 18px clamp(16px, 5vw, 52px);
 }
 
-@media (max-width: 880px) {
+@media (max-width: 1028px) {
     .hero,
     .split-page,
     .game-layout {
@@ -890,10 +894,6 @@ summary:focus-visible {
 
     .hero-card {
         min-height: 0;
-    }
-
-    .game-layout .ladder {
-        order: -1;
     }
 
     .ladder-list {
@@ -913,6 +913,12 @@ summary:focus-visible {
         flex-direction: column;
     }
 
+    .nav-links {
+        column-gap: 10px;
+        row-gap: 4px;
+        width: 100%;
+    }
+
     .display {
         font-size: 40px;
     }
@@ -924,7 +930,13 @@ summary:focus-visible {
     }
 
     .table-head {
-        display: none;
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
     }
 
     .table-row,
@@ -934,6 +946,18 @@ summary:focus-visible {
 
     .table-row > :nth-child(1) {
         grid-column: 1 / -1;
+    }
+
+    .table-row > [role='cell']:not(.rank)::before {
+        color: var(--color-muted);
+        content: attr(data-label);
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .05em;
+        margin-bottom: 4px;
+        text-transform: uppercase;
     }
 }
 

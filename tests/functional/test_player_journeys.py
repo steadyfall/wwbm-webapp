@@ -77,6 +77,26 @@ def begin_game(page: Page) -> None:
     expect(page.locator(".question-box")).to_be_visible()
 
 
+@pytest.mark.parametrize("viewport_width", [390, 900, 1024])
+@pytest.mark.django_db(transaction=True)
+def test_compact_timed_game_places_question_before_prize_ladder(
+    page: Page, live_server, player_data, viewport_width
+):
+    page.set_viewport_size({"width": viewport_width, "height": 900})
+    log_in(page, live_server.url)
+    page.goto(f"{live_server.url}/quiz/")
+    begin_game(page)
+
+    board = page.locator(".game-board").bounding_box()
+    ladder = page.locator(".ladder").bounding_box()
+
+    assert board is not None and ladder is not None
+    assert board["y"] < ladder["y"]
+    assert page.evaluate(
+        "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+    )
+
+
 @pytest.mark.django_db(transaction=True)
 def test_wrong_answer_journey(page: Page, live_server, player_data):
     page.goto(live_server.url)

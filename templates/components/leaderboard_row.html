@@ -1,8 +1,8 @@
 {% load humanize %}
 <div class="table-row" role="row">
     <span class="rank" role="cell">#{{ forloop.counter0|add:allSessions.start_index }}</span>
-    <strong role="cell">{{ session.session_user.username }}</strong>
-    <span class="score" role="cell">${{ session.score|intcomma }}</span>
-    <span role="cell">Level {{ session.level_reached }}</span>
-    <time role="cell" datetime="{{ session.date_created|date:'c' }}">{{ session.date_created|date:"M j, Y" }}</time>
+    <strong role="cell" data-label="Player">{{ session.session_user.username }}</strong>
+    <span class="score" role="cell" data-label="Score">${{ session.score|intcomma }}</span>
+    <span role="cell" data-label="Level">Level {{ session.level_reached }}</span>
+    <time role="cell" data-label="Date played" datetime="{{ session.date_created|date:'c' }}">{{ session.date_created|date:"M j, Y" }}</time>
 </div>
