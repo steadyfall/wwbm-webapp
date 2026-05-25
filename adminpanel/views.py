@@ -11,8 +11,8 @@ from django.forms import ModelForm
 from django.forms import modelform_factory
 
 from django.db import models
-from django.db.models import F
-from django.db.models.functions import Length, Trim
+from django.db.models import Count, F, Max, Q
+from django.db.models.functions import Length, Trim, TruncDate
 from django.contrib.auth.models import User
 from django.contrib.admin.models import LogEntry
 from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
@@ -95,38 +95,68 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
     login_url = "adminLogin"
     raise_exception = False
 
+    def add_object_exists_to_logs(self, logs):
+        logs_by_model = {}
+        for log in logs:
+            model = log.content_type.model_class()
+            if model is not None:
+                logs_by_model.setdefault(model, []).append(log)
+
+        for model, model_logs in logs_by_model.items():
+            object_ids = [log.object_id for log in model_logs]
+            existing_ids = {
+                str(pk)
+                for pk in model.objects.filter(pk__in=object_ids).values_list(
+                    "pk", flat=True
+                )
+            }
+            for log in model_logs:
+                log.object_exists = log.object_id in existing_ids
+
     def context_creater(self):
-        recent_log = list(LogEntry.objects.order_by("-action_time")[:12])
-        total_question_count = Question.objects.all().count()
+        recent_log = list(
+            LogEntry.objects.select_related("content_type").order_by("-action_time")[
+                :12
+            ]
+        )
+        self.add_object_exists_to_logs(recent_log)
+        total_question_count = Question.objects.count()
         daily_question_count = Question.objects.filter(
             date_added__gte=datetime.date.today()
         ).count()
-        total_session_count = Session.objects.all().count()
+        total_session_count = Session.objects.count()
         daily_session_count = Session.objects.filter(
             date_created__gte=datetime.date.today()
         ).count()
         top_30_highest_scores = list(
-            map(
-                lambda x: x.score,
-                Session.objects.order_by("-score", "-date_created")[:30],
-            )
+            Session.objects.order_by("-score", "-date_created").values_list(
+                "score", flat=True
+            )[:30]
         )
-        highest_score = f"{top_30_highest_scores[0]:,}"
-        total_user_count = User.objects.all().count()
+        highest_score = (
+            f"{top_30_highest_scores[0]:,}" if top_30_highest_scores else "0"
+        )
+        total_user_count = User.objects.count()
         daily_user_count = User.objects.filter(
             date_joined__gte=datetime.date.today()
         ).count()
-        total_category = Category.objects.all()
+        categories = list(
+            Category.objects.annotate(question_count=Count("all_questions"))
+        )
         active_users_count = User.objects.filter(is_active=True).count()
 
         percent_of_daily_threshold = round(((daily_question_count) / 10) * 100)
-        percent_of_active_users = round((active_users_count / total_user_count) * 100)
+        percent_of_active_users = (
+            round((active_users_count / total_user_count) * 100)
+            if total_user_count
+            else 0
+        )
         more_than_ten_sessions = daily_session_count / 10
-        category_with_most_qs = sorted(
-            list(map(lambda x: (x, x.all_questions.all().count()), total_category)),
-            reverse=True,
-            key=lambda y: y[1],
-        )[0][0]
+        category_with_most_qs = max(
+            categories,
+            key=lambda category: category.question_count,
+            default=None,
+        )
 
         # Chart data
         (
@@ -140,38 +170,52 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
         ) = [list() for _ in range(7)]
         start_date = datetime.date.today() - datetime.timedelta(15)
         end_date = datetime.date.today() + datetime.timedelta(1)
+        session_stats = {
+            row["day"]: row
+            for row in Session.objects.filter(
+                date_created__date__gte=start_date,
+                date_created__date__lt=end_date,
+            )
+            .annotate(day=TruncDate("date_created"))
+            .values("day")
+            .annotate(
+                session_count=Count("pk"),
+                session_user_count=Count("session_user", distinct=True),
+                max_score=Max("score"),
+            )
+        }
+        question_stats = {
+            row["day"]: row
+            for row in QuestionOrder.objects.filter(
+                date_chosen__date__gte=start_date,
+                date_chosen__date__lt=end_date,
+            )
+            .annotate(day=TruncDate("date_chosen"))
+            .values("day")
+            .annotate(
+                easy_count=Count("pk", filter=Q(question__difficulty=Question.EASY)),
+                medium_count=Count(
+                    "pk", filter=Q(question__difficulty=Question.MEDIUM)
+                ),
+                hard_count=Count("pk", filter=Q(question__difficulty=Question.HARD)),
+            )
+        }
         for date in daterange(start_date, end_date):
-            session_query = Session.objects.filter(date_created__gte=date).filter(
-                date_created__lte=date + datetime.timedelta(1)
-            )
-            session_user_query = session_query.values("session_user").distinct()
-            questionorder_dateQuery = QuestionOrder.objects.filter(
-                date_chosen__gte=date
-            ).filter(date_chosen__lte=date + datetime.timedelta(1))
-            session_easy_query = questionorder_dateQuery.filter(
-                question__difficulty=Question.EASY
-            )
-            session_medium_query = questionorder_dateQuery.filter(
-                question__difficulty=Question.MEDIUM
-            )
-            session_hard_query = questionorder_dateQuery.filter(
-                question__difficulty=Question.HARD
-            )
-            score_query = (
-                Session.objects.filter(date_created__gte=date)
-                .filter(date_created__lte=date + datetime.timedelta(1))
-                .order_by("-score")
-            )
+            session_row = session_stats.get(date, {})
+            question_row = question_stats.get(date, {})
             date_list.append(date.strftime("%d-%m"))
-            session_list.append(session_query.count())
-            session_user_list.append(session_user_query.count())
-            session_easy_list.append(session_easy_query.count())
-            session_medium_list.append(session_medium_query.count())
-            session_hard_list.append(session_hard_query.count())
-            score_list.append(score_query[0].score if score_query.exists() else 0)
-        active_users_labels = [i.username for i in User.objects.all()]
+            session_list.append(session_row.get("session_count", 0))
+            session_user_list.append(session_row.get("session_user_count", 0))
+            session_easy_list.append(question_row.get("easy_count", 0))
+            session_medium_list.append(question_row.get("medium_count", 0))
+            session_hard_list.append(question_row.get("hard_count", 0))
+            score_list.append(session_row.get("max_score") or 0)
+        users_with_session_counts = list(
+            User.objects.annotate(session_count=Count("initiated_sessions"))
+        )
+        active_users_labels = [user.username for user in users_with_session_counts]
         active_users_activity = [
-            i.initiated_sessions.all().count() for i in User.objects.all()
+            user.session_count for user in users_with_session_counts
         ]
 
         context = dict(
@@ -184,12 +228,14 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
             highest_score=highest_score,
             total_user_count=total_user_count,
             daily_user_count=daily_user_count,
-            total_category_count=f"{total_category.count():,}",
+            total_category_count=f"{len(categories):,}",
             active_users_count=active_users_count,
             percent_of_daily_threshold=percent_of_daily_threshold,
             percent_of_active_users=percent_of_active_users,
             more_than_ten_sessions=more_than_ten_sessions,
-            category_with_most_qs=f"""\
+            category_with_most_qs=""
+            if category_with_most_qs is None
+            else f"""\
                                 <a style="text-decoration: none;" \
                                 href="{reverse_lazy("adminDBObject", kwargs={"db": "category", "pk": category_with_most_qs.pk})}" \
                                 title="{category_with_most_qs.name}">\

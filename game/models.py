@@ -145,17 +145,19 @@ class Question(models.Model):
         max_length=20, choices=question_type_choices, default=MULTIPLE
     )
     difficulty = models.CharField(
-        max_length=20, choices=difficulty_choices, default=UNASSIGNED
+        max_length=20, choices=difficulty_choices, default=UNASSIGNED, db_index=True
     )
     asked_to = models.ManyToManyField(User, related_name="questions_asked")
 
     @classmethod
     def get_default_pk(cls):
+        default_option_pk = Option.get_default_pk()
         question, created = cls.objects.get_or_create(
             text="None",
-            correct_option=Option.objects.get(pk=Option.get_default_pk()),
+            correct_option_id=default_option_pk,
         )
-        question.incorrect_options.set([Option.get_default_pk()])
+        if created or not question.incorrect_options.filter(pk=default_option_pk).exists():
+            question.incorrect_options.add(default_option_pk)
         return question.pk
 
     class Meta:
@@ -170,7 +172,7 @@ class Question(models.Model):
 
 class Session(models.Model):
     session_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    date_created = models.DateTimeField(default=timezone.now)
+    date_created = models.DateTimeField(default=timezone.now, db_index=True)
     session_user = models.ForeignKey(
         get_user_model(),
         default=get_sentinel_user,
@@ -233,20 +235,28 @@ class Session(models.Model):
             mode = Question.MEDIUM
         else:
             mode = Question.EASY
-        questionsAskedToUser = list(sessionObj.session_user.questions_asked.all())
-        mode_questions = list(Question.objects.filter(difficulty=mode))
-        desirable_questions = list(set(mode_questions) - set(questionsAskedToUser))
-        qn = random.choice(desirable_questions)
-        return qn
+        asked_pks = sessionObj.session_user.questions_asked.values_list("pk", flat=True)
+        available_questions = (
+            Question.objects.filter(difficulty=mode)
+            .exclude(pk__in=asked_pks)
+            .order_by("pk")
+        )
+        question_count = available_questions.count()
+        if question_count == 0:
+            return None
+        return available_questions[random.randrange(question_count)]
 
     @classmethod
     def set_question(cls, session_id):
         sessionObj = cls.objects.get(session_id=session_id)
         nextQuestion = cls.get_next_question(session_id)
+        if nextQuestion is None:
+            return None
         sessionObj.current_question = nextQuestion
         nextQuestion.asked_to.add(sessionObj.session_user)
         sessionObj.save(update_fields=["current_question"])
         sessionObj.questions_asked.add(nextQuestion)
+        return nextQuestion
 
     class Meta:
         verbose_name = "session"
@@ -260,7 +270,7 @@ class Session(models.Model):
 class QuestionOrder(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
-    date_chosen = models.DateTimeField(default=timezone.now)
+    date_chosen = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
         verbose_name = "ordering of question in session"

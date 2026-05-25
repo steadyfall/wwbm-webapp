@@ -1,9 +1,13 @@
 import pytest
 from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
 from django.contrib.auth.models import User
+from django.db import connection
+from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
+from adminpanel.views import AdminMainPage
 from game.models import Category, Lifeline, Option, Question, Session
 
 
@@ -38,7 +42,7 @@ def admin_data(superuser):
     question.falls_under.set([category, none_category])
     question.incorrect_options.set(wrong_options)
     Lifeline.objects.create(name="Ask an expert", description="Expert help")
-    Session.objects.create(session_id="TEST1234", session_user=superuser, score=100)
+    Session.objects.create(session_user=superuser, score=100)
     return {
         "category": category,
         "correct": correct,
@@ -120,6 +124,21 @@ class TestAdminAccessControl:
 
 
 @pytest.mark.django_db
+class TestAdminDashboardPerformance:
+    def test_dashboard_context_stays_under_query_budget(self, admin_data):
+        view = AdminMainPage()
+        view.request = RequestFactory().get(reverse("adminMainPage"))
+        view.kwargs = {}
+
+        with CaptureQueriesContext(connection) as queries:
+            context = view.context_creater()
+
+        assert len(queries) <= 20
+        assert context["total_question_count"] >= 1
+        assert context["category_with_most_qs"]
+
+
+@pytest.mark.django_db
 class TestAdminCRUDViews:
     @pytest.mark.parametrize(
         "model_name",
@@ -180,6 +199,29 @@ class TestAdminCRUDViews:
         assert category.name == "Updated General"
         log = LogEntry.objects.get(object_id=str(category.pk), action_flag=CHANGE)
         assert log.user == superuser
+
+    def test_change_category_without_changes_does_not_save_or_log(self, admin_client):
+        category = Category.objects.create(
+            name="Unchanged",
+            date_created=timezone.now().replace(microsecond=0),
+        )
+
+        with CaptureQueriesContext(connection) as queries:
+            response = admin_client.post(
+                reverse("adminDBObject", kwargs={"db": "category", "pk": category.pk}),
+                {
+                    "name": category.name,
+                    "date_created": category.date_created.strftime("%Y-%m-%d %H:%M:%S"),
+                    "save_continue": "Save and continue",
+                },
+            )
+
+        sql = " ".join(query["sql"] for query in queries)
+        assert response.status_code == 302
+        assert 'UPDATE "game_category"' not in sql
+        assert not LogEntry.objects.filter(
+            object_id=str(category.pk), action_flag=CHANGE
+        ).exists()
 
     def test_delete_category_yes_deletes_object_and_adds_log_entry(
         self, admin_client, superuser

@@ -3,6 +3,7 @@ import random
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.views.generic import View
 
@@ -264,7 +265,12 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                         level_number=1 + sessionObj.prev_level.level_number
                     )
                     sessionObj.save(update_fields=["prev_level"])
-                    Session.set_question(sessionId)
+                    if Session.set_question(sessionId) is None:
+                        messages.error(
+                            request,
+                            "No questions are available for this level.",
+                        )
+                        return redirect("mainpage")
                 return render(request, "question.html", self.context_creator())
         return redirect("mainpage", permanent=True)
 
@@ -565,18 +571,23 @@ class Leaderboard(View):
 
 class ScoreBoard(LoginRequiredMixin, View):
     def context_creator(self):
+        default_wrong_qn_pk = Question.get_default_pk()
         allSessions = [
             (
                 f"$ {ses.score:,}",
                 ses.current_level.level_number,
                 ses.date_created,
-                ses.correct_qns.all().count(),
-                (True if ses.wrong_qn.pk == Question.get_default_pk() else False),
-                ses.used_lifelines.all().count(),
+                ses.correct_count,
+                ses.wrong_qn_id == default_wrong_qn_pk,
+                ses.lifeline_count,
             )
-            for ses in Session.objects.filter(session_user=self.request.user).order_by(
-                "-score", "-date_created"
+            for ses in Session.objects.filter(session_user=self.request.user)
+            .select_related("current_level", "wrong_qn")
+            .annotate(
+                correct_count=Count("correct_qns", distinct=True),
+                lifeline_count=Count("used_lifelines", distinct=True),
             )
+            .order_by("-score", "-date_created")
         ]
         paginator = Paginator(allSessions, PAGINATE_NO)
         page = self.request.GET.get("page", 1)
