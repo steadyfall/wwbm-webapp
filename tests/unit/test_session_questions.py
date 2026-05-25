@@ -6,7 +6,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from game.models import Level, Lifeline, Option, Question, Session
-from game.views import ScoreBoard
+from game.views import PAGINATE_NO, ScoreBoard
 
 
 @pytest.fixture
@@ -167,4 +167,4 @@ class TestScoreBoardPerformance:
             context = view.context_creator()
 
         assert len(queries) <= 5
-        assert len(context["allSessions"]) == 12
+        assert len(context["allSessions"]) == PAGINATE_NO
