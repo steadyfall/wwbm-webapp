@@ -1,0 +1,16 @@
+<fieldset class="question-box">
+    <legend>{{ question.text }}</legend>
+    <div class="options">
+        {% for letter, text in options %}
+        {% if text %}
+        <label class="option">
+            <input type="radio" name="userAnswer" id="option_{{ letter|lower }}" value="{{ text }}" required>
+            <span class="option-card">
+                <span class="option-letter">{{ letter }}.</span>
+                <span>{{ text }}</span>
+            </span>
+        </label>
+        {% endif %}
+        {% endfor %}
+    </div>
+</fieldset>

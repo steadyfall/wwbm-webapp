@@ -1,0 +1,12 @@
+{% load humanize %}
+<aside class="panel ladder" aria-label="Prize ladder">
+    <h2 class="ladder-title">Prize ladder</h2>
+    <ol class="ladder-list" reversed>
+        {% for tier in levels %}
+        <li class="ladder-rung {% if tier.level_number == 5 or tier.level_number == 10 or tier.level_number == 15 %}safe{% endif %} {% if level_number and tier.level_number == level_number %}current{% elif level_number and tier.level_number < level_number %}passed{% endif %}" {% if level_number and tier.level_number == level_number %}aria-current="step"{% endif %}>
+            <span>{{ tier.level_number|stringformat:"02d" }}</span>
+            <span>${{ tier.money|intcomma }}</span>
+        </li>
+        {% endfor %}
+    </ol>
+</aside>

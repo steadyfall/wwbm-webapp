@@ -1,87 +1,38 @@
 {% extends 'base.html' %}
-{% load static tailwind_tags %}
-{% load utility %}
-{% block header %}
-{% include 'navbar.html' %}
-{% endblock header %}
 {% block content %}
-<div class="mb-6 p-4 sm:p-8">
-    <h1 class="text-3xl sm:text-4xl mb-4 sm:mb-6">Leaderboard</h1>
-    <div class="overflow-x-auto">
-        <table class="w-full bg-gray-900 rounded-lg overflow-hidden">
-            <thead class="bg-gray-800">
-                <tr>
-                    <th class="px-2 sm:px-4 py-2 text-center text-gray-400">Score</th>
-                    <th class="px-2 sm:px-4 py-2 text-center text-gray-400">Level reached</th>
-                    <th class="px-2 sm:px-4 py-2 text-center text-gray-400">User</th>
-                    <th class="px-2 sm:px-4 py-2 text-center text-gray-400">Date played</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for session in allSessions %}
-                <tr class="border-b border-gray-800">
-                    <td class="px-2 sm:px-4 py-2 text-center">{{ session|slicer:0 }}</td>
-                    <td class="px-2 sm:px-4 py-2 text-center">{{ session|slicer:1 }}</td>
-                    <td class="px-2 sm:px-4 py-2 text-center">{{ session|slicer:2 }}</td>
-                    <td class="px-2 sm:px-4 py-2 text-center text-sm sm:text-base">{{ session|slicer:3|date:"j F Y, g:i A e" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between">
-        <p class="text-sm text-gray-400 mb-2 sm:mb-0">
-            Showing
-            <span>
-                {{ allSessions.start_index }}
-            </span> to
-            <span>
-                {{ allSessions.end_index }}
-            </span> of
-            <span>
-                {{ allSessions.paginator.count }}
-            </span> entries
-        </p>
-        {% if allSessions.has_other_pages %}
-        <div class="flex space-x-2">
-            <button
-                class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
-                {% if allSessions.has_previous %}{% else %}disabled{% endif %}
-            >
-                <a href="{% if allSessions.has_previous %}?page={{ allSessions.previous_page_number }}{% else %}#{% endif %}">&lt;</a>
-            </button>
-            {% for num in allSessions.paginator.page_range %}
-                {% if allSessions.number == num %}
-                    <a href="?page={{ num }}">
-                        <button
-                            class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                        {{ num }}
-                        </button>
-                    </a>
-                {% elif num > allSessions.number|add:'-2' and num < allSessions.number|add:'2' %}
-                    <a href="?page={{ num }}">
-                        <button
-                            class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
-                        >
-                            {{ num }}
-                        </button>
-                    </a>
-                {% endif %}
-            {% endfor %}
-            <a href="{% if allSessions.has_next %}?page={{ allSessions.next_page_number }}{% else %}#{% endif %}">
-                <button
-                    class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
-                    {% if allSessions.has_next %}{% else %}disabled{% endif %}
-                >
-                    &gt;
-                </button>
-            </a>
+<section class="page">
+    <div class="dashboard-head">
+        <div>
+            <p class="eyebrow">Hall of answers</p>
+            <h1 class="title">Leaderboard</h1>
+            <p class="subtitle">Every climb counts. See who kept their nerve.</p>
         </div>
-        {% endif %}
+        <a class="btn btn-primary" href="{% url 'quiz_start' %}">Play now</a>
     </div>
-</div>
+    <div class="panel table-panel" role="table" aria-label="Leaderboard standings">
+        <div class="table-head" role="row">
+            <span role="columnheader">Rank</span>
+            <span role="columnheader">Player</span>
+            <span role="columnheader">Score</span>
+            <span role="columnheader">Level</span>
+            <span role="columnheader">Date played</span>
+        </div>
+        {% for session in allSessions %}
+        {% include 'components/leaderboard_row.html' %}
+        {% empty %}
+        <p class="empty">No completed rounds yet. Be the first name on the page.</p>
+        {% endfor %}
+    </div>
+    {% if allSessions.has_other_pages %}
+    <nav class="pagination" aria-label="Leaderboard pages">
+        {% if allSessions.has_previous %}
+        <a class="btn btn-plain btn-small" href="?page={{ allSessions.previous_page_number }}">Previous</a>
+        {% else %}<span></span>{% endif %}
+        <span>Page {{ allSessions.number }} of {{ allSessions.paginator.num_pages }}</span>
+        {% if allSessions.has_next %}
+        <a class="btn btn-plain btn-small" href="?page={{ allSessions.next_page_number }}">Next</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+</section>
 {% endblock content %}
-{% block footer %}
-{% include 'footer.html' %}
-{% endblock footer %}

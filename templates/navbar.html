@@ -1,16 +1,17 @@
-{% load static tailwind_tags %}
-<header class="p-4 flex justify-between items-center relative z-10 blur-bg">
-    <div class="flex items-center">
-        <img src="{% static 'img/wwbmicon.ico' %}" alt="Logo" class="w-10 h-10 mr-2">
-        <span class="text-xl font-bold logo-gradient inline-block text-transparent bg-clip-text">Trivivo</span>
-    </div>
-    <div>
+<header class="site-header">
+    <a href="{% url 'mainpage' %}" class="brand" aria-label="Trivivo home">
+        <span class="brand-mark" aria-hidden="true">?</span>
+        <span>Trivivo</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+        <a href="{% url 'quiz_start' %}" class="nav-link">Play</a>
+        <a href="{% url 'leaderboard' %}" class="nav-link">Leaderboard</a>
         {% if user.is_authenticated %}
-        <span class="text-sm mr-4 hover:text-emerald-400">{{ request.user.username }}</span>
-        <a class="text-sm hover:text-blue-400" href="{% url 'logout' %}">Logout</a>
+        <a href="{% url 'scores' %}" class="nav-link">Dashboard</a>
+        <span class="nav-link">Hi, {{ request.user.username }}</span>
+        <a href="{% url 'logout' %}" class="btn btn-plain btn-small">Log out</a>
         {% else %}
-        <a href="{% url 'login' %}" class="text-sm mr-4 hover:text-blue-400">Login</a>
-        <a href="{% url 'register' %}" class="text-sm hover:text-blue-400">Register</a>
+        <a href="{% url 'login' %}" class="btn btn-plain btn-small">Log in</a>
         {% endif %}
-    </div>
+    </nav>
 </header>

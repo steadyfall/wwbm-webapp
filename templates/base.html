@@ -2,98 +2,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    {% if title %}
-    <title>{{ title }}</title>
-    {% else %}
-    <title>Trivivo</title>
-    {% endif %}
-
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if title %}{{ title }}{% else %}Trivivo | Take the hot seat{% endif %}</title>
     {% tailwind_css %}
     <link rel="icon" type="image/x-icon" href="{% static 'img/wwbmicon.ico' %}">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-
 </head>
-
-<body class="bg-black text-white min-h-screen flex flex-col">
-    <div id="smooth-grid" class="fixed inset-0 z-0"></div>
-    {% block header %}{% endblock %}
-
-    <div class="flex flex-col w-full relative z-10">
-        {% if messages %}
+<body class="doodle-body">
+    {% block header %}{% include 'navbar.html' %}{% endblock header %}
+    {% if messages %}
+    <div class="alert-stack" aria-live="polite">
         {% for message in messages %}
-        <div
-            {% if message.tags %}
-                {% if message.tags == 'debug' %}
-                    class="bg-gray-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
-                {% elif message.tags == 'info' %}
-                    class="bg-blue-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
-                {% elif message.tags == 'success' %}
-                    class="bg-green-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
-                {% elif message.tags == 'warning' %}
-                    class="bg-yellow-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
-                {% elif message.tags == 'error' %}
-                    class="bg-red-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
-                {% else %}
-                    class="bg-neutral-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center"
-                {% endif %}
-            {% endif %}
-            role="alert"
-        >
-            <span class="text-center flex-grow"> {{ message|safe }} </span>
-            <strong class="text-xl cursor-pointer close-alert ml-4">&times;</strong>
+        <div class="alert alert-{{ message.tags|default:'info' }}" role="status">
+            <span>{{ message|safe }}</span>
+            <button class="alert-close" type="button" aria-label="Dismiss message">&times;</button>
         </div>
         {% endfor %}
-        {% endif %}
-
-        {% if expertAnswerText or audiencePollText or fifty50Text %}
-        <div class="bg-green-700 text-white mx-5 my-2 md:mx-auto md:w-[50rem] p-4 rounded flex justify-between items-center" role="alert">
-            <span class="text-center flex-grow">
-                {% if expertAnswerText %}
-                {{ expertAnswerText|safe }}
-                {% elif audiencePollText %}
-                Audience Poll tells us the following:
-                <ul class="text-center p-0 list-none">
-                    {{ audiencePollText|safe }}
-                </ul>
-                {% elif fifty50Text %}
-                <span class="text-danger">{{ fifty50Text|safe }}</span>
-                {% endif %}
-            </span>
-            <strong class="text-xl cursor-pointer close-alert ml-4">&times;</strong>
-        </div>
-        {% endif %}
     </div>
-
-    <main class="flex-grow flex flex-col items-center justify-center relative z-10 mt-5">
-        {% block content %}{% endblock %}
+    {% endif %}
+    <main class="site-main">
+        {% block content %}{% endblock content %}
     </main>
-
-    {% block footer %}{% endblock %}
-
-    <script defer src="{% static 'js/flickeringGrid.js' %}"></script>
+    {% block footer %}{% include 'footer.html' %}{% endblock footer %}
     <script>
-        var close_alert = document.querySelectorAll('.close-alert');
-        close_alert.forEach((x) =>
-        x.addEventListener('click', function () {
-            x.parentElement.classList.add('hidden');
-        })
-        );
+        document.querySelectorAll('.alert-close').forEach(function (button) {
+            button.addEventListener('click', function () {
+                button.parentElement.remove();
+            });
+        });
     </script>
-
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
-        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"
-    ></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
-        crossorigin="anonymous"></script> -->
+    {% block scripts %}{% endblock scripts %}
 </body>
-
 </html>

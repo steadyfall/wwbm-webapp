@@ -1,0 +1,11 @@
+<article class="panel result result-{{ mode }}" aria-labelledby="result-title">
+    <div class="result-mark" aria-hidden="true">{% if mode == 'finished' %}&#10003;{% elif mode == 'over' %}${% else %}&times;{% endif %}</div>
+    <p class="eyebrow">Final result</p>
+    <h1 class="title" id="result-title">{{ resultTitle }}</h1>
+    <p class="subtitle" style="margin: 0 auto;">{{ mainMessage|safe }}</p>
+    <p class="result-message">{{ message|safe }}</p>
+    <div class="button-row" style="justify-content: center;">
+        <a class="btn btn-primary" href="{% url 'leaderboard' %}">View leaderboard</a>
+        <a class="btn btn-plain" href="{% url 'quiz_start' %}">Play again</a>
+    </div>
+</article>

@@ -1,12 +1,4 @@
-{% load static tailwind_tags %}
-<div class="z-10 blur-bg">
-    <nav class="py-4 text-center relative">
-        <a href="{% url 'mainpage' %}" class="mx-2 hover:text-blue-400">Home</a>
-        <a href="{% url 'leaderboard' %}" class="mx-2 hover:text-blue-400">Leaderboard</a>
-        <a href="{% url 'scores' %}" class="mx-2 hover:text-blue-400">Scores</a>
-        <a href="{% url 'about' %}" class="mx-2 hover:text-blue-400">About</a>
-    </nav>
-    <footer class="py-4 text-center text-sm relative">
-        <p>&copy; 2024 <span class="logo-gradient inline-block text-transparent bg-clip-text">Trivivo</span> | <a href="{% url 'mainpage' %}" class="hover:text-blue-400">Contact Us</a></p>
-    </footer>
-</div>
+<footer class="site-footer">
+    <span>Trivivo. Fifteen questions, one brave final answer.</span>
+    <span><a class="ink-link" href="{% url 'leaderboard' %}">Leaderboard</a> &middot; <a class="ink-link" href="{% url 'quiz_start' %}">Play now</a></span>
+</footer>

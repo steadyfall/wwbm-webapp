@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page split-page">
+    <div class="panel">
+        <p class="eyebrow">Before the clock starts</p>
+        <h1 class="title">Ready for the hot seat?</h1>
+        <p class="subtitle">Read the rules once, then start a fresh fifteen-question run.</p>
+        {% include 'components/prestart_details.html' %}
+        {% if user.is_authenticated %}
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-primary" type="submit" name="startQuiz" value="yes">Start the quiz</button>
+        </form>
+        {% else %}
+        <div class="button-row">
+            <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to start</a>
+            <a class="btn btn-plain" href="{% url 'register' %}">Create account</a>
+        </div>
+        {% endif %}
+    </div>
+    {% include 'components/prize_ladder.html' %}
+</section>
+{% endblock content %}

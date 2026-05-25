@@ -1,111 +1,92 @@
-function setNewDate() {
-    newDate = new Date().getTime() + countDownSec * 1000;
-    localStorage.setItem('newDate', newDate);
-};
-function setDifference() {
-    difference = newDate - new Date().getTime();
-    localStorage.setItem('difference', difference);
-};
+(function () {
+    "use strict";
 
-let x;
-let newDate;
-let difference;
-let countDownSec;
-let paused;
-let timeLeft;
-
-timeLeft = document.getElementById("time-left");
-
-countDownSec = parseInt(timeLeft.textContent);
-++countDownSec;
-paused = false;
-
-function pause() {
-    if (!paused) {
-        countDownSec = parseInt(difference / 1000);
-        ++countDownSec;
+    var timer = document.getElementById("question-timer");
+    var form = document.getElementById("game-form");
+    if (!timer || !form) {
+        return;
     }
-    localStorage.clear();
-    timeLeft.innerHTML = countDownSec;
-    paused = !paused;
-    // console.log(paused, 'lmao', countDownSec);
-    var startBack = paused ? clearInterval(x) : startTimer();
-}
 
-function timeUpdate() {
-    var newDate = localStorage.getItem('newDate');
-    if (!newDate) { setNewDate(); }
-    var difference = localStorage.getItem('difference')
-    if (!difference) { setDifference(); }
+    var output = document.getElementById("time-left");
+    var timeoutInput = document.getElementById("timed-out");
+    var remaining = Number.parseInt(timer.dataset.seconds, 10);
+    var intervalId = null;
+    var paused = false;
 
-    if (newDate - new Date().getTime() <= 0) {
-        localStorage.clear();
-        setNewDate();
-        setDifference();
-        timeLeft.innerHTML = countDownSec;
-    } else {
-        timeLeft.innerHTML = Math.floor((newDate - new Date().getTime()) / 1000);
+    function paint() {
+        output.textContent = String(Math.max(remaining, 0));
+        timer.classList.toggle("urgent", remaining <= 10);
     }
-}
 
-function checker() {
-    difference = newDate - new Date().getTime();
-    // console.log(difference);
-    if (difference < 10) {
-        $('#sendAnswer').click();
-        // document.getElementById("newform").submit()
-    }
-    var seconds = Math.floor(difference / 1000);
-    // console.log(seconds);
-    if (timeLeft.innerHTML <= 10) {
-        timeLeft.style.color = 'red';
-    } else {
-        timeLeft.style.color = 'white';
-    }
-    timeLeft.innerHTML = seconds;
-}
-
-function startTimer() {
-    // console.log(countDownSec);
-    timeUpdate();
-    x = setInterval(checker, 1000);
-}
-
-
-if (!paused) {
-    startTimer();
-}
-
-$('#lifelineButton').on('click', pause);
-$('#sendAnswer').on("click submit", function submitChecker(e) {
-    if (!paused) {
-        pause();
-    }
-    var arr = [];
-    var common = "#option_";
-    for (i = 0; i <= 3; i++) {
-        var newcommon = (' ' + common).slice(1) + String.fromCharCode(97+i);
-        arr[i] = newcommon;
-    }
-    var option = arr.some(o => $(o).is(":checked"));
-    if (!option) {
-        for (i = 0; i <= arr.length - 1; i++) {
-            if (~($(arr[i]).is(":checked"))) {
-                $(arr[i]).attr('checked', true);
-                break;
-            }
+    function stop() {
+        if (intervalId !== null) {
+            window.clearInterval(intervalId);
+            intervalId = null;
         }
-        // console.log(arr);
-        // e.preventDefault();
     }
-});
 
-$('#confirmLifeline').on("click", function (e) {
-    $('#timeLeftAfterLifeline').val(parseInt(timeLeft.textContent));
-    e.attr('disabled', true);
-});
+    function expire() {
+        stop();
+        timeoutInput.value = "yes";
+        document.getElementById("submit-answer").disabled = true;
+        form.submit();
+    }
 
-$('#closeLifeline').on("click", function () {
-    $('#lifelineButton').attr('disabled', true);
-    pause();
-});
+    function start() {
+        stop();
+        intervalId = window.setInterval(function () {
+            if (paused) {
+                return;
+            }
+            remaining -= 1;
+            paint();
+            if (remaining <= 0) {
+                expire();
+            }
+        }, 1000);
+    }
+
+    var modal = document.getElementById("lifeline-modal");
+    var openButton = document.getElementById("open-lifelines");
+    var cancelButton = document.getElementById("cancel-lifeline");
+    var confirmButton = document.getElementById("confirm-lifeline");
+    var retainedTime = document.getElementById("time-left-after-lifeline");
+    var lifelineForm = document.getElementById("lifeline-form");
+
+    function openModal() {
+        paused = true;
+        modal.hidden = false;
+        cancelButton.focus();
+    }
+
+    function closeModal() {
+        modal.hidden = true;
+        paused = false;
+        openButton.focus();
+    }
+
+    if (openButton && modal) {
+        openButton.addEventListener("click", openModal);
+        cancelButton.addEventListener("click", closeModal);
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !modal.hidden) {
+                closeModal();
+            }
+        });
+        lifelineForm.addEventListener("submit", function () {
+            retainedTime.value = String(remaining);
+            window.setTimeout(function () {
+                confirmButton.disabled = true;
+            }, 0);
+        });
+    }
+
+    form.addEventListener("submit", stop);
+    paint();
+    start();
+}());

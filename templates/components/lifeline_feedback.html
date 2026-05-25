@@ -1,0 +1,12 @@
+{% if expertAnswerText or audiencePollText or fifty50Text %}
+<div class="feedback" role="status" aria-live="polite">
+    {% if expertAnswerText %}
+    {{ expertAnswerText|safe }}
+    {% elif audiencePollText %}
+    <strong>Audience results</strong>
+    <ul>{{ audiencePollText|safe }}</ul>
+    {% elif fifty50Text %}
+    {{ fifty50Text }}
+    {% endif %}
+</div>
+{% endif %}

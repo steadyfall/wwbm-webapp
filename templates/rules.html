@@ -1,32 +1,17 @@
 {% extends 'base.html' %}
-{% load static tailwind_tags %}
-{% load utility %}
-{% block header %}
-{% include 'navbar.html' %}
-{% endblock header %}
 {% block content %}
-<iframe src="{% static 'audio/introduction.mp3' %}" allow="autoplay" id="audio" style="display:none"></iframe>
-<div class="rounded-lg blur-bg mb-4">
-    <h1 class="text-4xl font-bold mb-2 ml-6">RULES</h1>
-    <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 p-6">
-        {% include 'gamerules.html' %}
-        <div class="md:col-span-3 text-right">
-            <p>You have read the rules and are liable to them.</p>
-            <p>Are you ready to <span class="text-green-400">PLAY</span>?</p>
-            <div class="mt-4 space-x-4">
-                <form method="post" id="newform">
-                    {% csrf_token %}
-                    <button class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 transition-colors"
-                    type="submit" title="I am not ready to play" name="agreed" value="no">
-                        No
-                    </button>
-                    <button class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition-colors"
-                    type="submit" title="Let's play Trivivo!" name="agreed" value="yes">
-                        Yes
-                    </button>
-                </form>
-            </div>
-        </div>
+<section class="page split-page">
+    <div class="panel">
+        <p class="eyebrow">Before the clock starts</p>
+        <h1 class="title">Ready for the hot seat?</h1>
+        <p class="subtitle">Your game is prepared. Confirm when you are ready for question one.</p>
+        {% include 'components/prestart_details.html' %}
+        <form class="button-row" method="post">
+            {% csrf_token %}
+            <button class="btn btn-plain" type="submit" name="agreed" value="no">Leave game</button>
+            <button class="btn btn-primary" type="submit" name="agreed" value="yes">Start the quiz</button>
+        </form>
     </div>
-</div>
-{% endblock %}
+    {% include 'components/prize_ladder.html' %}
+</section>
+{% endblock content %}

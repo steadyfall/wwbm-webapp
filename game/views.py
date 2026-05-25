@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.generic import View
 
 from game.models import Level, Lifeline, Option, Question, Session
@@ -63,6 +64,23 @@ def question(request):
 PAGINATE_NO = 12
 
 
+def player_levels():
+    return Level.objects.filter(level_number__range=(1, 15)).order_by("level_number")
+
+
+def create_player_session(user):
+    session = Session.objects.create(
+        session_id=Session.get_unused_sessionId(),
+        session_user=user,
+    )
+    session.left_lifelines.set(Lifeline.objects.all())
+    session.agreedToRules = True
+    session.prev_level = Level.objects.get(level_number=-1)
+    session.current_level = Level.objects.get(level_number=1)
+    session.save(update_fields=["agreedToRules", "current_level", "prev_level"])
+    return session
+
+
 class MainPage(View):
     def get(self, request, *args, **kwargs):
         return render(request, "mainPage.html")
@@ -71,17 +89,27 @@ class MainPage(View):
         if "startPlay" not in tuple(self.request.POST.keys()):
             return redirect(self.request.get_full_path())
         if self.request.POST["startPlay"] == "yes":
-            if self.request.user.is_authenticated:
-                new_session = Session.objects.create(
-                    session_user=self.request.user,
-                )
-                new_session.left_lifelines.set(
-                    Lifeline.objects.values_list("id", flat=True)
-                )
-                return redirect("rules", session=new_session.session_id, permanent=True)
-            else:
-                return redirect("login")
+            return redirect("quiz_start")
         return redirect(self.request.get_full_path())
+
+
+class QuizStart(View):
+    def get(self, request, *args, **kwargs):
+        context = {
+            "title": "Start the Challenge | Trivivo",
+            "lifelines": Lifeline.objects.all(),
+            "levels": player_levels(),
+        }
+        return render(request, "quiz_start.html", context)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            login_url = reverse("login")
+            return redirect(f"{login_url}?next={reverse('quiz_start')}")
+        if request.POST.get("startQuiz") != "yes":
+            return redirect("quiz_start")
+        session = create_player_session(request.user)
+        return redirect("question", session=session.session_id, level=1)
 
 
 class About(View):
@@ -116,7 +144,7 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
                 context = {
                     "title": "Rules (game about to begin)",
                     "lifelines": Lifeline.objects.all(),
-                    "levels": Level.objects.all(),
+                    "levels": player_levels(),
                 }
                 return render(request, "rules.html", context)
         return redirect("mainpage", permanent=True)
@@ -196,12 +224,14 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
         Change int(timeleft) to int(timeLeft if timeLeft else 0) for better
         error handling when timer is not functional
         """
+        try:
+            retained_time = max(1, int(timeLeft))
+        except (TypeError, ValueError):
+            retained_time = timeDecider(level)
         timer = (
-            int(timeLeft)
-            if (
-                lifeline is not None
-                and lifeline in (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER)
-            )
+            retained_time
+            if lifeline is not None
+            and lifeline in (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER)
             else timeDecider(level)
         )
         fifty50Text = (
@@ -242,6 +272,14 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             "audiencePollText": audiencePollText,
             "fifty50Text": fifty50Text,
             "usedLifelineRecently": usedLifelineRecently,
+            "options": [
+                ("A", options[order[0]]),
+                ("B", options[order[1]]),
+                ("C", options[order[2]]),
+                ("D", options[order[3]]),
+            ],
+            "levels": player_levels().order_by("-level_number"),
+            "level_number": level,
         }
         return context
 
@@ -290,20 +328,35 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             return redirect("mainpage", permanent=True)
 
         if "lifelineSubmit" in set(self.request.POST.keys()):
+            lifeline = self.request.POST.get("lifeline")
             if (
                 self.request.POST["lifelineSubmit"] == "yes"
-                and self.request.POST["lifeline"] in LIFELINE_NAMES
+                and lifeline in LIFELINE_NAMES
+                and sessionObj.left_lifelines.filter(name=lifeline).exists()
             ):
                 return render(
                     self.request,
                     "question.html",
                     self.context_creator(
-                        lifeline=self.request.POST["lifeline"],
-                        timeLeft=self.request.POST["timeLeftAfterLifeline"],
+                        lifeline=lifeline,
+                        timeLeft=self.request.POST.get("timeLeftAfterLifeline"),
                     ),
                 )
             else:
+                messages.warning(request, "That lifeline is no longer available.")
                 return render(self.request, "question.html", self.context_creator())
+
+        if self.request.POST.get("timedOut") == "yes":
+            sessionObj.gameOver = True
+            sessionObj.wrong_qn = sessionObj.current_question
+            sessionObj.score //= 100
+            sessionObj.save(update_fields=["gameOver", "wrong_qn", "score"])
+            return redirect(
+                "statusAfterQn",
+                session=sessionId,
+                level=level,
+                status="incorrect",
+            )
 
         if "submitBtn" not in tuple(self.request.POST.keys()):
             messages.warning(request, "Invalid data!")
@@ -412,8 +465,10 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
         total = sessionObj.score
         header, formatted_message = "", ""
         title = ""
+        result_title = "Wrong Answer"
         if mode == "correct":
             title = "Correct answer!"
+            result_title = "You Won" if sessionObj.current_level.level_number == 16 else "Correct Answer"
             header = 'You just <span class="font-bold">ANSWERED</span> it correctly!'
             formatted_message = (
                 message.format(
@@ -424,18 +479,21 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
             )
             mode = mode if sessionObj.current_level.level_number != 16 else "finished"
         elif mode == "over":
-            title = "QUIT at the wrong time!"
-            header = 'You just <span class="font-bold">QUIT</span> at the wrong time!'
+            title = "Voluntary Quit"
+            result_title = "Voluntary Quit"
+            header = "You walked away with your winnings."
             formatted_message = message.format(f"{total:,}")
         elif mode == "wrong":
-            title = "Wrong answer!"
-            header = 'You just <span class="font-bold">LOST</span> it ALL!'
-            formatted_message = message.format(f"{total * 99:,}", f"{total:,}")
+            title = "Wrong Answer"
+            result_title = "Wrong Answer"
+            header = "That answer did not land."
+            formatted_message = message.format(f"{total*99:,}", f"{total:,}")
         context = {
             "title": title,
             "message": formatted_message,
             "mainMessage": header,
             "mode": mode,
+            "resultTitle": result_title,
         }
         return context
 
@@ -536,21 +594,10 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
 
 class Leaderboard(View):
     def context_creator(self):
-        allSessions = [
-            (
-                f"$ {ses['score']:,}",
-                ses["current_level__level_number"],
-                ses["session_user__username"],
-                ses["date_created"],
-            )
-            for ses in Session.objects.order_by("-score", "-date_created").values(
-                "score",
-                "current_level__level_number",
-                "session_user__username",
-                "date_created",
-            )
-        ]
-        paginator = Paginator(allSessions, PAGINATE_NO)
+        sessions = Session.objects.select_related("current_level", "session_user").order_by(
+            "-score", "-date_created"
+        )
+        paginator = Paginator(sessions, PAGINATE_NO)
         page = self.request.GET.get("page", 1)
         try:
             objects_list = paginator.page(page)
@@ -558,6 +605,8 @@ class Leaderboard(View):
             objects_list = paginator.page(1)
         except EmptyPage:
             objects_list = paginator.page(paginator.num_pages)
+        for session in objects_list.object_list:
+            session.level_reached = max(session.current_level.level_number - 1, 0)
         context = {
             "title": "WWBM Leaderboard",
             "heading": "Leaderboard",
@@ -572,24 +621,37 @@ class Leaderboard(View):
 class ScoreBoard(LoginRequiredMixin, View):
     def context_creator(self):
         default_wrong_qn_pk = Question.get_default_pk()
-        allSessions = [
-            (
-                f"$ {ses.score:,}",
-                ses.current_level.level_number,
-                ses.date_created,
-                ses.correct_count,
-                ses.wrong_qn_id == default_wrong_qn_pk,
-                ses.lifeline_count,
-            )
-            for ses in Session.objects.filter(session_user=self.request.user)
+        filters = {
+            "date_played": self.request.GET.get("date_played", ""),
+            "correct_questions": self.request.GET.get("correct_questions", ""),
+            "used_lifelines": self.request.GET.get("used_lifelines", ""),
+            "level_reached": self.request.GET.get("level_reached", ""),
+            "minimum_score": self.request.GET.get("minimum_score", ""),
+        }
+        sessions = (
+            Session.objects.filter(session_user=self.request.user)
             .select_related("current_level", "wrong_qn")
             .annotate(
                 correct_count=Count("correct_qns", distinct=True),
                 lifeline_count=Count("used_lifelines", distinct=True),
             )
-            .order_by("-score", "-date_created")
-        ]
-        paginator = Paginator(allSessions, PAGINATE_NO)
+        )
+        if filters["date_played"]:
+            sessions = sessions.filter(date_created__date=filters["date_played"])
+        for name, lookup in (
+            ("correct_questions", "correct_count"),
+            ("used_lifelines", "lifeline_count"),
+        ):
+            if filters[name].isdigit():
+                sessions = sessions.filter(**{lookup: int(filters[name])})
+        if filters["level_reached"].isdigit():
+            sessions = sessions.filter(
+                current_level__level_number=int(filters["level_reached"]) + 1
+            )
+        if filters["minimum_score"].isdigit():
+            sessions = sessions.filter(score__gte=int(filters["minimum_score"]))
+        sessions = sessions.order_by("-score", "-date_created")
+        paginator = Paginator(sessions, PAGINATE_NO)
         page = self.request.GET.get("page", 1)
         try:
             objects_list = paginator.page(page)
@@ -597,10 +659,20 @@ class ScoreBoard(LoginRequiredMixin, View):
             objects_list = paginator.page(1)
         except EmptyPage:
             objects_list = paginator.page(paginator.num_pages)
+        for session in objects_list.object_list:
+            session.level_reached = max(session.current_level.level_number - 1, 0)
+            session.voluntary_quit = (
+                session.gameOver and session.wrong_qn_id == default_wrong_qn_pk
+            )
+        page_query = self.request.GET.copy()
+        page_query.pop("page", None)
         context = {
             "title": "Scoreboard",
-            "heading": f'Scoreboard for <u><span class="text-info"><i>{self.request.user.username}</i></span></u>',
+            "heading": f"Dashboard for {self.request.user.username}",
             "allSessions": objects_list,
+            "filters": filters,
+            "level_choices": range(0, 16),
+            "filter_query": page_query.urlencode(),
         }
         return context
 

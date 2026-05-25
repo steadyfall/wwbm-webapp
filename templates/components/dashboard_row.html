@@ -1,0 +1,11 @@
+{% load humanize %}
+<article class="panel session-card">
+    <div>
+        <small>Played</small>
+        <time datetime="{{ session.date_created|date:'c' }}">{{ session.date_created|date:"M j, Y - g:i A" }}</time>
+    </div>
+    <div><small>Score</small><span class="score">${{ session.score|intcomma }}</span></div>
+    <div><small>Level reached</small>{{ session.level_reached }}</div>
+    <div><small>Correct</small>{{ session.correct_count }} / 15</div>
+    <div><small>Lifelines used</small>{{ session.lifeline_count }}</div>
+</article>

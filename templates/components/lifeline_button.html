@@ -1,0 +1,10 @@
+<div class="lifeline-bar" aria-label="Available lifelines">
+    {% for life in session.left_lifelines.all %}
+    <span class="lifeline-chip">{{ life.name }}</span>
+    {% empty %}
+    <span class="lifeline-chip">No lifelines left</span>
+    {% endfor %}
+    {% if session.left_lifelines.all %}
+    <button class="btn btn-plain btn-small" type="button" id="open-lifelines" {% if usedLifelineRecently %}disabled{% endif %}>Use a lifeline</button>
+    {% endif %}
+</div>

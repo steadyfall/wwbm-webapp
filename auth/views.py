@@ -1,10 +1,23 @@
-from django.shortcuts import render, redirect, HttpResponseRedirect
-
-from django.contrib import messages
+from django.contrib import auth, messages
 from django.contrib.auth.models import User
+from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 
-from django.contrib import auth
-from .validate import *
+from .validate import (
+    confirmPassword,
+    emailValidator,
+    passwordValidator,
+    usernameValidator,
+)
+
+
+def _safe_next_url(request):
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}
+    ):
+        return next_url
+    return None
 
 
 def register(request):
@@ -29,7 +42,7 @@ def register(request):
             if User.objects.filter(username=username).exists():
                 messages.warning(request, "You already have an account.")
                 return redirect("login")
-            newuser = User.objects.create_user(
+            User.objects.create_user(
                 username=username, email=email, password=password
             )
             messages.success(request, "Account successfully created!")
@@ -43,6 +56,7 @@ def register(request):
 
 def login(request):
     error: str = "Data is invalid. Try again."
+    next_url = _safe_next_url(request)
     if request.method == "POST":
         try:
             username: str = request.POST["username"]
@@ -61,7 +75,7 @@ def login(request):
             user = auth.authenticate(username=username, password=password)
             if user is not None:
                 auth.login(request, user)
-                return redirect("mainpage")
+                return redirect(next_url or "mainpage")
             else:
                 messages.error(request, "Wrong password. Try again.")
                 return redirect("login")
@@ -69,14 +83,15 @@ def login(request):
             messages.error(request, error)
             return redirect("login")
 
-    return render(request, "authentication/signin.html")
+    return render(request, "authentication/signin.html", {"next": next_url})
 
 
 def logout(request):
     if not request.user.is_authenticated:
         return redirect("mainpage")
     auth.logout(request)
-    return render(request, "authentication/signout.html")
+    messages.success(request, "You have been logged out. See you for the next round.")
+    return redirect("mainpage")
 
 
 def adminlogin(request):

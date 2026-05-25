@@ -1,29 +1,28 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block header %}
-{% include 'navbar.html' %}
-{% endblock header %}
 {% block content %}
-<form method="post">
-    {% csrf_token %}
-    <div class="text-3xl sm:text-4xl text-center p-1 md:p-4 rounded-lg blur-bg inline-block">
-        Click
-        <button
-            type="submit"
-            name="startPlay"
-            value="yes"
-            role="button"
-            class="text-emerald-500 hover:text-emerald-600 bg-transparent font-bold rounded-lg"
-        >
-            here
-        </button>
-        to play
-        <span class="font-bold logo-gradient inline-block text-transparent bg-clip-text">
-            Trivivo
-        </span>.
+<section class="page hero" aria-label="Welcome to Trivivo">
+    <div>
+        <p class="eyebrow">Who Wants to Be a Millionaire, redrawn</p>
+        <h1 class="display">Think fast.<br>Climb high.<br>Win it all.</h1>
+        <p class="subtitle">Fifteen hand-picked questions stand between you and the top prize. Choose wisely, ask for help once, and walk away before the ink runs dry.</p>
+        <div class="button-row">
+            <a class="btn btn-primary" href="{% url 'quiz_start' %}">Take the hot seat</a>
+            <a class="btn btn-plain" href="{% url 'leaderboard' %}">See top scores</a>
+        </div>
+        <div class="stat-strip" aria-label="Game highlights">
+            <div class="stat"><strong>15</strong><span>questions</span></div>
+            <div class="stat"><strong>3</strong><span>lifelines</span></div>
+            <div class="stat"><strong>20-60s</strong><span>per answer</span></div>
+        </div>
     </div>
-</form>
-{% endblock %}
-{% block footer %}
-{% include 'footer.html' %}
-{% endblock footer %}
+    <aside class="panel hero-card" aria-label="How the challenge works">
+        <div class="hero-question" aria-hidden="true">?</div>
+        <h2>The challenge</h2>
+        <ol class="hero-steps">
+            <li><span class="number">1</span>Pick your answer</li>
+            <li><span class="number">2</span>Use a lifeline wisely</li>
+            <li><span class="number">3</span>Reach the million</li>
+        </ol>
+    </aside>
+</section>
+{% endblock content %}

@@ -7,6 +7,7 @@ from . import views as game_views
 urlpatterns = [
     path("tester/", game_views.pageChecker, name="tester"),
     path("", game_views.MainPage.as_view(), name="mainpage"),
+    path("quiz/", game_views.QuizStart.as_view(), name="quiz_start"),
     path("about/", game_views.About.as_view(), name="about"),
     path("leaderboard/", game_views.Leaderboard.as_view(), name="leaderboard"),
     path("scores/", game_views.ScoreBoard.as_view(), name="scores"),

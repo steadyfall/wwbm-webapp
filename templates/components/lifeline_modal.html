@@ -1,0 +1,24 @@
+<div class="modal-backdrop" id="lifeline-modal" hidden>
+    <section class="panel modal" role="dialog" aria-modal="true" aria-labelledby="lifeline-title">
+        <p class="eyebrow">One-time help</p>
+        <h2 id="lifeline-title">Choose a lifeline</h2>
+        <p class="form-note">The clock pauses while this card is open. Confirming spends the selected lifeline.</p>
+        <form method="post" id="lifeline-form">
+            {% csrf_token %}
+            <label class="field" for="lifeline-choice">
+                <span class="field-label">Available lifelines</span>
+                <select class="input" name="lifeline" id="lifeline-choice">
+                    {% for life in session.left_lifelines.all %}
+                    <option value="{{ life.name }}">{{ life.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="lifelineSubmit" value="yes">
+            <input type="hidden" id="time-left-after-lifeline" name="timeLeftAfterLifeline" value="">
+            <div class="modal-actions">
+                <button class="btn btn-plain btn-small" id="cancel-lifeline" type="button">Cancel</button>
+                <button class="btn btn-primary btn-small" id="confirm-lifeline" type="submit">Use lifeline</button>
+            </div>
+        </form>
+    </section>
+</div>

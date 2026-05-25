@@ -1,101 +1,62 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load utility %}
-{% block header %}
-{% include 'navbar.html' %}
-{% endblock header %}
 {% block content %}
-<div class="mb-6 p-4 sm:p-8">
-    <h1 class="text-3xl sm:text-4xl md:text-5xl mb-4 sm:mb-6">Scoreboard for
-        <span class="bg-emerald-300 inline-block text-transparent bg-clip-text">
-            {{ request.user.username }}
-        </span>
-    </h1>
-    <div class="overflow-x-auto">
-        {% if allSessions %}
-            <table class="w-full bg-gray-900 rounded-lg overflow-hidden">
-                <thead class="bg-gray-800">
-                    <tr>
-                        <th class="px-2 py-2 text-center text-gray-400">Score</th>
-                        <th class="px-2 py-2 text-center text-gray-400">Level Reached</th>
-                        <th class="px-2 py-2 text-center text-gray-400">Date Played</th>
-                        <th class="px-2 py-2 text-center text-gray-400">Correct Questions</th>
-                        <th class="px-2 py-2 text-center text-gray-400 max-md:hidden">User Quit?</th>
-                        <th class="px-2 py-2 text-center text-gray-400 max-md:hidden"><b>USED</b> Lifelines</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for session in allSessions %}
-                    <tr class="border-b items-center border-gray-800">
-                        <td class="px-2 py-2 text-center">{{ session|slicer:0 }}</td>
-                        <td class="px-2 py-2 text-center">{{ session|slicer:1 }}</td>
-                        <td class="px-2 py-2 text-center text-sm sm:text-base md:hidden">{{ session|slicer:2|date:"j-M, H:i e" }}</td>
-                        <td class="px-2 py-2 text-center text-sm sm:text-base max-md:hidden">{{ session|slicer:2|date:"j F Y, g:i A e" }}</td>
-                        <td class="px-2 py-2 text-center">{{ session|slicer:3 }}</td>
-                        <td class="px-2 py-2 justify-between items-center max-md:hidden">
-                            <span
-                                title="{% if session|slicer:4 %}Yes{% else %}No{% endif %}"
-                                class="flex justify-center items-center h-full"
-                            >
-                                {% if session|slicer:4 %}
-                                {% include 'icons/check.html' %}
-                                {% else %}
-                                {% include 'icons/cross.html' %}
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td class="px-2 py-2 text-center max-md:hidden">{{ session|slicer:5 }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <span class="text-gray-300 text-lg">No records to show.</span>
-        {% endif %}
-    </div>
-    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between">
-        <p class="text-sm text-gray-400 mb-2 sm:mb-0">
-            Showing
-            <span>
-                {{ allSessions.start_index }}
-            </span> to
-            <span>
-                {{ allSessions.end_index }}
-            </span> of
-            <span>
-                {{ allSessions.paginator.count }}
-            </span> entries
-        </p>
-        {% if allSessions.has_other_pages %}
-        <div class="flex space-x-2">
-            <button
-                class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
-                {% if allSessions.has_previous %}{% else %}disabled{% endif %}
-            >
-                <a href="{% if allSessions.has_previous %}?page={{ allSessions.previous_page_number }}{% else %}#{% endif %}">&lt;</a>
-            </button>
-            {% for num in allSessions.paginator.page_range %}
-                <button
-                    {% if allSessions.number == num %}
-                        class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    {% elif num > allSessions.number|add:'-2' and num < allSessions.number|add:'2' %}
-                        class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
-                    {% endif %}
-                >
-                    <a href="?page={{ num }}">{{ num }}</a>
-                </button>
-            {% endfor %}
-            <button
-                class="px-3 py-1 bg-gray-800 text-gray-300 rounded-md hover:bg-gray-700 transition-colors disabled:hidden"
-                {% if allSessions.has_next %}{% else %}disabled{% endif %}
-            >
-                <a href="{% if allSessions.has_next %}?page={{ allSessions.next_page_number }}{% else %}#{% endif %}">&gt;</a>
-            </button>
+<section class="page">
+    <div class="dashboard-head">
+        <div>
+            <p class="eyebrow">Your game history</p>
+            <h1 class="title">Dashboard</h1>
+            <p class="subtitle">Welcome back, {{ request.user.username }}. Trace every climb and try again.</p>
         </div>
-        {% endif %}
+        <a class="btn btn-primary" href="{% url 'quiz_start' %}">New game</a>
     </div>
-</div>
+    <form class="panel filter-panel" method="get" aria-label="Filter games">
+        <label class="field">
+            <span class="field-label">Date played</span>
+            <input class="input" type="date" name="date_played" value="{{ filters.date_played }}">
+        </label>
+        <label class="field">
+            <span class="field-label">Correct questions</span>
+            <input class="input" type="number" min="0" max="15" name="correct_questions" value="{{ filters.correct_questions }}" placeholder="Any">
+        </label>
+        <label class="field">
+            <span class="field-label">Used lifelines</span>
+            <input class="input" type="number" min="0" max="3" name="used_lifelines" value="{{ filters.used_lifelines }}" placeholder="Any">
+        </label>
+        <label class="field">
+            <span class="field-label">Level reached</span>
+            <select class="input" name="level_reached">
+                <option value="">Any</option>
+                {% for level in level_choices %}
+                <option value="{{ level }}" {% if filters.level_reached == level|stringformat:"s" %}selected{% endif %}>{{ level }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="field">
+            <span class="field-label">Minimum score</span>
+            <input class="input" type="number" min="0" name="minimum_score" value="{{ filters.minimum_score }}" placeholder="$0">
+        </label>
+        <div class="filter-actions">
+            <a class="btn btn-plain btn-small" href="{% url 'scores' %}">Clear</a>
+            <button class="btn btn-primary btn-small" type="submit">Apply filters</button>
+        </div>
+    </form>
+    <div class="session-grid" aria-live="polite">
+        {% for session in allSessions %}
+        {% include 'components/dashboard_row.html' %}
+        {% empty %}
+        <div class="panel empty">No games match those filters. Adjust them or begin a new run.</div>
+        {% endfor %}
+    </div>
+    {% if allSessions.has_other_pages %}
+    <nav class="pagination" aria-label="Dashboard pages">
+        {% if allSessions.has_previous %}
+        <a class="btn btn-plain btn-small" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ allSessions.previous_page_number }}">Previous</a>
+        {% else %}<span></span>{% endif %}
+        <span>Page {{ allSessions.number }} of {{ allSessions.paginator.num_pages }}</span>
+        {% if allSessions.has_next %}
+        <a class="btn btn-plain btn-small" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ allSessions.next_page_number }}">Next</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+</section>
 {% endblock content %}
-{% block footer %}
-{% include 'footer.html' %}
-{% endblock footer %}
