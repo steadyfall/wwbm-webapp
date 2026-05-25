@@ -235,7 +235,7 @@ class Session(models.Model):
             mode = Question.MEDIUM
         else:
             mode = Question.EASY
-        asked_pks = sessionObj.questions_asked.values_list("pk", flat=True)
+        asked_pks = sessionObj.session_user.questions_asked.values_list("pk", flat=True)
         return (
             Question.objects.filter(difficulty=mode)
             .exclude(pk__in=asked_pks)

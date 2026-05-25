@@ -60,9 +60,27 @@ class TestSessionQuestionSelection:
         )
         asked = create_question("Already asked?", Question.EASY, option, player)
         available = create_question("Fresh question?", Question.EASY, option, player)
-        session.questions_asked.add(asked)
+        asked.asked_to.add(player)
 
         assert Session.get_next_question(session.session_id) == available
+
+    def test_get_next_question_excludes_question_seen_in_prior_session(
+        self, player, easy_level, option
+    ):
+        prior_session = Session.objects.create(
+            session_user=player,
+            current_level=easy_level,
+        )
+        current_session = Session.objects.create(
+            session_user=player,
+            current_level=easy_level,
+        )
+        prior_question = create_question("Asked before?", Question.EASY, option, player)
+        available = create_question("Still unseen?", Question.EASY, option, player)
+        prior_session.questions_asked.add(prior_question)
+        prior_question.asked_to.add(player)
+
+        assert Session.get_next_question(current_session.session_id) == available
 
     def test_set_question_returns_none_without_changing_current_question(
         self, player, medium_level
