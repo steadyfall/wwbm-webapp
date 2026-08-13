@@ -3,7 +3,7 @@ import random
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import redirect, render
 from django.views.generic import View
 
@@ -326,8 +326,22 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
 
         if self.request.POST["submitBtn"] == "yes":
             userAnswer = self.request.POST["userAnswer"]
-            optionText = sessionObj.current_question.correct_option.text
-            option = Option.objects.get(text=userAnswer)
+            question = sessionObj.current_question
+            try:
+                option = (
+                    Option.objects.filter(
+                        Q(pk=question.correct_option_id)
+                        | Q(related_questions=question),
+                        text=userAnswer,
+                    )
+                    .distinct()
+                    .get()
+                )
+            except (Option.DoesNotExist, Option.MultipleObjectsReturned):
+                messages.warning(request, "Invalid answer!")
+                return redirect(self.request.get_full_path())
+
+            optionText = question.correct_option.text
             option.hits.add(sessionObj.session_user)
             if userAnswer == optionText:
                 sessionObj.score += sessionObj.current_level.money
