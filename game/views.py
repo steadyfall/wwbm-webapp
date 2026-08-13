@@ -20,6 +20,45 @@ from .lifelines import (
 )
 
 
+def build_option_values(correct_option, incorrect_options, selected_options=None):
+    options = (
+        list(selected_options)
+        if selected_options is not None
+        else list(incorrect_options)
+    )
+    if selected_options is None:
+        options.append(correct_option)
+    random.shuffle(options)
+    if selected_options is not None:
+        options.extend([None, None])
+    order = list(range(4))
+    random.shuffle(order)
+    return options, order
+
+
+def get_question_timer(level, lifeline=None, time_left=None):
+    if lifeline in (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER):
+        return int(time_left)
+    if level >= 13:
+        return 60
+    if level >= 10:
+        return 50
+    if level >= 6:
+        return 40
+    if level >= 1:
+        return 20
+    return 5
+
+
+def is_active_question_session(session, level):
+    return (
+        session.agreed_to_rules
+        and not session.game_over
+        and 1 <= session.current_level.level_number <= 15
+        and session.current_level.level_number == level
+    )
+
+
 def rules(request):
     context = {"lifelines": Lifeline.objects.all(), "levels": Level.objects.all()}
     return render(request, "rules.html", context)
@@ -31,6 +70,9 @@ PAGINATE_NO = 12
 
 
 class SessionLookupMixin:
+    def get_session_id(self):
+        return self.kwargs["session"]
+
     def get_session_object(self):
         if hasattr(self, "_session_object"):
             return self._session_object
@@ -41,6 +83,10 @@ class SessionLookupMixin:
         except Session.DoesNotExist:
             self._session_object = None
         return self._session_object
+
+    def owns_session(self):
+        session = self.get_session_object()
+        return session is not None and self.request.user == session.session_user
 
 
 class MainPage(View):
@@ -78,12 +124,8 @@ class About(View):
 
 
 class Rules(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View):
-    def get_sessionId(self):
-        return self.kwargs["session"]
-
     def test_func(self):
-        sessionObj = self.get_session_object()
-        return sessionObj is not None and self.request.user == sessionObj.session_user
+        return self.owns_session()
 
     def get(self, request, *args, **kwargs):
         sessionObj = self.get_session_object()
@@ -98,7 +140,7 @@ class Rules(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect("mainpage")
 
     def post(self, request, *args, **kwargs):
-        sessionId = self.get_sessionId()
+        sessionId = self.get_session_id()
         sessionObj = self.get_session_object()
         if sessionObj is None:
             return redirect("mainpage")
@@ -124,60 +166,24 @@ class Rules(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View):
 class QuestionInGame(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View):
     def get_url_kwargs(self):
         """Order: Session, Level"""
-        return (self.kwargs["session"], int(self.kwargs["level"]))
+        return (self.get_session_id(), int(self.kwargs["level"]))
 
     def test_func(self):
-        sessionObj = self.get_session_object()
-        return sessionObj is not None and self.request.user == sessionObj.session_user
+        return self.owns_session()
 
-    def context_creator(self, lifeline=None, timeLeft=None):
-        def randomOptionsCreator(obj, selected=None):
-            if selected is None:
-                optionsAsIs = [o.text for o in obj.incorrect_options.all()]
-                optionsAsIs.extend([obj.correct_option.text])
-                random.shuffle(optionsAsIs)
-            else:
-                optionsAsIs = list(selected)
-                random.shuffle(optionsAsIs)
-                optionsAsIs.extend([None, None])
-            orderAsIs = list(range(4))
-            random.shuffle(orderAsIs)
-            return optionsAsIs, orderAsIs
-
-        def timeDecider(level_number):
-            if level_number >= 13:
-                return 60
-            elif level_number >= 10:
-                return 50
-            elif level_number >= 6:
-                return 40
-            elif level_number >= 1:
-                return 20
-            else:
-                return 5
-
+    def get_question_context(self, lifeline=None, time_left=None):
         sessionId, level = self.get_url_kwargs()
         sessionObj = self.get_session_object()
         total = sessionObj.score
         forAmount = sessionObj.current_level.money
         qn = sessionObj.current_question
-        options, order = (
-            randomOptionsCreator(qn, fifty50(qn.pk, sessionId))
-            if (lifeline is not None and lifeline == FIFTY50)
-            else randomOptionsCreator(qn)
+        selected_options = fifty50(qn.pk, sessionId) if lifeline == FIFTY50 else None
+        options, order = build_option_values(
+            qn.correct_option.text,
+            qn.incorrect_options.values_list("text", flat=True),
+            selected_options,
         )
-        """TODO:
-        Change int(timeleft) to int(timeLeft if timeLeft else 0) for better
-        error handling when timer is not functional
-        """
-        timer = (
-            int(timeLeft)
-            if (
-                lifeline is not None
-                and lifeline in (FIFTY50, AUDIENCE_POLL, EXPERT_ANSWER)
-            )
-            else timeDecider(level)
-        )
+        timer = get_question_timer(level, lifeline, time_left)
         fifty50Text = (
             "Kindly check your updated options."
             if (lifeline is not None and lifeline == FIFTY50)
@@ -223,12 +229,7 @@ class QuestionInGame(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin
         sessionId, level = self.get_url_kwargs()
         sessionObj = self.get_session_object()
         if sessionObj is not None:
-            if (
-                sessionObj.agreed_to_rules
-                and not sessionObj.game_over
-                and (1 <= sessionObj.current_level.level_number <= 15)
-                and sessionObj.current_level.level_number == level
-            ):
+            if is_active_question_session(sessionObj, level):
                 level_diff = (
                     sessionObj.current_level.level_number
                     - sessionObj.prev_level.level_number
@@ -244,7 +245,7 @@ class QuestionInGame(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin
                             "No questions are available for this level.",
                         )
                         return redirect("mainpage")
-                return render(request, "question.html", self.context_creator())
+                return render(request, "question.html", self.get_question_context())
         return redirect("mainpage")
 
     def post(self, request, *args, **kwargs):
@@ -253,12 +254,7 @@ class QuestionInGame(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin
         if sessionObj is None:
             return redirect("mainpage")
 
-        if (
-            not (sessionObj.agreed_to_rules)
-            or sessionObj.game_over
-            or not (1 <= sessionObj.current_level.level_number <= 15)
-            or not (sessionObj.current_level.level_number == level)
-        ):
+        if not is_active_question_session(sessionObj, level):
             return redirect("mainpage")
 
         if "lifelineSubmit" in set(self.request.POST.keys()):
@@ -269,13 +265,15 @@ class QuestionInGame(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin
                 return render(
                     self.request,
                     "question.html",
-                    self.context_creator(
+                    self.get_question_context(
                         lifeline=self.request.POST["lifeline"],
-                        timeLeft=self.request.POST["timeLeftAfterLifeline"],
+                        time_left=self.request.POST["timeLeftAfterLifeline"],
                     ),
                 )
             else:
-                return render(self.request, "question.html", self.context_creator())
+                return render(
+                    self.request, "question.html", self.get_question_context()
+                )
 
         if "submitBtn" not in tuple(self.request.POST.keys()):
             messages.warning(request, "Invalid data!")
@@ -373,18 +371,17 @@ class BetweenQuestion(
     SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View
 ):
     def get_url_kwargs(self):
-        """Order: Session, Level"""
+        """Order: Session, Level, Status"""
         return (
-            self.kwargs["session"],
+            self.get_session_id(),
             int(self.kwargs["level"]),
             self.kwargs["status"],
         )
 
     def test_func(self):
-        sessionObj = self.get_session_object()
-        return sessionObj is not None and self.request.user == sessionObj.session_user
+        return self.owns_session()
 
-    def context_creator(self, message, mode="wrong"):
+    def get_status_context(self, message, mode="wrong"):
         sessionId, level, qStatus = self.get_url_kwargs()
         sessionObj = self.get_session_object()
         total = sessionObj.score
@@ -439,7 +436,7 @@ class BetweenQuestion(
                     msg = """You just QUIT the game successfully, \
                         making your total earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
                     return render(
-                        request, "gameover.html", self.context_creator(msg, "over")
+                        request, "gameover.html", self.get_status_context(msg, "over")
                     )
                 elif (
                     qStatus.lower() == "correct"
@@ -452,12 +449,14 @@ class BetweenQuestion(
                         return render(
                             request,
                             "gameover.html",
-                            self.context_creator(msg, "correct"),
+                            self.get_status_context(msg, "correct"),
                         )
                     msg = """You just earned $<span class="font-bold">{}</span> \
                         to make your total earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
                     return render(
-                        request, "gameover.html", self.context_creator(msg, "correct")
+                        request,
+                        "gameover.html",
+                        self.get_status_context(msg, "correct"),
                     )
                 elif (
                     qStatus.lower() == "incorrect"
@@ -466,7 +465,9 @@ class BetweenQuestion(
                 ):
                     msg = """You just lost $<span class="font-bold">{}</span> \
                           to make your final earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
-                    return render(request, "gameover.html", self.context_creator(msg))
+                    return render(
+                        request, "gameover.html", self.get_status_context(msg)
+                    )
         return redirect("mainpage")
 
     def post(self, request, *args, **kwargs):
