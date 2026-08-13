@@ -112,7 +112,7 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
         check = Session.objects.filter(session_id=sessionId).exists()
         if check:
             sessionObj = Session.objects.get(session_id=sessionId)
-            if not sessionObj.agreedToRules and not sessionObj.gameOver:
+            if not sessionObj.agreed_to_rules and not sessionObj.game_over:
                 context = {
                     "title": "Rules (game about to begin)",
                     "lifelines": Lifeline.objects.all(),
@@ -131,11 +131,11 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
             sessionObj.delete()
             return redirect("mainpage", permanent=True)
         if self.request.POST["agreed"] == "yes":
-            sessionObj.agreedToRules = True
+            sessionObj.agreed_to_rules = True
             sessionObj.prev_level = Level.objects.get(level_number=-1)
             sessionObj.current_level = Level.objects.get(level_number=1)
             sessionObj.save(
-                update_fields=["agreedToRules", "current_level", "prev_level"]
+                update_fields=["agreed_to_rules", "current_level", "prev_level"]
             )
             return redirect("question", session=sessionId, level=1, permanent=True)
         sessionObj.delete()
@@ -251,8 +251,8 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
         if check:
             sessionObj = Session.objects.get(session_id=sessionId)
             if (
-                sessionObj.agreedToRules
-                and not sessionObj.gameOver
+                sessionObj.agreed_to_rules
+                and not sessionObj.game_over
                 and (1 <= sessionObj.current_level.level_number <= 15)
                 and sessionObj.current_level.level_number == level
             ):
@@ -282,8 +282,8 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
         sessionObj = Session.objects.get(session_id=sessionId)
 
         if (
-            not (sessionObj.agreedToRules)
-            or sessionObj.gameOver
+            not (sessionObj.agreed_to_rules)
+            or sessionObj.game_over
             or not (1 <= sessionObj.current_level.level_number <= 15)
             or not (sessionObj.current_level.level_number == level)
         ):
@@ -310,8 +310,8 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             return redirect(self.request.get_full_path())
 
         if self.request.POST["submitBtn"] == "exit":
-            sessionObj.gameOver = True
-            sessionObj.save(update_fields=["gameOver"])
+            sessionObj.game_over = True
+            sessionObj.save(update_fields=["game_over"])
             return redirect(
                 "statusAfterQn",
                 session=sessionId,
@@ -353,8 +353,8 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
 
                 # Message to user after they have answered correctly and being redirected to next question
                 if level == 15 and sessionObj.current_level.level_number == 16:
-                    sessionObj.gameOver = True
-                    sessionObj.save(update_fields=["gameOver"])
+                    sessionObj.game_over = True
+                    sessionObj.save(update_fields=["game_over"])
                     return redirect(
                         "statusAfterQn",
                         session=sessionId,
@@ -389,10 +389,10 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                     permanent=True,
                 ) """
             else:
-                sessionObj.gameOver = True
+                sessionObj.game_over = True
                 sessionObj.wrong_qn = sessionObj.current_question
                 sessionObj.score //= 100
-                sessionObj.save(update_fields=["gameOver", "wrong_qn", "score"])
+                sessionObj.save(update_fields=["game_over", "wrong_qn", "score"])
                 return redirect(
                     "statusAfterQn",
                     session=sessionId,
@@ -459,7 +459,7 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
         if check:
             sessionObj = Session.objects.get(session_id=sessionId)
             if (
-                sessionObj.agreedToRules
+                sessionObj.agreed_to_rules
                 and (1 <= sessionObj.current_level.level_number <= 16)
                 and (0 <= sessionObj.current_level.level_number - level <= 1)
             ):
@@ -469,7 +469,7 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                 )
                 if (
                     qStatus.lower() == "quit"
-                    and sessionObj.gameOver
+                    and sessionObj.game_over
                     and len(sessionObj.wrong_qn.text) == 4
                     and level_diff in (1, 2)
                 ):
@@ -498,7 +498,7 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                     )
                 elif (
                     qStatus.lower() == "incorrect"
-                    and sessionObj.gameOver
+                    and sessionObj.game_over
                     and len(sessionObj.wrong_qn.text) > 4
                 ):
                     msg = """You just lost $<span class="font-bold">{}</span> \
@@ -518,7 +518,7 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
         sessionObj = Session.objects.get(session_id=sessionId)
 
         if (
-            not sessionObj.agreedToRules
+            not sessionObj.agreed_to_rules
             and not (1 <= sessionObj.current_level.level_number <= 16)
             and not (0 <= sessionObj.current_level.level_number - level <= 1)
         ):
@@ -529,8 +529,8 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
             return redirect(self.request.get_full_path())
 
         if self.request.POST["nextQ"] == "no":
-            sessionObj.gameOver = True
-            sessionObj.save(update_fields=["gameOver"])
+            sessionObj.game_over = True
+            sessionObj.save(update_fields=["game_over"])
             return redirect(
                 "statusAfterQn",
                 session=sessionId,
