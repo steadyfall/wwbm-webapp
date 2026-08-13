@@ -7,7 +7,7 @@ from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.views.generic import View
 
-from game.models import Level, Lifeline, Option, Question, Session
+from game.models import Level, Lifeline, Question, Session
 
 from .lifelines import (
     AUDIENCE_POLL,
@@ -326,8 +326,16 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
 
         if self.request.POST["submitBtn"] == "yes":
             userAnswer = self.request.POST["userAnswer"]
-            optionText = sessionObj.current_question.correct_option.text
-            option = Option.objects.get(text=userAnswer)
+            current_question = sessionObj.current_question
+            optionText = current_question.correct_option.text
+            option = (
+                current_question.correct_option
+                if userAnswer == optionText
+                else current_question.incorrect_options.filter(text=userAnswer).first()
+            )
+            if option is None:
+                messages.warning(request, "Invalid answer!")
+                return redirect(self.request.get_full_path())
             option.hits.add(sessionObj.session_user)
             if userAnswer == optionText:
                 sessionObj.score += sessionObj.current_level.money
