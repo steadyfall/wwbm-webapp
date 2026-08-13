@@ -83,3 +83,70 @@ class TestSetQuestion:
         assert list(session.questions_asked.all()) == [next_question]
         assert list(player.questions_asked.all()) == [next_question]
         get_next_question.assert_called_once_with(session.session_id)
+
+
+@pytest.mark.django_db
+class TestGetNextQuestion:
+    @pytest.mark.parametrize(
+        ("level_number", "expected_difficulty"),
+        [
+            (1, Question.EASY),
+            (5, Question.EASY),
+            (6, Question.MEDIUM),
+            (10, Question.MEDIUM),
+            (11, Question.HARD),
+            (15, Question.HARD),
+        ],
+    )
+    def test_selects_question_for_level_difficulty(
+        self, player, level_number, expected_difficulty
+    ):
+        level = Level.objects.create(level_number=level_number, money=100)
+        expected_question = create_question(
+            text=f"Question for level {level_number}",
+            difficulty=expected_difficulty,
+            player=player,
+        )
+        session = Session.objects.create(session_user=player, current_level=level)
+
+        assert Session.get_next_question(session.session_id) == expected_question
+
+    def test_excludes_questions_already_asked_to_player(self, player):
+        level = Level.objects.create(level_number=1, money=100)
+        asked_question = create_question(
+            text="Already asked",
+            difficulty=Question.EASY,
+            player=player,
+        )
+        available_question = create_question(
+            text="Still available",
+            difficulty=Question.EASY,
+            player=player,
+        )
+        asked_question.asked_to.add(player)
+        session = Session.objects.create(session_user=player, current_level=level)
+
+        assert Session.get_next_question(session.session_id) == available_question
+
+    def test_returns_none_when_difficulty_has_no_available_questions(self, player):
+        level = Level.objects.create(level_number=11, money=100)
+        create_question(
+            text="Easy only",
+            difficulty=Question.EASY,
+            player=player,
+        )
+        session = Session.objects.create(session_user=player, current_level=level)
+
+        assert Session.get_next_question(session.session_id) is None
+
+    def test_stays_within_two_query_budget(self, player, django_assert_max_num_queries):
+        level = Level.objects.create(level_number=6, money=100)
+        create_question(
+            text="Medium question",
+            difficulty=Question.MEDIUM,
+            player=player,
+        )
+        session = Session.objects.create(session_user=player, current_level=level)
+
+        with django_assert_max_num_queries(2):
+            Session.get_next_question(session.session_id)
