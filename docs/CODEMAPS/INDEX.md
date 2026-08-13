@@ -62,7 +62,6 @@ kbc/urls.py
 │   ├── /random-question/                   → GetQuestion (API)
 │   └── /add-questions/                     → AddQuestion (API)
 ├── /                                       → game.urls
-│   ├── /tester/                            → pageChecker
 │   ├── /                                   → MainPage
 │   ├── /about/                             → About
 │   ├── /leaderboard/                       → Leaderboard

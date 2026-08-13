@@ -5,7 +5,6 @@ from django.urls import path
 from . import views as game_views
 
 urlpatterns = [
-    path("tester/", game_views.pageChecker, name="tester"),
     path("", game_views.MainPage.as_view(), name="mainpage"),
     path("about/", game_views.About.as_view(), name="about"),
     path("leaderboard/", game_views.Leaderboard.as_view(), name="leaderboard"),

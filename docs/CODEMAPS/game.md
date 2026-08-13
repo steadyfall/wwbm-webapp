@@ -50,7 +50,6 @@ Leaderboard / ScoreBoard
 | `BetweenQuestion` | CBV (LoginRequired) | `statusAfterQn` | Shows correct/incorrect/quit result between levels |
 | `Leaderboard` | CBV | `leaderboard` | All-users scores ranked by score (paginated) |
 | `ScoreBoard` | CBV (LoginRequired) | `scores` | User-specific session history (paginated) |
-| `pageChecker` | Function | `tester` | Dev/test page (renders gameover.html) |
 
 ## URL Patterns
 
@@ -63,7 +62,6 @@ Leaderboard / ScoreBoard
 | `game/<session>/rules/` | `rules` | Rules |
 | `game/<session>/question/<level>/` | `question` | QuestionInGame |
 | `game/<session>/question/<level>/<status>/` | `statusAfterQn` | BetweenQuestion |
-| `tester/` | `tester` | pageChecker |
 
 ## Management Commands
 
