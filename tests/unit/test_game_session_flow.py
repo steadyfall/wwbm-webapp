@@ -55,7 +55,7 @@ def test_start_game_creates_uuid_session_and_redirects_to_rules(
 
     response = client.post(reverse("mainpage"), {"startPlay": "yes"})
 
-    assert response.status_code == 301
+    assert response.status_code == 302
     session = Session.objects.get(session_user=player)
     assert isinstance(session.session_id, uuid.UUID)
     assert response.url == reverse("rules", kwargs={"session": session.session_id})

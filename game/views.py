@@ -45,7 +45,10 @@ class MainPage(View):
                 new_session.left_lifelines.set(
                     Lifeline.objects.values_list("id", flat=True)
                 )
-                return redirect("rules", session=new_session.session_id, permanent=True)
+                return redirect(
+                    "rules",
+                    session=new_session.session_id,
+                )
             else:
                 return redirect("login")
         return redirect(self.request.get_full_path())
@@ -86,17 +89,17 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
                     "levels": Level.objects.all(),
                 }
                 return render(request, "rules.html", context)
-        return redirect("mainpage", permanent=True)
+        return redirect("mainpage")
 
     def post(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
         check = Session.objects.filter(session_id=sessionId).exists()
         if not check:
-            return redirect("mainpage", permanent=True)
+            return redirect("mainpage")
         sessionObj = Session.objects.get(session_id=sessionId)
         if "agreed" not in tuple(self.request.POST.keys()):
             sessionObj.delete()
-            return redirect("mainpage", permanent=True)
+            return redirect("mainpage")
         if self.request.POST["agreed"] == "yes":
             sessionObj.agreed_to_rules = True
             sessionObj.prev_level = Level.objects.get(level_number=-1)
@@ -104,9 +107,13 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
             sessionObj.save(
                 update_fields=["agreed_to_rules", "current_level", "prev_level"]
             )
-            return redirect("question", session=sessionId, level=1, permanent=True)
+            return redirect(
+                "question",
+                session=sessionId,
+                level=1,
+            )
         sessionObj.delete()
-        return redirect("mainpage", permanent=True)
+        return redirect("mainpage")
 
 
 class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -239,13 +246,13 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                         )
                         return redirect("mainpage")
                 return render(request, "question.html", self.context_creator())
-        return redirect("mainpage", permanent=True)
+        return redirect("mainpage")
 
     def post(self, request, *args, **kwargs):
         sessionId, level = self.get_url_kwargs()
         check = Session.objects.filter(session_id=sessionId).exists()
         if not check:
-            return redirect("mainpage", permanent=True)
+            return redirect("mainpage")
         sessionObj = Session.objects.get(session_id=sessionId)
 
         if (
@@ -254,7 +261,7 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
             or not (1 <= sessionObj.current_level.level_number <= 15)
             or not (sessionObj.current_level.level_number == level)
         ):
-            return redirect("mainpage", permanent=True)
+            return redirect("mainpage")
 
         if "lifelineSubmit" in set(self.request.POST.keys()):
             if (
@@ -284,7 +291,6 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                 session=sessionId,
                 level=level,
                 status="quit",
-                permanent=True,
             )
 
         if "userAnswer" not in tuple(self.request.POST.keys()):
@@ -327,7 +333,6 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                         session=sessionId,
                         level=level,
                         status="correct",
-                        permanent=True,
                     )
                 msg = """You just earned <span class="font-bold">${}</span> \
                     to make your TOTAL earnings <span class="underline underline-offset-2">${}</span>!"""
@@ -344,7 +349,6 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                     "question",
                     session=sessionId,
                     level=sessionObj.current_level.level_number,
-                    permanent=True,
                 )
 
                 # Previous method of going to intermediary page and giving option to user to quit
@@ -353,7 +357,6 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                     session=sessionId,
                     level=level,
                     status="correct",
-                    permanent=True,
                 ) """
             else:
                 sessionObj.game_over = True
@@ -365,7 +368,6 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                     session=sessionId,
                     level=level,
                     status="incorrect",
-                    permanent=True,
                 )
 
 
@@ -471,17 +473,17 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                     msg = """You just lost $<span class="font-bold">{}</span> \
                           to make your final earnings $<span class="font-bold underline underline-offset-2">{}</span>!"""
                     return render(request, "gameover.html", self.context_creator(msg))
-        return redirect("mainpage", permanent=True)
+        return redirect("mainpage")
 
     def post(self, request, *args, **kwargs):
         sessionId, level, qStatus = self.get_url_kwargs()
         check = Session.objects.filter(session_id=sessionId).exists()
 
         if qStatus.lower() != "correct":
-            return redirect("mainpage", permanent=True)
+            return redirect("mainpage")
 
         if not check:
-            return redirect("mainpage", permanent=True)
+            return redirect("mainpage")
         sessionObj = Session.objects.get(session_id=sessionId)
 
         if (
@@ -489,7 +491,7 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
             and not (1 <= sessionObj.current_level.level_number <= 16)
             and not (0 <= sessionObj.current_level.level_number - level <= 1)
         ):
-            return redirect("mainpage", permanent=True)
+            return redirect("mainpage")
 
         if "nextQ" not in tuple(self.request.POST.keys()):
             messages.warning(request, "Choose an option!")
@@ -503,7 +505,6 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                 session=sessionId,
                 level=level,
                 status="quit",
-                permanent=True,
             )
 
         if self.request.POST["nextQ"] == "yes":
@@ -511,7 +512,6 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
                 "question",
                 session=sessionId,
                 level=sessionObj.current_level.level_number,
-                permanent=True,
             )
 
 
