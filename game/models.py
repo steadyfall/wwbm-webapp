@@ -156,7 +156,10 @@ class Question(models.Model):
             text="None",
             correct_option_id=default_option_pk,
         )
-        if created or not question.incorrect_options.filter(pk=default_option_pk).exists():
+        if (
+            created
+            or not question.incorrect_options.filter(pk=default_option_pk).exists()
+        ):
             question.incorrect_options.add(default_option_pk)
         return question.pk
 
@@ -226,19 +229,23 @@ class Session(models.Model):
 
     @classmethod
     def get_next_question(cls, session_id):
-        sessionObj = cls.objects.get(session_id=session_id)
-        level_number = sessionObj.current_level.level_number
-        mode = "None"
-        if level_number >= 11:
-            mode = Question.HARD
-        elif level_number >= 6:
-            mode = Question.MEDIUM
-        else:
-            mode = Question.EASY
-        asked_pks = sessionObj.session_user.questions_asked.values_list("pk", flat=True)
+        session_level = cls.objects.filter(session_id=session_id).values(
+            "current_level__level_number"
+        )[:1]
         available_questions = (
-            Question.objects.filter(difficulty=mode)
-            .exclude(pk__in=asked_pks)
+            Question.objects.annotate(
+                session_level=models.Subquery(session_level),
+            )
+            .filter(
+                models.Q(session_level__gte=11, difficulty=Question.HARD)
+                | models.Q(
+                    session_level__gte=6,
+                    session_level__lte=10,
+                    difficulty=Question.MEDIUM,
+                )
+                | models.Q(session_level__lte=5, difficulty=Question.EASY)
+            )
+            .exclude(asked_to__initiated_sessions__session_id=session_id)
             .order_by("pk")
         )
         question_count = available_questions.count()
