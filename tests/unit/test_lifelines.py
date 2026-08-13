@@ -2,6 +2,7 @@ import re
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from game.lifelines import (
     AUDIENCE_POLL,
@@ -13,7 +14,7 @@ from game.lifelines import (
     general_procedure,
     get_lifeline_map,
 )
-from game.models import Lifeline, Option, Question, Session
+from game.models import Level, Lifeline, Option, Question, Session
 
 
 @pytest.fixture
@@ -117,3 +118,40 @@ def test_audience_poll_returns_all_options_with_percentages(
     assert all(1 <= percent <= 100 for percent in percentages)
     assert lifelines[AUDIENCE_POLL] in session.used_lifelines.all()
     assert lifelines[AUDIENCE_POLL] not in session.left_lifelines.all()
+
+
+@pytest.mark.django_db
+def test_using_all_lifelines_hides_lifeline_button(
+    client, lifelines, question, session
+):
+    level = Level.objects.create(level_number=1, money=100)
+    session.agreedToRules = True
+    session.current_level = level
+    session.prev_level = level
+    session.current_question = question
+    session.save(
+        update_fields=[
+            "agreedToRules",
+            "current_level",
+            "prev_level",
+            "current_question",
+        ]
+    )
+
+    fifty50(question.pk, session.session_id)
+    audiencePoll(question.pk, session.session_id)
+    expertAnswer(question.pk, session.session_id)
+    client.force_login(session.session_user)
+
+    response = client.get(
+        reverse(
+            "question",
+            kwargs={"session": session.session_id, "level": level.level_number},
+        )
+    )
+
+    session.refresh_from_db()
+    assert response.status_code == 200
+    assert not session.left_lifelines.exists()
+    assert set(session.used_lifelines.all()) == set(lifelines.values())
+    assert b'id="lifelineButton"' not in response.content
