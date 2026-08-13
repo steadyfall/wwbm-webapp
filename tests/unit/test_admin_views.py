@@ -7,7 +7,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from adminpanel.views import AdminMainPage
+from adminpanel.views import AdminDBObjectHistory, AdminMainPage
 from game.models import Category, Lifeline, Option, Question, Session
 
 
@@ -136,6 +136,32 @@ class TestAdminDashboardPerformance:
         assert len(queries) <= 20
         assert context["total_question_count"] >= 1
         assert context["category_with_most_qs"]
+
+
+@pytest.mark.django_db
+class TestAdminObjectLookupPerformance:
+    def test_history_context_retrieves_requested_object_once(self, admin_data):
+        category = admin_data["category"]
+        view = AdminDBObjectHistory()
+        view.request = RequestFactory().get(
+            reverse(
+                "adminDBObjectHistory",
+                kwargs={"db": "category", "pk": category.pk},
+            )
+        )
+        view.kwargs = {"db": "category", "pk": str(category.pk)}
+
+        with CaptureQueriesContext(connection) as queries:
+            context = view.context_creator()
+
+        category_retrievals = [
+            query
+            for query in queries
+            if query["sql"].upper().startswith("SELECT")
+            and 'FROM "GAME_CATEGORY"' in query["sql"].upper()
+        ]
+        assert len(category_retrievals) == 1
+        assert context["record"] == category
 
 
 @pytest.mark.django_db

@@ -30,6 +30,19 @@ def rules(request):
 PAGINATE_NO = 12
 
 
+class SessionLookupMixin:
+    def get_session_object(self):
+        if hasattr(self, "_session_object"):
+            return self._session_object
+        try:
+            self._session_object = Session.objects.get(
+                session_id=self.kwargs["session"]
+            )
+        except Session.DoesNotExist:
+            self._session_object = None
+        return self._session_object
+
+
 class MainPage(View):
     def get(self, request, *args, **kwargs):
         return render(request, "mainPage.html")
@@ -64,24 +77,17 @@ class About(View):
         return render(request, "about.html", context)
 
 
-class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
+class Rules(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View):
     def get_sessionId(self):
         return self.kwargs["session"]
 
     def test_func(self):
-        sessionId = self.get_sessionId()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
-            if self.request.user == sessionObj.session_user:
-                return True
-        return False
+        sessionObj = self.get_session_object()
+        return sessionObj is not None and self.request.user == sessionObj.session_user
 
     def get(self, request, *args, **kwargs):
-        sessionId = self.get_sessionId()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
+        sessionObj = self.get_session_object()
+        if sessionObj is not None:
             if not sessionObj.agreed_to_rules and not sessionObj.game_over:
                 context = {
                     "title": "Rules (game about to begin)",
@@ -93,10 +99,9 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if not check:
+        sessionObj = self.get_session_object()
+        if sessionObj is None:
             return redirect("mainpage")
-        sessionObj = Session.objects.get(session_id=sessionId)
         if "agreed" not in tuple(self.request.POST.keys()):
             sessionObj.delete()
             return redirect("mainpage")
@@ -116,19 +121,14 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect("mainpage")
 
 
-class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
+class QuestionInGame(SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View):
     def get_url_kwargs(self):
         """Order: Session, Level"""
         return (self.kwargs["session"], int(self.kwargs["level"]))
 
     def test_func(self):
-        sessionId, level = self.get_url_kwargs()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
-            if self.request.user == sessionObj.session_user:
-                return True
-        return False
+        sessionObj = self.get_session_object()
+        return sessionObj is not None and self.request.user == sessionObj.session_user
 
     def context_creator(self, lifeline=None, timeLeft=None):
         def randomOptionsCreator(obj, selected=None):
@@ -157,7 +157,7 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                 return 5
 
         sessionId, level = self.get_url_kwargs()
-        sessionObj = Session.objects.get(session_id=sessionId)
+        sessionObj = self.get_session_object()
         total = sessionObj.score
         forAmount = sessionObj.current_level.money
         qn = sessionObj.current_question
@@ -221,9 +221,8 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def get(self, request, *args, **kwargs):
         sessionId, level = self.get_url_kwargs()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
+        sessionObj = self.get_session_object()
+        if sessionObj is not None:
             if (
                 sessionObj.agreed_to_rules
                 and not sessionObj.game_over
@@ -250,10 +249,9 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request, *args, **kwargs):
         sessionId, level = self.get_url_kwargs()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if not check:
+        sessionObj = self.get_session_object()
+        if sessionObj is None:
             return redirect("mainpage")
-        sessionObj = Session.objects.get(session_id=sessionId)
 
         if (
             not (sessionObj.agreed_to_rules)
@@ -371,7 +369,9 @@ class QuestionInGame(LoginRequiredMixin, UserPassesTestMixin, View):
                 )
 
 
-class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
+class BetweenQuestion(
+    SessionLookupMixin, LoginRequiredMixin, UserPassesTestMixin, View
+):
     def get_url_kwargs(self):
         """Order: Session, Level"""
         return (
@@ -381,17 +381,12 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
     def test_func(self):
-        sessionId, level, qStatus = self.get_url_kwargs()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
-            if self.request.user == sessionObj.session_user:
-                return True
-        return False
+        sessionObj = self.get_session_object()
+        return sessionObj is not None and self.request.user == sessionObj.session_user
 
     def context_creator(self, message, mode="wrong"):
         sessionId, level, qStatus = self.get_url_kwargs()
-        sessionObj = Session.objects.get(session_id=sessionId)
+        sessionObj = self.get_session_object()
         total = sessionObj.score
         header, formatted_message = "", ""
         title = ""
@@ -424,9 +419,8 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def get(self, request, *args, **kwargs):
         sessionId, level, qStatus = self.get_url_kwargs()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
+        sessionObj = self.get_session_object()
+        if sessionObj is not None:
             if (
                 sessionObj.agreed_to_rules
                 and (1 <= sessionObj.current_level.level_number <= 16)
@@ -477,14 +471,13 @@ class BetweenQuestion(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request, *args, **kwargs):
         sessionId, level, qStatus = self.get_url_kwargs()
-        check = Session.objects.filter(session_id=sessionId).exists()
 
         if qStatus.lower() != "correct":
             return redirect("mainpage")
 
-        if not check:
+        sessionObj = self.get_session_object()
+        if sessionObj is None:
             return redirect("mainpage")
-        sessionObj = Session.objects.get(session_id=sessionId)
 
         if (
             not sessionObj.agreed_to_rules

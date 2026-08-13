@@ -657,9 +657,9 @@ class AdminDBObjectHistory(SuperuserRequiredMixin, LoginRequiredMixin, View):
         smallcaseDB, pk = self.get_url_kwargs()
         model = modelDict[smallcaseDB]
 
-        obj = model.objects.all()[0]
-        if model.objects.filter(pk=pk).exists():
-            obj = model.objects.get(pk=pk)
+        obj = model.objects.filter(pk=pk).first()
+        if obj is None:
+            obj = model.objects.all()[0]
 
         query = LogEntry.objects.filter(
             content_type_id=get_content_type_for_model(obj).pk, object_id=pk
