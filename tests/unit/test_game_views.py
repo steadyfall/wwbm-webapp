@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
@@ -189,3 +191,76 @@ class TestQuestionInGameAnswers:
         assert session.current_level == original_level
         assert session.gameOver is False
         assert not Option.hits.through.objects.filter(user=player).exists()
+
+
+@pytest.mark.django_db
+class TestRules:
+    def test_get_renders_rules_for_session_that_has_not_agreed(
+        self, client, player, session_factory
+    ):
+        session = session_factory()
+        session.agreedToRules = False
+        session.save(update_fields=["agreedToRules"])
+        client.force_login(player)
+
+        response = client.get(reverse("rules", kwargs={"session": session.session_id}))
+
+        assert response.status_code == 200
+        assert "rules.html" in [template.name for template in response.templates]
+
+    def test_get_redirects_when_rules_are_already_agreed(
+        self, client, player, session_factory
+    ):
+        session = session_factory()
+        client.force_login(player)
+
+        response = client.get(reverse("rules", kwargs={"session": session.session_id}))
+
+        assert response.status_code == 301
+        assert response.url == reverse("mainpage")
+
+    def test_post_agreement_updates_session_and_starts_first_question(
+        self, client, player, levels, session_factory
+    ):
+        session = session_factory()
+        session.agreedToRules = False
+        session.save(update_fields=["agreedToRules"])
+        client.force_login(player)
+
+        response = client.post(
+            reverse("rules", kwargs={"session": session.session_id}),
+            {"agreed": "yes"},
+        )
+
+        session.refresh_from_db()
+        assert response.status_code == 301
+        assert response.url == question_url(session, 1)
+        assert session.agreedToRules is True
+        assert session.prev_level == levels[-1]
+        assert session.current_level == levels[1]
+
+    def test_post_without_agreement_deletes_session(
+        self, client, player, session_factory
+    ):
+        session = session_factory()
+        session.agreedToRules = False
+        session.save(update_fields=["agreedToRules"])
+        session_id = session.session_id
+        client.force_login(player)
+
+        response = client.post(reverse("rules", kwargs={"session": session_id}), {})
+
+        assert response.status_code == 301
+        assert response.url == reverse("mainpage")
+        assert not Session.objects.filter(session_id=session_id).exists()
+
+    def test_post_for_nonexistent_session_redirects_to_mainpage(self, client, player):
+        client.force_login(player)
+
+        response = client.post(
+            reverse("rules", kwargs={"session": uuid.uuid4()}),
+            {"agreed": "yes"},
+        )
+
+        assert response.status_code == 301
+        assert response.url == reverse("mainpage")

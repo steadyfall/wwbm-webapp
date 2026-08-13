@@ -99,13 +99,8 @@ class Rules(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.kwargs["session"]
 
     def test_func(self):
-        sessionId = self.get_sessionId()
-        check = Session.objects.filter(session_id=sessionId).exists()
-        if check:
-            sessionObj = Session.objects.get(session_id=sessionId)
-            if self.request.user == sessionObj.session_user:
-                return True
-        return False
+        sessionObj = Session.objects.filter(session_id=self.get_sessionId()).first()
+        return sessionObj is None or self.request.user == sessionObj.session_user
 
     def get(self, request, *args, **kwargs):
         sessionId = self.get_sessionId()
