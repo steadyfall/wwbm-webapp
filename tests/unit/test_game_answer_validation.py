@@ -38,7 +38,7 @@ def question():
 def game_session(player, levels, question):
     return Session.objects.create(
         session_user=player,
-        agreedToRules=True,
+        agreed_to_rules=True,
         prev_level=levels[-1],
         current_level=levels[1],
         current_question=question,
@@ -53,7 +53,7 @@ def assert_unchanged_session(game_session, question):
     game_session.refresh_from_db()
     assert game_session.score == 0
     assert game_session.current_level.level_number == 1
-    assert game_session.gameOver is False
+    assert game_session.game_over is False
     assert game_session.wrong_qn_id == Question.get_default_pk()
     assert not game_session.correct_qns.exists()
     assert ChosenOption.objects.count() == 0
@@ -157,7 +157,7 @@ class TestQuestionAnswerValidation:
                 "status": "incorrect",
             },
         )
-        assert game_session.gameOver is True
+        assert game_session.game_over is True
         assert game_session.wrong_qn == question
         assert game_session.score == 0
         assert incorrect_option.hits.get() == player

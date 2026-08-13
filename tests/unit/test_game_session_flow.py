@@ -68,7 +68,7 @@ def test_question_lifeline_post_removes_lifeline_from_available_options(
 ):
     session = Session.objects.create(
         session_user=player,
-        agreedToRules=True,
+        agreed_to_rules=True,
         prev_level=levels[-1],
         current_level=levels[1],
         current_question=question,

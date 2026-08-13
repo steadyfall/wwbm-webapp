@@ -36,7 +36,7 @@ Leaderboard / ScoreBoard
 | `Option` | text, date_added, hits | FK ← Question (correct_option); M2M ← Question (incorrect_options); M2M → User (through ChosenOption) |
 | `ChosenOption` | user, option, date_chosen | Through table: User → Option selection history |
 | `Question` | text, difficulty, question_type, date_added | FK → User (who_added), Option (correct_option); M2M → Category, Option, User (asked_to) |
-| `Session` | session_id (8-char), score, gameOver, agreedToRules | FK → User, Level; M2M → Lifeline, Question |
+| `Session` | session_id (8-char), score, game_over, agreed_to_rules | FK → User, Level; M2M → Lifeline, Question |
 | `QuestionOrder` | question, session, date_chosen | Through table: tracks question order per session |
 
 ## Views
@@ -119,7 +119,7 @@ POST /  (startPlay=yes)
   → redirect rules?session=<id>
 
 POST /game/<session>/rules/  (agreed=yes)
-  → current_level=1, prev_level=-1, agreedToRules=True
+  → current_level=1, prev_level=-1, agreed_to_rules=True
   → redirect question?session=<id>&level=1
 
 GET /game/<session>/question/<level>/
@@ -129,7 +129,7 @@ GET /game/<session>/question/<level>/
 POST /game/<session>/question/<level>/  (userAnswer=<text>)
   → Option.hits.add(user)           ← track selection
   → Correct: score += level.money, level += 1, correct_qns.add(question)
-  → Wrong:   gameOver=True, wrong_qn=question, score //= 100
+  → Wrong:   game_over=True, wrong_qn=question, score //= 100
   → redirect statusAfterQn
 ```
 

@@ -140,8 +140,8 @@ QuestionOrder  [through: Session.questions_asked]
 | `session_user` | ForeignKey | User, `on_delete=SET(sentinel)` |
 | `prev_level` | ForeignKey | Level, `on_delete=SET_DEFAULT` |
 | `current_level` | ForeignKey | Level, `on_delete=SET_DEFAULT` |
-| `agreedToRules` | BooleanField | `default=False` |
-| `gameOver` | BooleanField | `default=False` |
+| `agreed_to_rules` | BooleanField | `default=False` |
+| `game_over` | BooleanField | `default=False` |
 | `score` | IntegerField | `min=0`, `max=100_000_000`, `default=0` |
 | `current_question` | ForeignKey | Question, `on_delete=SET_DEFAULT` |
 | `questions_asked` | ManyToManyField | Question, through=`QuestionOrder` |

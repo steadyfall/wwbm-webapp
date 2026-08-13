@@ -156,7 +156,10 @@ class Question(models.Model):
             text="None",
             correct_option_id=default_option_pk,
         )
-        if created or not question.incorrect_options.filter(pk=default_option_pk).exists():
+        if (
+            created
+            or not question.incorrect_options.filter(pk=default_option_pk).exists()
+        ):
             question.incorrect_options.add(default_option_pk)
         return question.pk
 
@@ -190,9 +193,9 @@ class Session(models.Model):
         on_delete=models.SET_DEFAULT,
         related_name="sessions_currently",
     )
-    agreedToRules = models.BooleanField(verbose_name="Agreed to T&C", default=False)
+    agreed_to_rules = models.BooleanField(verbose_name="Agreed to T&C", default=False)
     # Above will turn True if user agrees to terms and conditions given
-    gameOver = models.BooleanField(verbose_name="Game over?", default=False)
+    game_over = models.BooleanField(verbose_name="Game over?", default=False)
     # Above will turn True if either user quits from the game or answers an question wrong
     score = models.IntegerField(
         verbose_name="Money Won",
