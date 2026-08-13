@@ -6,7 +6,14 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from game.lifelines import AUDIENCE_POLL, EXPERT_ANSWER, FIFTY50
-from game.models import Level, Lifeline, Option, Question, Session
+from game.models import (
+    Level,
+    Lifeline,
+    Option,
+    Question,
+    Session,
+    get_sentinel_user,
+)
 
 
 @pytest.fixture
@@ -150,3 +157,38 @@ class TestGetNextQuestion:
 
         with django_assert_max_num_queries(2):
             Session.get_next_question(session.session_id)
+
+
+@pytest.mark.django_db
+class TestDefaultFactories:
+    def test_level_default_pk_creates_level_zero(self):
+        default_pk = Level.get_default_pk()
+
+        default_level = Level.objects.get(pk=default_pk)
+        assert default_level.level_number == 0
+        assert Level.get_default_pk() == default_pk
+
+    def test_option_default_pk_creates_none_option(self):
+        default_pk = Option.get_default_pk()
+
+        default_option = Option.objects.get(pk=default_pk)
+        assert default_option.text == "None"
+        assert Option.get_default_pk() == default_pk
+
+    def test_question_default_pk_creates_complete_none_question(self):
+        default_pk = Question.get_default_pk()
+
+        default_question = Question.objects.get(pk=default_pk)
+        assert default_question.text == "None"
+        assert default_question.correct_option.text == "None"
+        assert list(default_question.incorrect_options.all()) == [
+            default_question.correct_option
+        ]
+        assert Question.get_default_pk() == default_pk
+
+    def test_sentinel_user_factory_creates_deleted_user(self):
+        default_pk = get_sentinel_user()
+
+        sentinel_user = get_user_model().objects.get(pk=default_pk)
+        assert sentinel_user.username == "deleted"
+        assert get_sentinel_user() == default_pk
