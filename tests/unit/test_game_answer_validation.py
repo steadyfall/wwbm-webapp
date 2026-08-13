@@ -127,7 +127,7 @@ class TestQuestionAnswerValidation:
         )
 
         game_session.refresh_from_db()
-        assert response.status_code == 301
+        assert response.status_code == 302
         assert response.url == reverse(
             "question", kwargs={"session": game_session.session_id, "level": 2}
         )
@@ -148,7 +148,7 @@ class TestQuestionAnswerValidation:
         )
 
         game_session.refresh_from_db()
-        assert response.status_code == 301
+        assert response.status_code == 302
         assert response.url == reverse(
             "statusAfterQn",
             kwargs={
