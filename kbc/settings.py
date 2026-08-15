@@ -1,7 +1,8 @@
-from configurations import Configuration, values
-from pathlib import Path
 import os
+from pathlib import Path
 from shutil import which
+
+from configurations import Configuration, values
 
 
 class Base(Configuration):

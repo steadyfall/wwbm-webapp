@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
-
 REGISTER_URL = "/auth/register/"
 ADMINLOGIN_URL = "/auth/admin-login/"
 LOGIN_URL = "/auth/login/"
@@ -61,7 +60,9 @@ class TestRegisterView:
         assert any(m.level_tag == "error" for m in msgs)
 
     def test_mismatched_passwords(self, client):
-        response = client.post(REGISTER_URL, _valid_post_data(password2="differentPass1"))
+        response = client.post(
+            REGISTER_URL, _valid_post_data(password2="differentPass1")
+        )
         assert response.status_code == 302
         assert response.url == "/auth/register/"
         msgs = list(get_messages(response.wsgi_request))
@@ -70,7 +71,9 @@ class TestRegisterView:
     def test_password_contains_username(self, client):
         response = client.post(
             REGISTER_URL,
-            _valid_post_data(username="john", password="johnsmith1", password2="johnsmith1"),
+            _valid_post_data(
+                username="john", password="johnsmith1", password2="johnsmith1"
+            ),
         )
         assert response.status_code == 302
         assert response.url == "/auth/register/"
@@ -106,7 +109,9 @@ class TestAdminLoginView:
         assert response.url == reverse("adminMainPage")
 
     def test_authenticated_non_superuser_get_redirects_to_mainpage(self, client):
-        user = User.objects.create_user(**_valid_admin_data(username="regularuser", password="userPass1"))
+        user = User.objects.create_user(
+            **_valid_admin_data(username="regularuser", password="userPass1")
+        )
         client.force_login(user)
         response = client.get(ADMINLOGIN_URL)
         assert response.status_code == 302
@@ -119,14 +124,24 @@ class TestAdminLoginView:
         assert response.url == reverse("adminMainPage")
 
     def test_post_valid_non_superuser_credentials_redirects_to_mainpage(self, client):
-        User.objects.create_user(**_valid_admin_data(username="regularuser", password="userPass1"))
-        response = client.post(ADMINLOGIN_URL, _valid_admin_data(username="regularuser", password="userPass1"))
+        User.objects.create_user(
+            **_valid_admin_data(username="regularuser", password="userPass1")
+        )
+        response = client.post(
+            ADMINLOGIN_URL,
+            _valid_admin_data(username="regularuser", password="userPass1"),
+        )
         assert response.status_code == 302
         assert response.url == reverse("mainpage")
 
     def test_post_invalid_credentials_redirects_with_error(self, client):
-        User.objects.create_user(**_valid_admin_data(username="regularuser", password="userPass1"))
-        response = client.post(ADMINLOGIN_URL, _valid_admin_data(username="regularuser", password="wrongpass"))
+        User.objects.create_user(
+            **_valid_admin_data(username="regularuser", password="userPass1")
+        )
+        response = client.post(
+            ADMINLOGIN_URL,
+            _valid_admin_data(username="regularuser", password="wrongpass"),
+        )
         assert response.status_code == 302
         assert response.url == reverse("adminLogin")
         msgs = list(get_messages(response.wsgi_request))
@@ -197,7 +212,9 @@ class TestLoginView:
 
     def test_already_authenticated_get(self, client):
         data = _valid_login_data()
-        user = User.objects.create_user(username=data["username"], password=data["password"])
+        user = User.objects.create_user(
+            username=data["username"], password=data["password"]
+        )
         client.force_login(user)
         response = client.get(LOGIN_URL)
         assert response.status_code == 200

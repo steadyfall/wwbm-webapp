@@ -1,10 +1,13 @@
-import json, logging
+import json
+import logging
 from itertools import islice
-from django.core.management.base import BaseCommand
-from django.core.exceptions import ImproperlyConfigured
-from game.models import Question, Option, Category
-from django.utils import timezone
+
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+
+from game.models import Category, Option, Question
 
 
 def configure_logger(enable_logging):
@@ -55,9 +58,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        def lazy_list_generator(l):
-            for obj in l:
-                yield obj
+        def lazy_list_generator(iterable):
+            yield from iterable
 
         json_file = options["json_file"]
         enable_logging = options.get("enable_logging", False)
@@ -67,12 +69,14 @@ class Command(BaseCommand):
         self.logger = configure_logger(enable_logging)
 
         try:
-            with open(json_file, "r", encoding="utf-8") as file:
+            with open(json_file, encoding="utf-8") as file:
                 data = json.load(file)
         except FileNotFoundError:
-            raise ImproperlyConfigured(f"File '{json_file}' not found.")
+            raise ImproperlyConfigured(f"File '{json_file}' not found.") from None
         except json.JSONDecodeError:
-            raise ImproperlyConfigured(f"File '{json_file}' is not a valid JSON file.")
+            raise ImproperlyConfigured(
+                f"File '{json_file}' is not a valid JSON file."
+            ) from None
 
         user = get_user_model().objects.get(username="admin")
         questions_to_create = []
@@ -168,7 +172,7 @@ incorrect_answers={item['incorrect_answers']}"
                 filter(lambda x: True if len(x["question"]) > 0 else False, data)
             )
 
-            for question, item in zip(questions_to_create, data):
+            for question, item in zip(questions_to_create, data, strict=True):
                 category = category_mapping[item["category"]]
                 question.falls_under.add(category)
                 question.incorrect_options.set(item["incorrect_answers"])

@@ -1,7 +1,10 @@
-import json, logging
+import json
+import logging
 from itertools import islice
-from django.core.management.base import BaseCommand
+
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management.base import BaseCommand
+
 from game.models import Option
 
 
@@ -48,8 +51,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         def lazy_option_generator(options):
-            for option in options:
-                yield option
+            yield from options
 
         json_file = options["json_file"]
         enable_logging = options.get("enable_logging", False)
@@ -58,12 +60,14 @@ class Command(BaseCommand):
         self.logger = configure_logger(enable_logging)
 
         try:
-            with open(json_file, "r", encoding="utf-8") as file:
+            with open(json_file, encoding="utf-8") as file:
                 data = json.load(file)
         except FileNotFoundError:
-            raise ImproperlyConfigured(f"File '{json_file}' not found.")
+            raise ImproperlyConfigured(f"File '{json_file}' not found.") from None
         except json.JSONDecodeError:
-            raise ImproperlyConfigured(f"File '{json_file}' is not a valid JSON file.")
+            raise ImproperlyConfigured(
+                f"File '{json_file}' is not a valid JSON file."
+            ) from None
 
         unique_options = set()
 

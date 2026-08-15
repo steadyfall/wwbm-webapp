@@ -1,8 +1,9 @@
-from django.forms.widgets import CheckboxSelectMultiple
-from django.db.models.fields import BigAutoField, CharField
-from django.db import models
-import re
 import datetime
+import re
+
+from django.db import models
+from django.db.models.fields import BigAutoField, CharField
+from django.forms.widgets import CheckboxSelectMultiple
 
 
 # Useful functions
@@ -24,7 +25,7 @@ def pk_checker(pk: int | str, model: models.Model) -> bool:
         RANDOM_STRING_CHARS = (
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         )
-        pattern = "[{}]".format(RANDOM_STRING_CHARS) + "{8}"
+        pattern = f"[{RANDOM_STRING_CHARS}]" + "{8}"
         return re.fullmatch(pattern, pk) is not None
     else:
         return pk.isdigit()
@@ -35,11 +36,11 @@ def safe_pk_list_converter(pk_list: list, model: models.Model) -> list:
     Safely converts a string to number and 0 if not in digits to return a list of numbers.
     """
     if isinstance(model._meta.pk, BigAutoField):
-        return list(map(lambda x: int(x) if pk_checker(x, model) else 0, pk_list))
+        return [int(x) if pk_checker(x, model) else 0 for x in pk_list]
     elif isinstance(model._meta.pk, CharField):
-        return list(map(lambda x: x if pk_checker(x, model) else 0, pk_list))
+        return [x if pk_checker(x, model) else 0 for x in pk_list]
     else:
-        return list(map(lambda x: int(x) if pk_checker(x, model) else 0, pk_list))
+        return [int(x) if pk_checker(x, model) else 0 for x in pk_list]
 
 
 def widget_list_generator(model):

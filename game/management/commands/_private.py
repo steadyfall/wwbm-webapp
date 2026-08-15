@@ -1,14 +1,14 @@
-import asyncio, aiohttp, itertools
+import itertools
 from html import unescape
 
-difficulty_choices = list(
-    (
-        "".join(x)
-        for x in itertools.chain.from_iterable(
-            itertools.permutations("emh", r) for r in range(1, len("emh") + 1)
-        )
+import aiohttp
+
+difficulty_choices = [
+    "".join(x)
+    for x in itertools.chain.from_iterable(
+        itertools.permutations("emh", r) for r in range(1, len("emh") + 1)
     )
-)  # regex : (?:([emh])(?!.*\1))+
+]  # regex : (?:([emh])(?!.*\1))+
 
 
 async def html_get(url):

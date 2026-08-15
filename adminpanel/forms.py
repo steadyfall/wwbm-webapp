@@ -1,8 +1,10 @@
-from django.forms import ModelForm, Form
-from django.utils.functional import cached_property
-from django.db.models import ManyToManyField
-from game.models import Question, Option, Lifeline, Category
 from copy import deepcopy
+
+from django.db.models import ManyToManyField
+from django.forms import ModelForm
+from django.utils.functional import cached_property
+
+from game.models import Category, Lifeline, Option, Question
 
 
 class ModifiedModelForm(ModelForm):
@@ -20,7 +22,7 @@ class ModifiedModelForm(ModelForm):
         if self._newly_created or not hasattr(self, "cleaned_data"):
             return apparent_changed_data
         model = self._meta.model
-        actual_changed_fields = list()
+        actual_changed_fields = []
         differenceBetweenFields = [
             (self.initial.get(x), self.cleaned_data[x]) for x in apparent_changed_data
         ]
@@ -46,13 +48,12 @@ class ModifiedModelForm(ModelForm):
             )
         model = self._meta.model
         if self._newly_created:
-            m2mFields = list(
-                filter(
-                    lambda x: isinstance(model._meta.get_field(x), ManyToManyField),
-                    self.cleaned_data.keys(),
-                )
-            )
-            m2mData = dict(list(map(lambda x: (x, self.cleaned_data[x]), m2mFields)))
+            m2mFields = [
+                x
+                for x in self.cleaned_data.keys()
+                if isinstance(model._meta.get_field(x), ManyToManyField)
+            ]
+            m2mData = {x: self.cleaned_data[x] for x in m2mFields}
             new_cleaned_data = deepcopy(self.cleaned_data)
             for field in m2mFields:
                 del new_cleaned_data[field]

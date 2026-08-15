@@ -1,10 +1,14 @@
-import asyncio, aiohttp, random, json
+import asyncio
+import json
 import logging
+import random
 from html import unescape
 from time import perf_counter, time
-from ._private import difficulty_choices, html_get
 
+import aiohttp
 from django.core.management.base import BaseCommand
+
+from ._private import difficulty_choices, html_get
 
 
 def configure_logger(enable_logging, log_to_file):
@@ -46,8 +50,8 @@ class Command(BaseCommand):
             "h": "hard",
         }
         self._difficulty_choices = difficulty_choices
-        self._categories = list(x for x in range(9, 32 + 1)) + ["any"]
-        self._categories_cli = list(str(x) for x in range(9, 32 + 1)) + ["any"]
+        self._categories = list(range(9, 32 + 1)) + ["any"]
+        self._categories_cli = [str(x) for x in range(9, 32 + 1)] + ["any"]
         self._category_text = '9-32 (both inclusive) or "any"'
         self.logger = None
 
@@ -128,7 +132,9 @@ class Command(BaseCommand):
                     else args[0]
                 )
 
-            kv = "&".join(["=".join(i) for i in list(zip(parameters, args))])
+            kv = "&".join(
+                ["=".join(i) for i in list(zip(parameters, args, strict=True))]
+            )
             return "https://opentdb.com/api.php?" + kv
 
         return generator
@@ -169,7 +175,7 @@ class Command(BaseCommand):
                         cat_id = int(api_url.split("category=")[-1].split("&")[0])
                         retrieved_categories.append(categories[cat_id])
                     list_of_qns = list(result["results"])
-                    list_of_qns = map(lambda q: unescape_question(q), list_of_qns)
+                    list_of_qns = (unescape_question(q) for q in list_of_qns)
                     responses.extend(list_of_qns)
 
                 await asyncio.sleep(5)  # Wait 5 seconds between requests
@@ -184,14 +190,14 @@ class Command(BaseCommand):
         query_coroutines = [
             GET_query_generator(a, b, c, d)
             for a, b, c, d in list(
-                zip(amount, category, difficulty, ["multiple"] * queries)
+                zip(amount, category, difficulty, ["multiple"] * queries, strict=False)
             )
         ]
 
         start = perf_counter()
         query_links = await asyncio.gather(*query_coroutines)
         end = perf_counter()
-        msg = f"Questions generated in {end-start} seconds."
+        msg = f"Questions generated in {end - start} seconds."
         self.logger.info(msg)
         self.stderr.write(self.style.SUCCESS(msg))
 
@@ -201,7 +207,7 @@ class Command(BaseCommand):
         with open(filename, "w") as f:
             json.dump(responses, f, indent=4)
         end = perf_counter()
-        msg = f"Questions fetched in {end-start} seconds."
+        msg = f"Questions fetched in {end - start} seconds."
         self.logger.info(msg)
         self.stderr.write(self.style.SUCCESS(msg))
         self.stdout.write(filename, ending="")
@@ -284,9 +290,7 @@ class Command(BaseCommand):
         amount = list(range(10, 20)) if (amount == 0) else [amount]
 
         category = (
-            self._categories
-            if (category == "any")
-            else list(map(lambda x: int(x), category))
+            self._categories if (category == "any") else [int(x) for x in category]
         )
 
         difficulty = (

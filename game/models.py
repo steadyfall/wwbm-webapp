@@ -156,7 +156,10 @@ class Question(models.Model):
             text="None",
             correct_option_id=default_option_pk,
         )
-        if created or not question.incorrect_options.filter(pk=default_option_pk).exists():
+        if (
+            created
+            or not question.incorrect_options.filter(pk=default_option_pk).exists()
+        ):
             question.incorrect_options.add(default_option_pk)
         return question.pk
 
