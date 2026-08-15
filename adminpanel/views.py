@@ -1,47 +1,47 @@
-from django.shortcuts import render, HttpResponseRedirect, redirect
+import datetime
+
 from django.contrib import messages
-from django.urls import reverse, reverse_lazy
-from django.http import JsonResponse, HttpResponseNotAllowed
-
-from django.views.generic import View
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-from .forms import QuestionForm, OptionForm, LifelineForm, CategoryForm
-from django.forms import ModelForm
-from django.forms import modelform_factory
-
+from django.contrib.admin.models import LogEntry
+from django.contrib.admin.options import construct_change_message
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Count, F, Max, Q
 from django.db.models.functions import Length, Trim, TruncDate
-from django.contrib.auth.models import User
-from django.contrib.admin.models import LogEntry
-from game.models import Session, Lifeline, Category, Question, Option, QuestionOrder
-
-from rest_framework.authtoken.models import Token
+from django.forms import ModelForm
+from django.http import HttpResponseNotAllowed, HttpResponseRedirect, JsonResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+from django.views.generic import View
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
+from game.models import Category, Lifeline, Option, Question, QuestionOrder, Session
+
+from .crud import (
+    PAGINATE_NO,
+    build_breadcrumbs,
+    get_record,
+    load_instance,
+    paginate,
+    record_context,
+)
+from .forms import CategoryForm, LifelineForm, OptionForm, QuestionForm
 from .mixins import SuperuserRequiredMixin
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from django.contrib.admin.options import construct_change_message
 from .serializers import QuestionEncoder
-
 from .viewsExtra import (
-    pk_checker,
-    safe_pk_list_converter,
-    safe_object_delete_log,
-    pretty_change_message,
+    daterange,
+    get_content_type_for_model,
     log_addition,
     log_change,
     log_deletion,
-    daterange,
-    get_content_type_for_model,
+    pk_checker,
+    pretty_change_message,
+    safe_object_delete_log,
+    safe_pk_list_converter,
 )
-import datetime
-from operator import itemgetter
-
 
 modelDict: dict[str, models.Model] = {
     "session": Session,
@@ -58,21 +58,19 @@ modelFormDict: dict[str, ModelForm] = {
     "option": OptionForm,
 }
 allowedModelNames = tuple(modelDict.keys())
-addressOfPages = dict(
-    adminMainPage=reverse_lazy("adminMainPage"),
-    test=reverse_lazy("test"),
-    adminListDB=lambda x: reverse_lazy("adminListDB", kwargs=x),
-    adminListLogs=reverse_lazy("adminListLogs"),
-    adminDBObject=lambda x: reverse_lazy("adminDBObject", kwargs=x),
-    adminDBObjectCreate=lambda x: reverse_lazy("adminDBObjectCreate", kwargs=x),
-    adminDBObjectDelete=lambda x: reverse_lazy("adminDBObjectDelete", kwargs=x),
-    adminDBObjectHistory=lambda x: reverse_lazy("adminDBObjectHistory", kwargs=x),
-    APIAccess=reverse_lazy("APIAccess"),
-    APIDocs=reverse_lazy("APIDocs"),
-)
-after1stElement = itemgetter(slice(1, None))
+addressOfPages = {
+    "adminMainPage": reverse_lazy("adminMainPage"),
+    "test": reverse_lazy("test"),
+    "adminListDB": lambda x: reverse_lazy("adminListDB", kwargs=x),
+    "adminListLogs": reverse_lazy("adminListLogs"),
+    "adminDBObject": lambda x: reverse_lazy("adminDBObject", kwargs=x),
+    "adminDBObjectCreate": lambda x: reverse_lazy("adminDBObjectCreate", kwargs=x),
+    "adminDBObjectDelete": lambda x: reverse_lazy("adminDBObjectDelete", kwargs=x),
+    "adminDBObjectHistory": lambda x: reverse_lazy("adminDBObjectHistory", kwargs=x),
+    "APIAccess": reverse_lazy("APIAccess"),
+    "APIDocs": reverse_lazy("APIDocs"),
+}
 
-PAGINATE_NO = 12
 SITE_NAME = "AdminPanel"
 
 
@@ -90,10 +88,63 @@ def testSite(request):
 # Production sites
 
 
-class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
+class AdminViewBase(SuperuserRequiredMixin, LoginRequiredMixin, View):
+    """Base view for admin panel pages that require a superuser login."""
+
     login_url = "adminLogin"
     raise_exception = False
 
+    def redirect_back(self):
+        """Redirect back to the previous page or the admin panel root."""
+        return HttpResponseRedirect(self.request.META.get("HTTP_REFERER", "/admin/"))
+
+
+class FormStateMixin:
+    """Shared form-state handling for create and change views."""
+
+    form_class = None
+    initial = {}
+    instance = None
+
+    def get_initial(self):
+        """Return the initial data to use for forms on this view."""
+        return self.initial.copy()
+
+    def get_instance(self):
+        """Return the model instance bound to forms on this view."""
+        return self.instance
+
+    def get_form_class(self):
+        """Return the form class to use."""
+        return self.form_class
+
+    def get_form_kwargs(self):
+        """Return the keyword arguments for instantiating the form."""
+        kwargs = {"initial": self.get_initial()}
+
+        if self.request.method in ("POST", "PUT"):
+            kwargs.update(
+                {
+                    "data": self.request.POST,
+                    "files": self.request.FILES,
+                }
+            )
+        if self.get_instance() is not None:
+            kwargs["instance"] = self.get_instance()
+        return kwargs
+
+    def get_form(self, form_class=None):
+        """Return an instance of the form to be used in this view."""
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(**self.get_form_kwargs())
+
+    def set_form_class(self, db):
+        """Set the form class used by this view for the given model name."""
+        self.form_class = modelFormDict[db]
+
+
+class AdminMainPage(AdminViewBase):
     def add_object_exists_to_logs(self, logs):
         logs_by_model = {}
         for log in logs:
@@ -166,7 +217,7 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
             session_medium_list,
             session_hard_list,
             score_list,
-        ) = [list() for _ in range(7)]
+        ) = [[] for _ in range(7)]
         start_date = datetime.date.today() - datetime.timedelta(15)
         end_date = datetime.date.today() + datetime.timedelta(1)
         session_stats = {
@@ -217,39 +268,37 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
             user.session_count for user in users_with_session_counts
         ]
 
-        context = dict(
-            recent_log=recent_log,
-            total_question_count=total_question_count,
-            daily_question_count=daily_question_count,
-            total_session_count=total_session_count,
-            daily_session_count=daily_session_count,
-            top_30_highest_scores=top_30_highest_scores,
-            highest_score=highest_score,
-            total_user_count=total_user_count,
-            daily_user_count=daily_user_count,
-            total_category_count=f"{len(categories):,}",
-            active_users_count=active_users_count,
-            percent_of_daily_threshold=percent_of_daily_threshold,
-            percent_of_active_users=percent_of_active_users,
-            more_than_ten_sessions=more_than_ten_sessions,
-            category_with_most_qs=category_with_most_qs,
-            date_list=date_list,
-            session_list=session_list,
-            session_user_list=session_user_list,
-            session_easy_list=session_easy_list,
-            session_medium_list=session_medium_list,
-            session_hard_list=session_hard_list,
-            score_list=score_list,
-            active_users_labels=active_users_labels,
-            active_users_activity=active_users_activity,
-        )
+        context = {
+            "recent_log": recent_log,
+            "total_question_count": total_question_count,
+            "daily_question_count": daily_question_count,
+            "total_session_count": total_session_count,
+            "daily_session_count": daily_session_count,
+            "top_30_highest_scores": top_30_highest_scores,
+            "highest_score": highest_score,
+            "total_user_count": total_user_count,
+            "daily_user_count": daily_user_count,
+            "total_category_count": f"{len(categories):,}",
+            "active_users_count": active_users_count,
+            "percent_of_daily_threshold": percent_of_daily_threshold,
+            "percent_of_active_users": percent_of_active_users,
+            "more_than_ten_sessions": more_than_ten_sessions,
+            "category_with_most_qs": category_with_most_qs,
+            "date_list": date_list,
+            "session_list": session_list,
+            "session_user_list": session_user_list,
+            "session_easy_list": session_easy_list,
+            "session_medium_list": session_medium_list,
+            "session_hard_list": session_hard_list,
+            "score_list": score_list,
+            "active_users_labels": active_users_labels,
+            "active_users_activity": active_users_activity,
+        }
         breadcrumbs = [
             ["Admin", addressOfPages["adminMainPage"]],
             [[], []],
         ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
-        )
+        context["breadcrumbs"] = build_breadcrumbs(breadcrumbs)
         context.update(self.kwargs)
         return context
 
@@ -258,13 +307,9 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/index.html", context)
 
 
-class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-
+class AdminListDB(AdminViewBase):
     def get_url_kwargs(self):
-        db = str(self.kwargs["db"])
-        return db
+        return str(self.kwargs["db"])
 
     def context_creator(self):
         smallcaseDB = self.get_url_kwargs()
@@ -274,36 +319,45 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
             .annotate(key_primary=F(model._meta.pk.name))
             .order_by("-key_primary")
         )
-        paginator = Paginator(query, PAGINATE_NO)
-        page = self.request.GET.get("page", 1)
-        try:
-            objects_list = paginator.page(page)
-        except PageNotAnInteger:
-            objects_list = paginator.page(1)
-        except EmptyPage:
-            objects_list = paginator.page(paginator.num_pages)
-        context = {
-            "allRecords": objects_list,
-            "recordVerboseName": model._meta.verbose_name,
-            "recordVerboseNamePlural": model._meta.verbose_name_plural,
-        }
-        context.update(self.kwargs)
+        objects_list = paginate(query, self.request.GET.get("page", 1), PAGINATE_NO)
+        context = record_context(model, self.kwargs, allRecords=objects_list)
         context["title"] = SITE_NAME + " - " + context["recordVerboseName"]
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            [smallcaseDB.title()],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        context["breadcrumbs"] = build_breadcrumbs(
+            [
+                ["Admin", addressOfPages["adminMainPage"]],
+                [smallcaseDB.title()],
+            ]
         )
         return context
 
     def get(self, request, *args, **kwargs):
         smallcaseDB = self.get_url_kwargs()
         if smallcaseDB not in allowedModelNames:
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+            return self.redirect_back()
         context = self.context_creator()
         return render(request, "adminpanel/listdb.html", context)
+
+    def is_bulk_delete_request(self, request, model, given_pk, safe_given_pk):
+        """Return True when the request deletes a fully validated selection."""
+        admin_action = request.POST.get("admin-action")
+        if (
+            admin_action not in ("Delete selected", "Delete all in view")
+            or not given_pk
+        ):
+            return False
+        valid_pks = set(
+            model.objects.all()
+            .annotate(key_primary=F(model._meta.pk.name))
+            .values_list("key_primary", flat=True)
+        )
+        if set(safe_given_pk) - valid_pks:
+            return False
+        if admin_action == "Delete selected":
+            return True
+        return (
+            bool(request.POST.get("allcheck"))
+            and len(set(safe_given_pk)) == PAGINATE_NO
+        )
 
     def post(self, request, *args, **kwargs):
         smallcaseDB = self.get_url_kwargs()
@@ -311,32 +365,21 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
             smallcaseDB not in allowedModelNames
             or request.POST.get("admin-action") == "-"
         ):
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+            return self.redirect_back()
 
         model = modelDict[smallcaseDB]
-        query = model.objects.all().annotate(key_primary=F(model._meta.pk.name))
         given_pk = request.POST.getlist("indcheck")
         safe_given_pk = safe_pk_list_converter(given_pk, model)
-        if (
-            request.POST.get("admin-action") == "Delete selected"
-            and given_pk
-            and (set(safe_given_pk) - set(map(lambda y: y.key_primary, query)) == set())
-        ) or (
-            request.POST.get("admin-action") == "Delete all in view"
-            and request.POST.get("allcheck")
-            and given_pk
-            and (set(safe_given_pk) - set(map(lambda y: y.key_primary, query)) == set())
-            and len(set(safe_given_pk)) == PAGINATE_NO
-        ):
+        if self.is_bulk_delete_request(request, model, given_pk, safe_given_pk):
             object_name = (
                 model._meta.verbose_name
                 if len(given_pk) == 1
                 else model._meta.verbose_name_plural
             )
-            action = list(
-                map(lambda x: safe_object_delete_log(request, model, x), safe_given_pk)
-            )
-            deleted = sum(list(map(lambda x: x[0], action)))
+            action = [
+                safe_object_delete_log(request, model, pk) for pk in safe_given_pk
+            ]
+            deleted = sum(result[0] for result in action)
             messages.success(
                 request,
                 f"""Successfully deleted {len(action)} {object_name} and {deleted} objects related to it!""",
@@ -346,91 +389,53 @@ class AdminListDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/listdb.html", context)
 
 
-class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-    form_class = None
-    initial = {}
-
+class AdminDBObjectCreate(AdminViewBase, FormStateMixin):
     def get_url_kwargs(self):
-        db = str(self.kwargs["db"])
-        return db
+        return str(self.kwargs["db"])
 
-    def get_initial(self):
-        """Return the initial data to use for forms on this view."""
-        return self.initial.copy()
-
-    def get_form_class(self):
-        """Return the form class to use."""
-        return self.form_class
-
-    def get_form(self, form_class=None):
-        """Return an instance of the form to be used in this view."""
-        if form_class is None:
-            form_class = self.get_form_class()
-        return form_class(**self.get_form_kwargs())
-
-    def get_form_kwargs(self):
-        """Return the keyword arguments for instantiating the form."""
-        kwargs = {
-            "initial": self.get_initial(),
-        }
-
-        if self.request.method in ("POST", "PUT"):
-            kwargs.update(
-                {
-                    "data": self.request.POST,
-                    "files": self.request.FILES,
-                }
-            )
-        return kwargs
+    def is_creatable(self, smallcaseDB):
+        return smallcaseDB not in allowedModelNames or smallcaseDB in (
+            "session",
+            "lifeline",
+        )
 
     def context_creator(self):
         smallcaseDB = self.get_url_kwargs()
         model = modelDict[smallcaseDB]
-        context = {
-            "form": self.get_form(),
-            "recordVerboseName": model._meta.verbose_name,
-            "recordVerboseNamePlural": model._meta.verbose_name_plural,
-        }
-        context.update(self.kwargs)
+        context = record_context(model, self.kwargs, form=self.get_form())
         context["title"] = (
             SITE_NAME + " - Create " + context["recordVerboseName"].title()
         )
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
+        context["breadcrumbs"] = build_breadcrumbs(
             [
-                f"Create {smallcaseDB.title()}",
-                addressOfPages["adminDBObjectCreate"]({"db": smallcaseDB}),
-            ],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+                ["Admin", addressOfPages["adminMainPage"]],
+                [
+                    smallcaseDB.title(),
+                    addressOfPages["adminListDB"]({"db": smallcaseDB}),
+                ],
+                [
+                    f"Create {smallcaseDB.title()}",
+                    addressOfPages["adminDBObjectCreate"]({"db": smallcaseDB}),
+                ],
+            ]
         )
         return context
 
     def get(self, request, *args, **kwargs):
         smallcaseDB = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames or smallcaseDB in (
-            "session",
-            "lifeline",
-        ):
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
-        self.form_class = modelFormDict[smallcaseDB]
+        if self.is_creatable(smallcaseDB):
+            return self.redirect_back()
+        self.set_form_class(smallcaseDB)
         context = self.context_creator()
         return render(request, "adminpanel/objectCreate.html", context)
 
     def post(self, request, *args, **kwargs):
         smallcaseDB = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames or smallcaseDB in (
-            "session",
-            "lifeline",
-        ):
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+        if self.is_creatable(smallcaseDB):
+            return self.redirect_back()
         if request.POST.get("cancel"):
             return redirect("adminListDB", db=smallcaseDB)
-        self.form_class = modelFormDict[smallcaseDB]
+        self.set_form_class(smallcaseDB)
         form = self.get_form()
         if not form.is_valid():
             context = self.context_creator()
@@ -444,72 +449,39 @@ class AdminDBObjectCreate(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return redirect("adminListDB", db=smallcaseDB)
 
 
-class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-    form_class = None
-    instance = None
-
+class AdminDBObjectChange(AdminViewBase, FormStateMixin):
     def get_url_kwargs(self):
         db, pk = str(self.kwargs["db"]), str(self.kwargs["pk"])
         return (db, pk)
 
-    def get_instance(self):
-        """Return the initial data to use for forms on this view."""
-        return self.instance
-
-    def get_form_class(self):
-        """Return the form class to use."""
-        return self.form_class
-
-    def get_form(self, form_class=None):
-        """Return an instance of the form to be used in this view."""
-        if form_class is None:
-            form_class = self.get_form_class()
-        return form_class(**self.get_form_kwargs())
-
-    def get_form_kwargs(self):
-        """Return the keyword arguments for instantiating the form."""
-        kwargs = {
-            "instance": self.get_instance(),
-        }
-
-        if self.request.method in ("POST", "PUT"):
-            kwargs.update(
-                {
-                    "data": self.request.POST,
-                    "files": self.request.FILES,
-                }
-            )
-        return kwargs
-
     def context_creator(self):
         smallcaseDB, pk = self.get_url_kwargs()
         model = modelDict[smallcaseDB]
-        context = {
-            "form": self.get_form(),
-            "recordVerboseName": model._meta.verbose_name,
-            "recordVerboseNamePlural": model._meta.verbose_name_plural,
-        }
-        context.update(self.kwargs)
+        context = record_context(model, self.kwargs, form=self.get_form())
         context["title"] = SITE_NAME + " - View " + context["recordVerboseName"].title()
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
+        context["breadcrumbs"] = build_breadcrumbs(
             [
-                f"View {smallcaseDB.title()}",
-                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
-            ],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+                ["Admin", addressOfPages["adminMainPage"]],
+                [
+                    smallcaseDB.title(),
+                    addressOfPages["adminListDB"]({"db": smallcaseDB}),
+                ],
+                [
+                    f"View {smallcaseDB.title()}",
+                    addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
+                ],
+            ]
         )
         return context
 
+    def set_form_state(self, model, smallcaseDB, pk):
+        self.set_form_class(smallcaseDB)
+        self.instance = load_instance(model, pk)
+
     def get(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
-        if smallcaseDB not in allowedModelNames or smallcaseDB in ("session"):
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+        if smallcaseDB not in allowedModelNames or smallcaseDB == "session":
+            return self.redirect_back()
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
@@ -517,17 +489,13 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         context = self.context_creator()
         return render(request, "adminpanel/objectView.html", context)
 
-    def set_form_state(self, model, smallcaseDB, pk):
-        self.form_class = modelFormDict[smallcaseDB]
-        self.instance = model.objects.get(pk=int(pk) if pk.isnumeric() else pk)
-
     def post(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
         if smallcaseDB not in allowedModelNames or smallcaseDB in (
             "session",
             "lifeline",
         ):
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+            return self.redirect_back()
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
@@ -561,12 +529,7 @@ class AdminDBObjectChange(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return redirect("adminListDB", db=smallcaseDB)
 
 
-class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-    form_class = None
-    instance = None
-
+class AdminDBObjectDelete(AdminViewBase):
     def get_url_kwargs(self):
         db, pk = str(self.kwargs["db"]), str(self.kwargs["pk"])
         return (db, pk)
@@ -574,30 +537,29 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
     def context_creator(self):
         smallcaseDB, pk = self.get_url_kwargs()
         model = modelDict[smallcaseDB]
-        obj = model.objects.get(pk=pk)
-        context = {
-            "record": obj,
-            "recordVerboseName": model._meta.verbose_name,
-            "recordVerboseNamePlural": model._meta.verbose_name_plural,
-        }
-        context.update(self.kwargs)
+        obj = load_instance(model, pk)
+        context = record_context(model, self.kwargs, record=obj)
         context["title"] = (
             SITE_NAME + " - Confirm deleting " + context["recordVerboseName"] + "?"
         )
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
+        context["breadcrumbs"] = build_breadcrumbs(
             [
-                f"View {smallcaseDB.title()}",
-                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
-            ],
-            [
-                f"Delete '{obj}'",
-                addressOfPages["adminDBObjectDelete"]({"db": smallcaseDB, "pk": pk}),
-            ],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+                ["Admin", addressOfPages["adminMainPage"]],
+                [
+                    smallcaseDB.title(),
+                    addressOfPages["adminListDB"]({"db": smallcaseDB}),
+                ],
+                [
+                    f"View {smallcaseDB.title()}",
+                    addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
+                ],
+                [
+                    f"Delete '{obj}'",
+                    addressOfPages["adminDBObjectDelete"](
+                        {"db": smallcaseDB, "pk": pk}
+                    ),
+                ],
+            ]
         )
         return context
 
@@ -607,7 +569,7 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
             "session",
             "lifeline",
         ):
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+            return self.redirect_back()
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
@@ -620,7 +582,7 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
             "session",
             "lifeline",
         ):
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+            return self.redirect_back()
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
@@ -638,10 +600,7 @@ class AdminDBObjectDelete(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return redirect("adminListDB", db=smallcaseDB)
 
 
-class AdminDBObjectHistory(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-
+class AdminDBObjectHistory(AdminViewBase):
     def get_url_kwargs(self):
         db, pk = str(self.kwargs["db"]), str(self.kwargs["pk"])
         return (db, pk)
@@ -650,58 +609,53 @@ class AdminDBObjectHistory(SuperuserRequiredMixin, LoginRequiredMixin, View):
         smallcaseDB, pk = self.get_url_kwargs()
         model = modelDict[smallcaseDB]
 
-        obj = model.objects.all()[0]
-        if model.objects.filter(pk=pk).exists():
-            obj = model.objects.get(pk=pk)
+        obj = get_record(model, pk)
 
         query = LogEntry.objects.filter(
             content_type_id=get_content_type_for_model(obj).pk, object_id=pk
         ).order_by("-action_time")
 
-        if query.exists():
-            paginator = Paginator(query, PAGINATE_NO)
-            page = self.request.GET.get("page", 1)
-            try:
-                objects_list = paginator.page(page)
-            except PageNotAnInteger:
-                objects_list = paginator.page(1)
-            except EmptyPage:
-                objects_list = paginator.page(paginator.num_pages)
-        else:
-            objects_list = None
-
-        context = dict(
-            record=obj,
-            recordVerboseName=model._meta.verbose_name,
-            recordVerboseNamePlural=model._meta.verbose_name_plural,
-            query=objects_list,
-            object_name=query[0].object_repr if query.exists() else str(obj),
+        objects_list = (
+            paginate(query, self.request.GET.get("page", 1), PAGINATE_NO)
+            if query.exists()
+            else None
         )
-        context.update(self.kwargs)
+
+        context = record_context(
+            model,
+            self.kwargs,
+            record=obj,
+            query=objects_list,
+            object_name=objects_list[0].object_repr if objects_list else str(obj),
+        )
         context["title"] = (
             SITE_NAME + " - " + "History of " + f'"{context["object_name"]}"'
         )
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            [smallcaseDB.title(), addressOfPages["adminListDB"]({"db": smallcaseDB})],
+        context["breadcrumbs"] = build_breadcrumbs(
             [
-                f"View {smallcaseDB.title()}",
-                addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
-            ],
-            [
-                f"History of '{obj}'",
-                addressOfPages["adminDBObjectHistory"]({"db": smallcaseDB, "pk": pk}),
-            ],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+                ["Admin", addressOfPages["adminMainPage"]],
+                [
+                    smallcaseDB.title(),
+                    addressOfPages["adminListDB"]({"db": smallcaseDB}),
+                ],
+                [
+                    f"View {smallcaseDB.title()}",
+                    addressOfPages["adminDBObject"]({"db": smallcaseDB, "pk": pk}),
+                ],
+                [
+                    f"History of '{obj}'",
+                    addressOfPages["adminDBObjectHistory"](
+                        {"db": smallcaseDB, "pk": pk}
+                    ),
+                ],
+            ]
         )
         return context
 
     def get(self, request, *args, **kwargs):
         smallcaseDB, pk = self.get_url_kwargs()
         if smallcaseDB not in allowedModelNames:
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+            return self.redirect_back()
         model = modelDict[smallcaseDB]
         if not pk_checker(pk, model):
             return redirect("adminListDB", db=smallcaseDB)
@@ -709,30 +663,21 @@ class AdminDBObjectHistory(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/objectHistory.html", context)
 
 
-class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-
+class ShowLogDB(AdminViewBase):
     def context_creator(self):
-        paginator = Paginator(LogEntry.objects.order_by("-action_time"), PAGINATE_NO)
-        page = self.request.GET.get("page", 1)
-        try:
-            objects_list = paginator.page(page)
-        except PageNotAnInteger:
-            objects_list = paginator.page(1)
-        except EmptyPage:
-            objects_list = paginator.page(paginator.num_pages)
-        context = dict(
-            allRecords=objects_list,
+        objects_list = paginate(
+            LogEntry.objects.order_by("-action_time"),
+            self.request.GET.get("page", 1),
+            PAGINATE_NO,
         )
+        context = {"allRecords": objects_list}
         context.update(self.kwargs)
         context["title"] = SITE_NAME + " - " + "Changelog"
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            ["Logs", addressOfPages["adminListLogs"]],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        context["breadcrumbs"] = build_breadcrumbs(
+            [
+                ["Admin", addressOfPages["adminMainPage"]],
+                ["Logs", addressOfPages["adminListLogs"]],
+            ]
         )
         return context
 
@@ -741,23 +686,19 @@ class ShowLogDB(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/listlog.html", context)
 
 
-class APIAccess(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-
+class APIAccess(AdminViewBase):
     def context_creator(self, request):
         token, created = Token.objects.get_or_create(user=request.user)
-        context = dict()
+        context = {}
         context.update(self.kwargs)
         context["token"] = token.key
         context["created"] = token.created
         context["title"] = SITE_NAME + " - " + "API Token"
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            ["API Access", addressOfPages["APIAccess"]],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        context["breadcrumbs"] = build_breadcrumbs(
+            [
+                ["Admin", addressOfPages["adminMainPage"]],
+                ["API Access", addressOfPages["APIAccess"]],
+            ]
         )
         return context
 
@@ -766,20 +707,16 @@ class APIAccess(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/apiaccess.html", context)
 
 
-class APIDocs(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-
+class APIDocs(AdminViewBase):
     def context_creator(self, request):
-        context = dict()
+        context = {}
         context.update(self.kwargs)
         context["title"] = SITE_NAME + " - " + "API Docs"
-        breadcrumbs = [
-            ["Admin", addressOfPages["adminMainPage"]],
-            ["API Docs", addressOfPages["APIDocs"]],
-        ]
-        context["breadcrumbs"] = list(
-            map(lambda x: (x[0], x[1]), list(enumerate(breadcrumbs, start=1)))
+        context["breadcrumbs"] = build_breadcrumbs(
+            [
+                ["Admin", addressOfPages["adminMainPage"]],
+                ["API Docs", addressOfPages["APIDocs"]],
+            ]
         )
         return context
 
@@ -788,10 +725,7 @@ class APIDocs(SuperuserRequiredMixin, LoginRequiredMixin, View):
         return render(request, "adminpanel/apidocs.html", context)
 
 
-class GetQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
-    login_url = "adminLogin"
-    raise_exception = False
-
+class GetQuestion(AdminViewBase):
     def get(self, request, *args, **kwargs):
         response = {}
         count = self.request.GET.get("count")
@@ -850,10 +784,12 @@ class AddQuestion(APIView):
             def checkDifficulty(diff):
                 difficulties = ("Easy", "Medium", "Hard")
                 db_difficulties = (Question.EASY, Question.MEDIUM, Question.HARD)
-                difficulties = list(map(lambda x: x.lower(), difficulties))
-                mapped_difficulties = dict(zip(difficulties, db_difficulties))
+                lower_difficulties = [difficulty.lower() for difficulty in difficulties]
+                mapped_difficulties = dict(
+                    zip(lower_difficulties, db_difficulties, strict=True)
+                )
                 if isinstance(diff, str):
-                    if diff.lower() in difficulties:
+                    if diff.lower() in lower_difficulties:
                         return mapped_difficulties[diff.lower()]
                 return False
 
@@ -880,10 +816,10 @@ class AddQuestion(APIView):
 
             keys = tuple(obj.keys())
             if (
-                (not "difficulty" in keys)
-                or (not "question" in keys)
-                or (not "correct_answer" in keys)
-                or (not "incorrect_answers" in keys)
+                "difficulty" not in keys
+                or "question" not in keys
+                or "correct_answer" not in keys
+                or "incorrect_answers" not in keys
             ):
                 queryResult["status_code"] = 4
                 queryResult["status_message"] = self.statuses[
@@ -941,11 +877,11 @@ class AddQuestion(APIView):
                 ]
                 add_questions.append(
                     (
-                        dict(
-                            text=qn,
-                            difficulty=difficulty,
-                            correct_option=correct_option,
-                        ),
+                        {
+                            "text": qn,
+                            "difficulty": difficulty,
+                            "correct_option": correct_option,
+                        },
                         cat,
                         incorrect_options,
                     )
@@ -981,19 +917,15 @@ class AddQuestion(APIView):
         for idx in range(len(received_json_data)):
             received_json_data[idx] = checkQuestion(received_json_data[idx])
 
-        status_codes_after_action = list(
-            res["status_code"] for res in received_json_data
-        )
+        status_codes_after_action = [res["status_code"] for res in received_json_data]
         if len(set(status_codes_after_action)) >= 1 and 1 not in set(
             status_codes_after_action
         ):
             final["success"] = 0
-            unique_status_codes = list(
-                map(
-                    lambda x: {"status_code": x, "status_message": self.statuses[x]},
-                    set(status_codes_after_action),
-                )
-            )
+            unique_status_codes = [
+                {"status_code": code, "status_message": self.statuses[code]}
+                for code in set(status_codes_after_action)
+            ]
             final["errors"] = unique_status_codes
             return JsonResponse(final, safe=False, encoder=QuestionEncoder, status=409)
 
