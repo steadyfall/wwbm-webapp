@@ -1,8 +1,9 @@
 import logging
 from time import perf_counter
-from game.models import Lifeline
 
 from django.core.management.base import BaseCommand
+
+from game.models import Lifeline
 
 
 def configure_logger(enable_logging):
@@ -86,6 +87,6 @@ class Command(BaseCommand):
                 count += 1
 
         end = perf_counter()
-        msg = f"{count} lifelines created in {end-start} seconds."
+        msg = f"{count} lifelines created in {end - start} seconds."
         self.logger.info(msg)
         self.stdout.write(self.style.SUCCESS(msg))

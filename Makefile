@@ -81,7 +81,7 @@ run-tailwind: ## Start Tailwind CSS watcher only
 
 check: format lint ## Run all code quality checks (format, lint)
 	@printf "$(CYAN)>>> Running Django system checks...$(NC)\n"
-	$(MANAGE) check
+	source .env && $(MANAGE) check
 	@printf "$(GREEN)>>> All checks passed!$(NC)\n"
 
 test: ## Run pytest test suite with coverage reporting

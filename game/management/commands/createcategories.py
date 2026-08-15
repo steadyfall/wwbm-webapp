@@ -1,12 +1,14 @@
-import asyncio, aiohttp
+import asyncio
 import logging
 from html import unescape
 from time import perf_counter
-from ._private import html_get
-from game.models import Category
-from django.utils import timezone
 
 from django.core.management.base import BaseCommand
+from django.utils import timezone
+
+from game.models import Category
+
+from ._private import html_get
 
 
 def configure_logger(enable_logging):
@@ -72,7 +74,7 @@ class Command(BaseCommand):
         start = perf_counter()
         categories = asyncio.run(self._category_lookup())
         end = perf_counter()
-        msg = f"Categories retrieved in {end-start} seconds."
+        msg = f"Categories retrieved in {end - start} seconds."
         self.logger.info(msg)
         self.stdout.write(self.style.SUCCESS(msg))
 
@@ -104,6 +106,6 @@ class Command(BaseCommand):
                     )
 
         end = perf_counter()
-        msg = f"Categories created/updated in {end-start} seconds."
+        msg = f"Categories created/updated in {end - start} seconds."
         self.logger.info(msg)
         self.stdout.write(self.style.SUCCESS(msg))

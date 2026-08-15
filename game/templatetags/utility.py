@@ -21,7 +21,7 @@ def getListFromQueryDict(querydict, itemToGet):
 
 @register.filter()
 def querysetToPrimaryKey(queryset):
-    return list(map(lambda x: x.pk, queryset))
+    return [x.pk for x in queryset]
 
 
 @register.filter

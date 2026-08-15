@@ -1,8 +1,9 @@
 import logging
 from time import perf_counter
-from game.models import Level
 
 from django.core.management.base import BaseCommand
+
+from game.models import Level
 
 
 def configure_logger(enable_logging):
@@ -91,6 +92,6 @@ class Command(BaseCommand):
                 count += 1
 
         end = perf_counter()
-        msg = f"{count} levels created in {end-start} seconds."
+        msg = f"{count} levels created in {end - start} seconds."
         self.logger.info(msg)
         self.stdout.write(self.style.SUCCESS(msg))

@@ -1,10 +1,13 @@
-from django.shortcuts import render, redirect, HttpResponseRedirect
-
-from django.contrib import messages
+from django.contrib import auth, messages
 from django.contrib.auth.models import User
+from django.shortcuts import redirect, render
 
-from django.contrib import auth
-from .validate import *
+from .validate import (
+    confirmPassword,
+    emailValidator,
+    passwordValidator,
+    usernameValidator,
+)
 
 
 def register(request):
@@ -29,9 +32,7 @@ def register(request):
             if User.objects.filter(username=username).exists():
                 messages.warning(request, "You already have an account.")
                 return redirect("login")
-            newuser = User.objects.create_user(
-                username=username, email=email, password=password
-            )
+            User.objects.create_user(username=username, email=email, password=password)
             messages.success(request, "Account successfully created!")
             return redirect("login")
         else:
