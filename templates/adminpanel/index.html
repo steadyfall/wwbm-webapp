@@ -279,7 +279,14 @@
                                                 {{ total_category_count }} categories
                                             </div>
                                             <div class="text-muted">
-                                                {{ category_with_most_qs|safe }} has the most questions
+                                                {% if category_with_most_qs %}
+                                                <a style="text-decoration: none;"
+                                                    href="{% url 'adminDBObject' db='category' pk=category_with_most_qs.pk %}"
+                                                    title="{{ category_with_most_qs.name }}">This cat.</a>
+                                                {% else %}
+                                                No category
+                                                {% endif %}
+                                                has the most questions
                                             </div>
                                         </div>
                                     </div>
