@@ -189,3 +189,66 @@ class TestAddQuestionAPI:
 
         assert response.status_code == 401
         assert Question.objects.count() == 0
+
+
+@pytest.fixture
+def api_admin_user():
+    return User.objects.create_superuser(
+        username="apiadmin", email="apiadmin@example.com", password="adminPass123"
+    )
+
+
+@pytest.fixture
+def api_admin_client(client, api_admin_user):
+    client.force_login(api_admin_user)
+    return client
+
+
+@pytest.fixture
+def api_questions(api_admin_user):
+    questions = []
+    for index in range(3):
+        question = Question.objects.create(
+            who_added=api_admin_user,
+            text=f"Random question {index}?",
+            difficulty=Question.EASY,
+            correct_option=Option.objects.create(text=f"Answer {index}"),
+        )
+        question.incorrect_options.set(
+            [
+                Option.objects.create(text=f"Wrong {index} a"),
+                Option.objects.create(text=f"Wrong {index} b"),
+                Option.objects.create(text=f"Wrong {index} c"),
+            ]
+        )
+        questions.append(question)
+    return questions
+
+
+@pytest.mark.django_db
+class TestGetQuestionAPI:
+    def test_count_param_returns_that_many_questions(
+        self, api_admin_client, api_questions
+    ):
+        response = api_admin_client.get(reverse("getQuestionAPI") + "?count=3")
+
+        assert response.status_code == 200
+        assert len(response.json()["data"]) == 3
+
+    def test_missing_count_defaults_to_one(self, api_admin_client, api_questions):
+        response = api_admin_client.get(reverse("getQuestionAPI"))
+
+        assert response.status_code == 200
+        assert len(response.json()["data"]) == 1
+
+    def test_non_numeric_count_defaults_to_one(self, api_admin_client, api_questions):
+        response = api_admin_client.get(reverse("getQuestionAPI") + "?count=abc")
+
+        assert response.status_code == 200
+        assert len(response.json()["data"]) == 1
+
+    def test_count_above_limit_returns_error(self, api_admin_client, api_questions):
+        response = api_admin_client.get(reverse("getQuestionAPI") + "?count=10")
+
+        assert response.status_code == 200
+        assert response.json()["error"] == "Cannot request more than 5 objects."

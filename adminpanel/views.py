@@ -41,7 +41,6 @@ from .viewsExtra import (
 )
 import datetime
 from operator import itemgetter
-import json, random
 
 
 modelDict: dict[str, models.Model] = {
@@ -800,8 +799,7 @@ class GetQuestion(SuperuserRequiredMixin, LoginRequiredMixin, View):
         if count > 5:
             response["error"] = "Cannot request more than 5 objects."
             return JsonResponse(response, safe=False, encoder=QuestionEncoder)
-        data = random.sample(list(Question.objects.all()), count)
-        response["data"] = data
+        response["data"] = list(Question.objects.order_by("?")[:count])
         return JsonResponse(response, safe=False, encoder=QuestionEncoder)
 
     def post(self, request, *args, **kwargs):
