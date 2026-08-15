@@ -233,13 +233,7 @@ class AdminMainPage(SuperuserRequiredMixin, LoginRequiredMixin, View):
             percent_of_daily_threshold=percent_of_daily_threshold,
             percent_of_active_users=percent_of_active_users,
             more_than_ten_sessions=more_than_ten_sessions,
-            category_with_most_qs=""
-            if category_with_most_qs is None
-            else f"""\
-                                <a style="text-decoration: none;" \
-                                href="{reverse_lazy("adminDBObject", kwargs={"db": "category", "pk": category_with_most_qs.pk})}" \
-                                title="{category_with_most_qs.name}">\
-                                This cat.</a>""",
+            category_with_most_qs=category_with_most_qs,
             date_list=date_list,
             session_list=session_list,
             session_user_list=session_user_list,

@@ -139,6 +139,38 @@ class TestAdminDashboardPerformance:
 
 
 @pytest.mark.django_db
+class TestAdminDashboardContext:
+    def test_category_with_most_qs_is_category_instance(self, admin_data):
+        view = AdminMainPage()
+        view.request = RequestFactory().get(reverse("adminMainPage"))
+        view.kwargs = {}
+
+        context = view.context_creater()
+
+        assert isinstance(context["category_with_most_qs"], Category)
+
+    def test_dashboard_escapes_xss_payload_in_category_name(self, admin_client):
+        Category.objects.create(name="<script>alert(1)</script>")
+
+        response = admin_client.get(reverse("adminMainPage"))
+
+        html = response.content.decode()
+        assert "<script>alert(1)</script>" not in html
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+
+    def test_dashboard_links_to_category_object_page(self, admin_client, admin_data):
+        category = admin_data["category"]
+
+        response = admin_client.get(reverse("adminMainPage"))
+
+        html = response.content.decode()
+        object_url = reverse(
+            "adminDBObject", kwargs={"db": "category", "pk": category.pk}
+        )
+        assert f'href="{object_url}"' in html
+
+
+@pytest.mark.django_db
 class TestAdminCRUDViews:
     @pytest.mark.parametrize(
         "model_name",
